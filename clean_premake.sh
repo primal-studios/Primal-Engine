@@ -1,0 +1,1 @@
+./dependencies/premake/premake5.exe clean

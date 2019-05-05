@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Project Name="GLFW" InternalType="Library">
+  <Plugins/>
+  <Description/>
+  <VirtualDirectory Name="include">
+    <VirtualDirectory Name="GLFW">
+      <File Name="include/GLFW/glfw3.h"/>
+      <File Name="include/GLFW/glfw3native.h"/>
+    </VirtualDirectory>
+  </VirtualDirectory>
+  <VirtualDirectory Name="src">
+    <File Name="src/context.c"/>
+    <File Name="src/egl_context.c"/>
+    <File Name="src/glfw_config.h"/>
+    <File Name="src/glx_context.c"/>
+    <File Name="src/init.c"/>
+    <File Name="src/input.c"/>
+    <File Name="src/linux_joystick.c"/>
+    <File Name="src/monitor.c"/>
+    <File Name="src/osmesa_context.c"/>
+    <File Name="src/posix_thread.c"/>
+    <File Name="src/posix_time.c"/>
+    <File Name="src/vulkan.c"/>
+    <File Name="src/window.c"/>
+    <File Name="src/x11_init.c"/>
+    <File Name="src/x11_monitor.c"/>
+    <File Name="src/x11_window.c"/>
+    <File Name="src/xkb_unicode.c"/>
+  </VirtualDirectory>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
+  <Dependencies Name="Dist"/>
+  <Settings Type="Dynamic Library">
+    <GlobalSettings>
+      <Compiler Options="" C_Options="" Assembler="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="">
+        <LibraryPath Value="."/>
+      </Linker>
+      <ResourceCompiler Options=""/>
+    </GlobalSettings>
+    <Configuration Name="Debug" CompilerType="clang" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-m64;-fPIC;-std=c11;-lgdi32" C_Options="-m64;-fPIC;-std=c11;-lgdi32" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" UseDifferentPCHFlags="no" PCHFlags="">
+        <Preprocessor Value="_GLFW_X11"/>
+      </Compiler>
+      <Linker Required="yes" Options="-m64;-shared;-Wl,-soname=libGLFW.so">
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="bin/Debug-linux-x86_64/GLFW/libGLFW.so" IntermediateDirectory="bin-int/Debug-linux-x86_64/GLFW" Command="" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="" PauseExecWhenProcTerminates="no" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <CustomBuild Enabled="no"/>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Release" CompilerType="clang" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-m64;-fPIC;-std=c11;-lgdi32" C_Options="-m64;-fPIC;-std=c11;-lgdi32" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" UseDifferentPCHFlags="no" PCHFlags="">
+        <Preprocessor Value="_GLFW_X11"/>
+      </Compiler>
+      <Linker Required="yes" Options="-m64;-shared;-Wl,-soname=libGLFW.so">
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="bin/Release-linux-x86_64/GLFW/libGLFW.so" IntermediateDirectory="bin-int/Release-linux-x86_64/GLFW" Command="" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="" PauseExecWhenProcTerminates="no" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <CustomBuild Enabled="no"/>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Dist" CompilerType="clang" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-m64;-fPIC;-std=c11;-lgdi32" C_Options="-m64;-fPIC;-std=c11;-lgdi32" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" UseDifferentPCHFlags="no" PCHFlags="">
+        <Preprocessor Value="_GLFW_X11"/>
+      </Compiler>
+      <Linker Required="yes" Options="-m64;-shared;-Wl,-soname=libGLFW.so">
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="bin/Dist-linux-x86_64/GLFW/libGLFW.so" IntermediateDirectory="bin-int/Dist-linux-x86_64/GLFW" Command="" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="" PauseExecWhenProcTerminates="no" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <CustomBuild Enabled="no"/>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+  </Settings>
+</CodeLite_Project>

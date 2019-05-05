@@ -43,3 +43,8 @@
 
 *.log
 
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+*.sln.DotSettings.user
