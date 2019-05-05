@@ -11,6 +11,7 @@ enum class EFileSaveMode : uint32_t
 
 class File
 {
+	friend class FileSystem;
 	public:
 		File();
 		~File();

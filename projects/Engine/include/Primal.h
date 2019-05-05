@@ -22,14 +22,29 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+// Application
+#include "application/Application.h"
+#include "application/EntryPoint.h"
+#include "application/ApplicationLayer.h"
+
 // Core
-#include "core/Application.h"
 #include "core/Log.h"
-#include "core/EntryPoint.h"
+#include "core/PrimalAssert.h"
+#include "core/Timer.h"
+#include "core/Window.h"
 
 // Events
 #include "events/Event.h"
 #include "events/ApplicationEvent.h"
+#include "events/KeyEvents.h"
+
+// Input
+#include "input/Input.h"
+#include "input/KeyCodes.h"
+
+// File System
+#include "filesystem/FileSystem.h"
+#include "filesystem/File.h"
 
 
 #endif // primal_h__

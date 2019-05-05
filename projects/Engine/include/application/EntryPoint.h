@@ -1,7 +1,7 @@
 #ifndef entrypoint_h__
 #define entrypoint_h__
 
-#include "core/Application.h"
+#include "application/Application.h"
 
 extern Application* createApplication();
 

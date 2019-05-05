@@ -2,6 +2,9 @@
 
 #include <fstream>
 
+#include "filesystem/FileSystem.h"
+#include "core/Log.h"
+
 File::File()
 {
 	mData = "";
@@ -27,14 +30,14 @@ void File::save(const EFileSaveMode& aMode) const
 {
 	if(mPath == "")
 	{
-		// LOG ERROR
+		PRIMAL_INTERNAL_ERROR("File has not path set, can not save to empty path");
 		return;
 	}
 
 	std::ofstream stream;
 	int32_t saveMode = std::ios::out;
 
-	if(/*exists*/ false)
+	if(FileSystem::instance().exists(mPath))
 	{
 		if(aMode == EFileSaveMode::Truncate)
 		{

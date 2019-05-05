@@ -6,6 +6,7 @@
 #include "core/PrimalAssert.h"
 
 #include "events/ApplicationEvent.h"
+#include "events/KeyEvents.h"
 
 static bool glfwInitialized = false;
 
@@ -70,6 +71,44 @@ Window::Window(const WindowProperties& aProps)
 		WindowCloseEvent event;
 		data.eventCallback(event);
 	});
+
+	glfwSetKeyCallback(mWindow, [](GLFWwindow* aWindow, const int32_t aKey, const int32_t aScanCode, const int32_t aAction, const int32_t aMods)
+	{
+		WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(aWindow));
+
+		switch (aAction)
+		{
+			case GLFW_PRESS:
+			{
+				KeyPressedEvent event(aKey, 0);
+				data.eventCallback(event);
+				break;
+			}
+			case GLFW_RELEASE:
+			{
+				KeyReleasedEvent event(aKey);
+				data.eventCallback(event);
+				break;
+			}
+			case GLFW_REPEAT:
+			{
+				KeyPressedEvent event(aKey, 1);
+				data.eventCallback(event);
+				break;
+			}
+
+			default:
+				break;
+		}
+	});
+
+	glfwSetCharCallback(mWindow, [](GLFWwindow* aWindow, const uint32_t aKeyCode)
+	{
+		WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(aWindow));
+
+		KeyTypedEvent event(aKeyCode);
+		data.eventCallback(event);
+	});
 }
 
 Window::~Window()
@@ -111,5 +150,21 @@ void Window::setFullscreen(const bool aEnabled)
 	}
 
 	mData.fullscreen = aEnabled;
+}
+
+void Window::setResolution(const uint32_t aWidth, const uint32_t aHeight)
+{
+	mData.width = static_cast<int32_t>(aWidth);
+	mData.height = static_cast<int32_t>(aHeight);
+
+	glfwSetWindowSize(mWindow, mData.width, mData.height);
+}
+
+void Window::close() const
+{
+	glfwSetWindowShouldClose(mWindow, true);
+
+	WindowCloseEvent event;
+	mData.eventCallback(event);
 }
 

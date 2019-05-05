@@ -52,6 +52,10 @@ class Window
 		void setVSync(const bool aEnabled);
 		void setFullscreen(const bool aEnabled);
 
+		void setResolution(const uint32_t aWidth, const uint32_t aHeight);
+
+		void close() const;
+
 		GLFWwindow* getNativeWindow() const { return mWindow; }
 
 	private:
