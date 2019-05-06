@@ -1,0 +1,137 @@
+#ifndef assetmanager_h__
+#define assetmanager_h__
+
+#include <utility>
+#include <unordered_map>
+#include <string>
+#include <type_traits>
+#include <memory>
+#include <list>
+
+#include <tbb/task_group.h>
+
+#include "assets/Asset.h"
+#include "core/Log.h"
+
+constexpr uint8_t ASSET_LOAD_LOW_PRIO = 0;
+constexpr uint8_t ASSET_LOAD_MED_PRIO = 1;
+constexpr uint8_t ASSET_LOAD_HIGH_PRIO = 2;
+
+class AssetManager
+{
+	public:
+		static AssetManager& instance();
+
+		template<typename T, typename ... Arguments>
+		std::shared_ptr<T> load(const std::string& aName,
+			const uint8_t aPrio,
+			Arguments&& ... aArgs);
+
+		template<typename T, typename ... Arguments>
+		std::shared_ptr<T> loadAsync(const std::string& aName,
+			const uint8_t aPrio,
+			Arguments&& ... aArgs);
+
+		template<typename T>
+		std::shared_ptr<T> get(const std::string& aName);
+
+		bool unload(const std::string& aName);
+		void unloadAll();
+
+	private:
+		void _loadAssetAsync(std::list<std::string>::iterator& aIter, const uint8_t aPrio);
+		void _loadAssetSync(std::list<std::string>::iterator& aIter, const uint8_t aPrio);
+
+		tbb::task_group mAsyncTaskGroup;
+		tbb::task_group mSyncTaskGroup;
+
+		std::list<std::string> mAsyncAssetQueueHigh;
+		std::list<std::string> mAsyncAssetQueueMedium;
+		std::list<std::string> mAsyncAssetQueueLow;
+
+		std::list<std::string> mSyncAssetQueueHigh;
+		std::list<std::string> mSyncAssetQueueMedium;
+		std::list<std::string> mSyncAssetQueueLow;
+
+		AssetManager();
+
+		std::unordered_map<std::string, std::shared_ptr<Asset>> mAssets;
+};
+
+template<typename T, typename ... Arguments>
+std::shared_ptr<T> AssetManager::load(const std::string& aName,
+                                      const uint8_t aPrio,
+									  Arguments&& ... aArgs)
+{
+	static_assert(std::is_base_of<Asset, T>::value, "T is not derived from Asset");
+
+	std::shared_ptr<T> asset = std::make_shared<T>(aName, std::forward<Arguments>(aArgs)...);
+
+	switch (aPrio)
+	{
+		case ASSET_LOAD_HIGH_PRIO:
+			mSyncAssetQueueHigh.push_back(aName);
+			break;
+
+		case ASSET_LOAD_MED_PRIO:
+			mSyncAssetQueueMedium.push_back(aName);
+			break;
+
+		case ASSET_LOAD_LOW_PRIO:
+			mSyncAssetQueueLow.push_back(aName);
+			break;
+
+		default:
+			break;
+	}
+
+	mAssets[aName] = asset;
+
+	return asset;
+}
+
+template <typename T, typename ... Arguments>
+std::shared_ptr<T> AssetManager::loadAsync(const std::string& aName,
+										   const uint8_t aPrio,
+										   Arguments&&... aArgs)
+{
+	static_assert(std::is_base_of<Asset, T>::value, "T is not derived from Asset");
+
+	std::shared_ptr<T> asset = std::make_shared<T>(aName, std::forward<Arguments>(aArgs)...);
+
+	switch (aPrio)
+	{
+		case ASSET_LOAD_HIGH_PRIO:
+			mAsyncAssetQueueHigh.push_back(aName);
+			break;
+
+		case ASSET_LOAD_MED_PRIO:
+			mAsyncAssetQueueMedium.push_back(aName);
+			break;
+
+		case ASSET_LOAD_LOW_PRIO:
+			mAsyncAssetQueueLow.push_back(aName);
+			break;
+
+		default:
+			break;
+	}
+
+	mAssets[aName] = asset;
+
+	return asset;
+}
+
+template<typename T>
+std::shared_ptr<T> AssetManager::get(const std::string& aName)
+{
+	static_assert(std::is_base_of<Asset, T>::value, "T is not derived from Asset");
+
+	const auto element = mAssets.find(aName);
+	if (element != mAssets.end())
+		return std::static_pointer_cast<T>(element->second);
+
+	return nullptr;
+}
+
+#endif // assetmanager_h__

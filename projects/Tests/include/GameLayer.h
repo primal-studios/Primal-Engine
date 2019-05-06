@@ -3,6 +3,10 @@
 
 #include <application/ApplicationLayer.h>
 
+#include <graphics/VertexArray.h>
+#include <graphics/VertexBuffer.h>
+#include <graphics/IndexBuffer.h>
+
 class GameLayer : public ApplicationLayer
 {
 	public:
@@ -17,6 +21,9 @@ class GameLayer : public ApplicationLayer
 		void onDetach() override;
 
 		void onEvent(Event& aEvent) override;
+
+	private:
+		VertexArray* vao;
 };
 
 #endif // gamelayer_h__

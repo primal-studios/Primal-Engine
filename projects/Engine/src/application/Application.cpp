@@ -1,6 +1,7 @@
 #include "application/Application.h"
 
 #include "core/Log.h"
+#include "input/Input.h"
 
 Application* Application::sInstance;
 
@@ -24,6 +25,8 @@ void Application::run() const
 {
 	while(mRunning)
 	{
+		Input::_poll();
+
 		if(Input::isKeyPressed(KEY_ESCAPE))
 		{
 			mWindow->close();
@@ -46,6 +49,10 @@ void Application::onEvent(Event& aEvent)
 	dispatcher.dispatch<WindowCloseEvent>(BIND_EVENT_FUNCTION(Application::_onWindowClose));
 	dispatcher.dispatch<KeyPressedEvent>(BIND_EVENT_FUNCTION(Application::_onKeyPressed));
 	dispatcher.dispatch<KeyReleasedEvent>(BIND_EVENT_FUNCTION(Application::_onKeyReleased));
+	dispatcher.dispatch<MouseMovedEvent>(BIND_EVENT_FUNCTION(Application::_onMouseMoved));
+	dispatcher.dispatch<MouseButtonPressedEvent>(BIND_EVENT_FUNCTION(Application::_onMousePressed));
+	dispatcher.dispatch<MouseButtonReleasedEvent>(BIND_EVENT_FUNCTION(Application::_onMouseReleased));
+	dispatcher.dispatch<MouseScrolledEvent>(BIND_EVENT_FUNCTION(Application::_onMouseScrolled));
 
 	for (auto it = mLayerStack.end(); it != mLayerStack.begin(); )
 	{
@@ -94,5 +101,29 @@ bool Application::_onKeyPressed(KeyPressedEvent& aEvent) const
 bool Application::_onKeyReleased(KeyReleasedEvent& aEvent) const
 {
 	Input::_setKeyReleased(aEvent.getKeyCode());
+	return false;
+}
+
+bool Application::_onMouseMoved(MouseMovedEvent& aEvent) const
+{
+	Input::_setMousePosition(aEvent.getX(), aEvent.getY());
+	return false;
+}
+
+bool Application::_onMousePressed(MouseButtonPressedEvent& aEvent) const
+{
+	Input::_setMousePressed(aEvent.getMouseButton());
+	return false;
+}
+
+bool Application::_onMouseReleased(MouseButtonReleasedEvent& aEvent) const
+{
+	Input::_setMouseReleased(aEvent.getMouseButton());
+	return false;
+}
+
+bool Application::_onMouseScrolled(MouseScrolledEvent& aEvent) const
+{
+	Input::_setMouseScroll(aEvent.getXOffset(), aEvent.getYOffset());
 	return false;
 }

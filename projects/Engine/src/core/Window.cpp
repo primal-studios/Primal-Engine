@@ -5,10 +5,19 @@
 #include "core/Log.h"
 #include "core/PrimalAssert.h"
 
-#include "events/ApplicationEvent.h"
-#include "events/KeyEvents.h"
+#if defined(PRIMAL_PLATFORM_WINDOWS)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#else
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
 
-static bool glfwInitialized = false;
+#include <GLFW/glfw3native.h>
+
+#include "events/KeyEvents.h"
+#include "events/ApplicationEvent.h"
+#include "events/MouseEvent.h"
+
+static bool sGlfwInitialized = false;
 
 static void sGlfwErrorCallback(const int32_t aError, const char* aDescription)
 {
@@ -29,12 +38,12 @@ Window::Window(const WindowProperties& aProps)
 	mData.fullscreen = aProps.fullscreen;
 	mData.vSync = aProps.vSync;
 
-	if(!glfwInitialized)
+	if(!sGlfwInitialized)
 	{
 		const int32_t status = glfwInit();
 		PRIMAL_INTERNAL_ASSERT(status, "Could not initialize GLFW");
 		glfwSetErrorCallback(sGlfwErrorCallback);
-		glfwInitialized = true;
+		sGlfwInitialized = true;
 	}
 
 	if(mData.fullscreen)
@@ -49,11 +58,11 @@ Window::Window(const WindowProperties& aProps)
 	glfwMakeContextCurrent(mWindow);
 
 	const int32_t status = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
-	PRIMAL_INTERNAL_ASSERT(status, "Could not initialize Glad");
+	PRIMAL_INTERNAL_ASSERT(status, "Could not initialize Glad!");
+
+	setVSync(mData.vSync);
 
 	glfwSetWindowUserPointer(mWindow, &mData);
-
-	glfwSwapInterval(static_cast<int32_t>(mData.vSync));
 
 	glfwSetWindowSizeCallback(mWindow, [](GLFWwindow* aWindow, const int32_t aWidth, const int32_t aHeight)
 	{
@@ -109,11 +118,52 @@ Window::Window(const WindowProperties& aProps)
 		KeyTypedEvent event(aKeyCode);
 		data.eventCallback(event);
 	});
+
+	glfwSetMouseButtonCallback(mWindow, [](GLFWwindow* aWindow, const int32_t aButton, const int32_t aAction, const int32_t aMods)
+	{
+		WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(aWindow));
+
+		switch (aAction)
+		{
+			case GLFW_PRESS:
+			{
+				MouseButtonPressedEvent event(aButton);
+				data.eventCallback(event);
+				break;
+			}
+			case GLFW_RELEASE:
+			{
+				MouseButtonReleasedEvent event(aButton);
+				data.eventCallback(event);
+				break;
+			}
+
+			default:
+				break;
+		}
+	});
+
+	glfwSetScrollCallback(mWindow, [](GLFWwindow* aWindow, const double aXOffset, const double aYOffset)
+	{
+		WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(aWindow));
+
+		MouseScrolledEvent event(static_cast<float>(aXOffset), static_cast<float>(aYOffset));
+		data.eventCallback(event);
+	});
+
+	glfwSetCursorPosCallback(mWindow, [](GLFWwindow* aWindow, const double aXPos, const double aYPos)
+	{
+		WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(aWindow));
+
+		MouseMovedEvent event(static_cast<float>(aXPos), static_cast<float>(aYPos));
+		data.eventCallback(event);
+	});
 }
 
 Window::~Window()
 {
 	glfwDestroyWindow(mWindow);
+	glfwTerminate();
 }
 
 void Window::pollEvents() const

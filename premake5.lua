@@ -31,11 +31,14 @@ workspace "Primal"
     IncludeDir["assimp"] = "%{sln.location}/dependencies/assimp/include"
     IncludeDir["FreeImage"] = "%{sln.location}/dependencies/FreeImage/include"
     IncludeDir["catch"] = "%{sln.location}/dependencies/catch2/include"
+    IncludeDir["bgfx"] = "%{sln.location}/dependencies/bgfx/include"
+    IncludeDir["Eigen"] = "%{sln.location}/dependencies/Eigen/include"
 
     LibDir = {}
     LibDir["assimp"] = "%{sln.location}/dependencies/assimp/lib"
     LibDir["FreeImage"] = "%{sln.location}/dependencies/FreeImage/lib"
     LibDir["tbb"] = "%{sln.location}/dependencies/tbb/lib/tbb_x64"
+    LibDir["bgfx"] = "%{sln.location}/dependencies/bgfx/libs"
 
     BinDir = {}
     BinDir["assimp"] = "%{sln.location}/dependencies/assimp/bin"

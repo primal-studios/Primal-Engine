@@ -16,17 +16,17 @@ public:
 
 	inline static std::shared_ptr<spdlog::logger>& getCoreLogger()
 	{
-		return mCoreLogger;
+		return sCoreLogger;
 	}
 
 	inline static std::shared_ptr<spdlog::logger>& getClientLogger()
 	{
-		return mClientLogger;
+		return sClientLogger;
 	}
 
 private:
-	static std::shared_ptr<spdlog::logger> mCoreLogger;
-	static std::shared_ptr<spdlog::logger> mClientLogger;
+	static std::shared_ptr<spdlog::logger> sCoreLogger;
+	static std::shared_ptr<spdlog::logger> sClientLogger;
 };
 
 // Core log macros

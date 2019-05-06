@@ -5,8 +5,8 @@
 
 #include <string>
 
-std::shared_ptr<spdlog::logger> Log::mCoreLogger;
-std::shared_ptr<spdlog::logger> Log::mClientLogger;
+std::shared_ptr<spdlog::logger> Log::sCoreLogger;
+std::shared_ptr<spdlog::logger> Log::sClientLogger;
 
 void Log::construct()
 {
@@ -21,17 +21,17 @@ void Log::construct()
 	clientFileSink->set_pattern(patternString);
 	combinedFileSink->set_pattern(patternString);
 
-	mCoreLogger = spdlog::stdout_color_mt("Core");
-	mCoreLogger->sinks().push_back(coreFileSink);
-	mCoreLogger->sinks().push_back(combinedFileSink);
-	mCoreLogger->set_pattern(patternString);
-	mCoreLogger->set_level(spdlog::level::trace);
-	mCoreLogger->flush_on(spdlog::level::trace);
+	sCoreLogger = spdlog::stdout_color_mt("Core");
+	sCoreLogger->sinks().push_back(coreFileSink);
+	sCoreLogger->sinks().push_back(combinedFileSink);
+	sCoreLogger->set_pattern(patternString);
+	sCoreLogger->set_level(spdlog::level::trace);
+	sCoreLogger->flush_on(spdlog::level::trace);
 
-	mClientLogger = spdlog::stdout_color_mt("Client");
-	mClientLogger->sinks().push_back(clientFileSink);
-	mClientLogger->sinks().push_back(combinedFileSink);
-	mClientLogger->set_pattern(patternString);
-	mClientLogger->set_level(spdlog::level::trace);
-	mClientLogger->flush_on(spdlog::level::trace);
+	sClientLogger = spdlog::stdout_color_mt("Client");
+	sClientLogger->sinks().push_back(clientFileSink);
+	sClientLogger->sinks().push_back(combinedFileSink);
+	sClientLogger->set_pattern(patternString);
+	sClientLogger->set_level(spdlog::level::trace);
+	sClientLogger->flush_on(spdlog::level::trace);
 }

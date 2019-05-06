@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#include "events/Event.h"
-
 class ApplicationLayer;
 class ApplicationLayerStack
 {

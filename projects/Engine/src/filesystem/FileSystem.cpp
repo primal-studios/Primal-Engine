@@ -25,7 +25,7 @@ void FileSystem::mount(const std::string& aPath)
 {
 	if(exists(aPath))
 	{
-		mMountedPath = aPath;
+		mMountedPath = aPath + "/";
 		PRIMAL_INTERNAL_INFO("Path mounted: {0}", aPath);
 		return;
 	}
@@ -41,7 +41,7 @@ void FileSystem::unmount()
 
 File* FileSystem::load(const std::string& aPath) const
 {
-	const std::string loadPath = mMountedPath + "/" + aPath;
+	const std::string loadPath = mMountedPath + aPath;
 
 	if(exists(loadPath))
 	{
@@ -61,7 +61,7 @@ File* FileSystem::load(const std::string& aPath) const
 
 std::string FileSystem::loadToString(const std::string& aPath) const
 {
-	const std::string loadPath = mMountedPath + "/" + aPath;
+	const std::string loadPath = mMountedPath + aPath;
 
 	if(exists(loadPath))
 	{
@@ -79,7 +79,7 @@ std::string FileSystem::loadToString(const std::string& aPath) const
 
 bool FileSystem::exists(const std::string& aPath) const
 {
-	const std::string loadPath = mMountedPath + "/" + aPath;
+	const std::string loadPath = mMountedPath + aPath;
 
 	struct stat buffer;
 	return (stat(loadPath.c_str(), &buffer) == 0);
@@ -102,7 +102,7 @@ File* FileSystem::create(const std::string& aPath) const
 
 void FileSystem::createDirectory(const std::string& aPath) const
 {
-	const std::string loadPath = mMountedPath + "/" + aPath;
+	const std::string loadPath = mMountedPath + aPath;
 
 	if(!exists(loadPath))
 	{
@@ -117,7 +117,7 @@ void FileSystem::createDirectory(const std::string& aPath) const
 std::vector<FileInfo> FileSystem::getAllFilesInDirectory(const std::string& aPath, const bool aRecursive) const
 {
 	std::vector<FileInfo> fileList;
-	std::string loadPath = mMountedPath + "/" + aPath;
+	std::string loadPath = mMountedPath + aPath;
 
 	struct dirent* entry;
 	DIR* dir = opendir(loadPath.c_str());

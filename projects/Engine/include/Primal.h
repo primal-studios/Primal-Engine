@@ -14,7 +14,6 @@
 	 misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-
 #ifndef primal_h__
 #define primal_h__
 
@@ -24,14 +23,25 @@
 
 // Application
 #include "application/Application.h"
-#include "application/EntryPoint.h"
 #include "application/ApplicationLayer.h"
+
+// Assets
+#include "assets/Asset.h"
+#include "assets/AssetManager.h"
 
 // Core
 #include "core/Log.h"
 #include "core/PrimalAssert.h"
 #include "core/Timer.h"
 #include "core/Window.h"
+
+// ECS
+#include "ecs/Component.h"
+#include "ecs/ComponentView.h"
+#include "ecs/Entity.h"
+#include "ecs/EntityManager.h"
+#include "ecs/System.h"
+#include "ecs/SystemManager.h"
 
 // Events
 #include "events/Event.h"
@@ -46,5 +56,10 @@
 #include "filesystem/FileSystem.h"
 #include "filesystem/File.h"
 
+// Graphics
+#include "graphics/VertexArray.h"
+#include "graphics/VertexBuffer.h"
+#include "graphics/VertexBufferLayout.h"
+#include "graphics/IndexBuffer.h"
 
 #endif // primal_h__

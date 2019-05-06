@@ -5,9 +5,9 @@
 
 extern Application* createApplication();
 
-int main(int argc, char** argv)
+int main(int aArgc, char** aArgv)
 {
-	auto app = createApplication();
+	const auto app = createApplication();
 	app->run();
 
 	delete app;

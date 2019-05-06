@@ -1,5 +1,7 @@
 #include <Primal.h>
 
+#include <application/EntryPoint.h>
+
 #include "GameLayer.h"
 
 class Sandbox final : public Application

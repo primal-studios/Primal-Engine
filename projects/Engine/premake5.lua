@@ -23,7 +23,9 @@ project "Engine"
         "%{IncludeDir.glm}",
         "%{IncludeDir.assimp}",
         "%{IncludeDir.FreeImage}",
-        "%{IncludeDir.catch}"
+        "%{IncludeDir.catch}",
+        "%{IncludeDir.bgfx}",
+        "%{IncludeDir.Eigen}"
     }
 
     libdirs {
@@ -109,10 +111,18 @@ project "Engine"
 
         symbols "On"
 
+        libdirs {
+            "%{LibDir.bgfx}" .. "/debug"
+        }
+
         links {
             "tbb_debug",
             "tbbmalloc_debug",
-            "tbbmalloc_proxy_debug"
+            "tbbmalloc_proxy_debug",
+            "bgfxDebug",
+            "bimg_decodeDebug",
+            "bimgDebug",
+            "bxDebug"
         }
 
     filter "configurations:Release"
@@ -125,10 +135,18 @@ project "Engine"
 
         optimize "On"
 
+        libdirs {
+            "%{LibDir.bgfx}" .. "/release"
+        }
+
         links {
             "tbb",
             "tbbmalloc",
-            "tbbmalloc_proxy"
+            "tbbmalloc_proxy",
+            "bgfxRelease",
+            "bimg_decodeRelease",
+            "bimgRelease",
+            "bxRelease"
         }
 
     filter "configurations:Dist"
@@ -141,8 +159,16 @@ project "Engine"
 
         optimize "On"
 
+        libdirs {
+            "%{LibDir.bgfx}" .. "/release"
+        }
+
         links {
             "tbb",
             "tbbmalloc",
-            "tbbmalloc_proxy"
+            "tbbmalloc_proxy",
+            "bgfxRelease",
+            "bimg_decodeRelease",
+            "bimgRelease",
+            "bxRelease"
         }
