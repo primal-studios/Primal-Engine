@@ -29,6 +29,11 @@
 #include "assets/Asset.h"
 #include "assets/AssetManager.h"
 
+// Components
+#include "components/MeshContainerComponent.h"
+#include "components/MeshRenderComponent.h"
+#include "components/TransformComponent.h"
+
 // Core
 #include "core/Log.h"
 #include "core/PrimalAssert.h"
@@ -57,9 +62,13 @@
 #include "filesystem/File.h"
 
 // Graphics
+#include "graphics/Mesh.h"
 #include "graphics/VertexArray.h"
 #include "graphics/VertexBuffer.h"
 #include "graphics/VertexBufferLayout.h"
 #include "graphics/IndexBuffer.h"
+
+// Systems
+#include "systems/RenderSystem.h"
 
 #endif // primal_h__

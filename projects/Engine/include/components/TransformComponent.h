@@ -12,13 +12,7 @@ class TransformComponent final : public Component
 	public:
 		TransformComponent()
 		{
-			position = Eigen::Vector3f(0, 0, 0);
-			rotation = Eigen::Vector3f(0, 0, 0);
-			scale = Eigen::Vector3f(1, 1, 1);
 
-			forward = Eigen::Vector3f(0, 0, 1);
-			right = Eigen::Vector3f(1, 0, 0);
-			up = Eigen::Vector3f(0, 1, 0);
 		}
 
 		~TransformComponent()
@@ -26,13 +20,13 @@ class TransformComponent final : public Component
 			
 		}
 
-		Eigen::Vector3f position;
-		Eigen::Vector3f rotation;
-		Eigen::Vector3f scale;
+		Property<Eigen::Vector3f> position = Eigen::Vector3f(0, 0, 0);
+		Property<Eigen::Vector3f> rotation = Eigen::Vector3f(0, 0, 0);
+		Property<Eigen::Vector3f> scale = Eigen::Vector3f(1, 1, 1);
 
-		Eigen::Vector3f forward;
-		Eigen::Vector3f right;
-		Eigen::Vector3f up;
+		Property<Eigen::Vector3f> forward = Eigen::Vector3f(0, 0, 1);
+		Property<Eigen::Vector3f> right = Eigen::Vector3f(1, 0, 0);
+		Property<Eigen::Vector3f> up = Eigen::Vector3f(0, 1, 0);
 
 	private:
 		Eigen::Quaternionf mInternalRotation;

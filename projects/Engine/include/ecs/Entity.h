@@ -82,7 +82,7 @@ T* Entity::getComponent()
 
 	for (const auto& comp : mComponents)
 	{
-		if (auto check = dynamic_cast<T>(comp))
+		if (auto check = dynamic_cast<T*>(comp))
 		{
 			return check;
 		}
@@ -100,7 +100,7 @@ std::vector<T*> Entity::getComponents()
 
 	for(const auto& comp : mComponents)
 	{
-		if(auto check = dynamic_cast<T>(comp))
+		if(auto check = dynamic_cast<T*>(comp))
 		{
 			components.push_back(comp);
 		}

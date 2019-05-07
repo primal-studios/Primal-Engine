@@ -14,9 +14,9 @@ GameLayer::~GameLayer()
 
 void GameLayer::onAttach()
 {
-	Entity* entity = EntityManager::instance().create("Cac");
+	SystemManager::instance().addSystem<RenderSystem>();
 
-	EntityManager::instance().destroy(entity);
+	SystemManager::instance().configure();
 
 	const float data[] = 
 	{
@@ -39,6 +39,13 @@ void GameLayer::onAttach()
 	IndexBuffer* ibo = new IndexBuffer(indices, sizeof(indices));
 
 	vao = new VertexArray(vbo, ibo);
+
+	Mesh* mesh = new Mesh(vao);
+
+	Entity* entity = EntityManager::instance().create("Cac");
+	entity->addComponent<MeshContainerComponent>(mesh);
+
+	entity->addComponent<MeshRenderComponent>();
 
 	FileSystem::instance().mount("dependencies");
 	auto list = FileSystem::instance().getFilesInPath("assimp", true);
@@ -66,7 +73,7 @@ void GameLayer::onAttach()
 
 void GameLayer::onUpdate()
 {
-
+	SystemManager::instance().update();
 }
 
 void GameLayer::onRender()
@@ -74,11 +81,11 @@ void GameLayer::onRender()
 	glClearColor(1, 0, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	vao->bind();
+	SystemManager::instance().render();
 
-	glDrawElements(GL_TRIANGLES, vao->getIndexBuffer()->count(), GL_UNSIGNED_INT, nullptr);
-
-	vao->unbind();
+	//vao->bind();
+	//glDrawElements(GL_TRIANGLES, vao->getIndexBuffer()->count(), GL_UNSIGNED_INT, nullptr);
+	//vao->unbind();
 }
 
 void GameLayer::onDetach()
