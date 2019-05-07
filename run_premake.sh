@@ -1,1 +1,1 @@
-./dependencies/premake/premake5.exe vs2017
+./dependencies/premake/premake5.exe vs2019

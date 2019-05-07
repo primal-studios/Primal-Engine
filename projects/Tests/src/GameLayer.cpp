@@ -1,5 +1,7 @@
 #include "GameLayer.h"
 
+#include "core/Property.h"
+
 GameLayer::GameLayer()
 {
 	vao = nullptr;
@@ -37,6 +39,29 @@ void GameLayer::onAttach()
 	IndexBuffer* ibo = new IndexBuffer(indices, sizeof(indices));
 
 	vao = new VertexArray(vbo, ibo);
+
+	FileSystem::instance().mount("dependencies");
+	auto list = FileSystem::instance().getFilesInPath("assimp", true);
+
+	Property<float> prop = 5.0f;
+
+	prop.getCallback([=](float& aValue)
+	{
+		return aValue;
+	});
+
+	prop.setCallback([=](const float aValue)
+	{
+		return aValue;
+	});
+
+	prop = 20.0f;
+
+	prop *= 5.0f;
+
+	PRIMAL_TRACE(*prop);
+
+	int jonathan = 0;
 }
 
 void GameLayer::onUpdate()

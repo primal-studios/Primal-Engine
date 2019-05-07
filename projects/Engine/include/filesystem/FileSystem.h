@@ -7,12 +7,16 @@
 #include <string>
 
 #include "filesystem/File.h"
+#include "core/Types.h"
 
 struct FileInfo
 {
-	std::string name;
-	std::string path;
-	size_t size;
+	std::string stem;
+	std::string extension;
+	std::string filename;
+
+	std::string parentPath;
+	std::string rootPath;
 };
 
 class FileSystem
@@ -20,23 +24,26 @@ class FileSystem
 	public:
 		static FileSystem& instance();
 
-		void mount(const std::string& aPath);
+		void mount(const Path& aPath);
 		void unmount();
 
-		File* load(const std::string& aPath) const;
-		std::string loadToString(const std::string& aPath) const;
+		File* load(const Path& aPath) const;
+		std::string loadToString(const Path& aPath) const;
 
-		bool exists(const std::string& aPath) const;
+		bool exists(const Path& aPath) const;
+
+		bool isFile(const Path& aPath) const;
+		bool isDirectory(const Path& aPath) const;
 
 		File* create(const std::string& aPath) const;
-		void createDirectory(const std::string& aPath) const;
+		void createDirectory(const Path& aPath) const;
 
-		std::vector<FileInfo> getAllFilesInDirectory(const std::string& aPath, const bool aRecursive = false) const;
+		std::vector<FileInfo> getFilesInPath(const Path& aPath, const bool aRecursive = false) const;
 
 	private:
 		FileSystem();
 
-		std::string mMountedPath;
+		Path mMountedPath;
 };
 
 #endif // filesystem_h__

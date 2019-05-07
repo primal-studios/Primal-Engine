@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "core/Types.h"
+
 enum class EFileSaveMode : uint32_t
 {
 	Truncate,
@@ -25,7 +27,7 @@ class File
 		std::string data() const;
 
 	private:
-		std::string mPath;
+		Path mPath;
 		std::string mData;
 };
 

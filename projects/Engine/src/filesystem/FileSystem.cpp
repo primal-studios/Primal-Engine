@@ -1,12 +1,5 @@
 #include "filesystem/FileSystem.h"
 
-#if defined(PRIMAL_PLATFORM_WINDOWS)
-#include "filesystem/direntwin.h"
-#include <direct.h>
-#else
-#include <dirent.h>
-#endif
-
 #include <fstream>
 #include "core/Log.h"
 
@@ -21,11 +14,13 @@ FileSystem& FileSystem::instance()
 	return *instance;
 }
 
-void FileSystem::mount(const std::string& aPath)
+void FileSystem::mount(const Path& aPath)
 {
 	if(exists(aPath))
 	{
-		mMountedPath = aPath + "/";
+		mMountedPath = aPath;
+		mMountedPath += "/";
+
 		PRIMAL_INTERNAL_INFO("Path mounted: {0}", aPath);
 		return;
 	}
@@ -39,55 +34,75 @@ void FileSystem::unmount()
 	mMountedPath = "";
 }
 
-File* FileSystem::load(const std::string& aPath) const
+File* FileSystem::load(const Path& aPath) const
 {
-	const std::string loadPath = mMountedPath + aPath;
-
-	if(exists(loadPath))
+	if(exists(aPath))
 	{
 		File* file = new File();
-		const std::string data = loadToString(loadPath);
+		const std::string data = loadToString(aPath);
 
 		file->mData = data;
-		file->mPath = loadPath;
+		
+		Path fullPath = mMountedPath;
+		fullPath += aPath;
+
+		file->mPath = fullPath;
 
 		return file;
 	}
 
-	PRIMAL_INTERNAL_ERROR("File does not exist at path: {0}", loadPath);
+	PRIMAL_INTERNAL_ERROR("File does not exist at path: {0}", aPath.string());
 
 	return nullptr;
 }
 
-std::string FileSystem::loadToString(const std::string& aPath) const
+std::string FileSystem::loadToString(const Path& aPath) const
 {
-	const std::string loadPath = mMountedPath + aPath;
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
 
 	if(exists(loadPath))
 	{
-		std::ifstream stream(loadPath);
+		std::ifstream stream(loadPath.string());
 		std::string str((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 		stream.close();
 
 		return str;
 	}
 
-	PRIMAL_INTERNAL_ERROR("File does not exist at path: {0}", loadPath);
+	PRIMAL_INTERNAL_ERROR("File does not exist at path: {0}", loadPath.string());
 
 	return "";
 }
 
-bool FileSystem::exists(const std::string& aPath) const
+bool FileSystem::exists(const Path& aPath) const
 {
-	const std::string loadPath = mMountedPath + aPath;
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
 
-	struct stat buffer;
-	return (stat(loadPath.c_str(), &buffer) == 0);
+	return std::filesystem::exists(loadPath);
+}
+
+bool FileSystem::isFile(const Path& aPath) const
+{
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
+
+	return std::filesystem::is_regular_file(loadPath);
+}
+
+bool FileSystem::isDirectory(const Path& aPath) const
+{
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
+
+	return std::filesystem::is_directory(loadPath);
 }
 
 File* FileSystem::create(const std::string& aPath) const
 {
-	const std::string loadPath = mMountedPath + "/" + aPath;
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
 
 	if(exists(loadPath))
 	{
@@ -100,78 +115,46 @@ File* FileSystem::create(const std::string& aPath) const
 	return file;
 }
 
-void FileSystem::createDirectory(const std::string& aPath) const
+void FileSystem::createDirectory(const Path& aPath) const
 {
-	const std::string loadPath = mMountedPath + aPath;
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
 
 	if(!exists(loadPath))
 	{
-		#if defined(PRIMAL_PLATFORM_WINDOWS)
-				_mkdir(loadPath.c_str());
-		#elif defined (PRIMAL_PLATFORM_LINUX)
-				mkdir(loadPath.c_str(), 0777);
-		#endif
+		std::filesystem::create_directory(loadPath);
 	}
 }
 
-std::vector<FileInfo> FileSystem::getAllFilesInDirectory(const std::string& aPath, const bool aRecursive) const
+std::vector<FileInfo> FileSystem::getFilesInPath(const Path& aPath, const bool aRecursive) const
 {
-	std::vector<FileInfo> fileList;
-	std::string loadPath = mMountedPath + aPath;
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
 
-	struct dirent* entry;
-	DIR* dir = opendir(loadPath.c_str());
+	std::vector<FileInfo> files;
 
-	if(dir == nullptr)
+	if (aRecursive)
 	{
-		PRIMAL_INTERNAL_ERROR("Directory does not exist: {0}", loadPath);
-		return fileList;
-	}
-
-	while((entry = readdir(dir)) != nullptr)
-	{
-		FileInfo info {};
-
-		const std::string fullPath = loadPath + "\\" + entry->d_name;
-		info.path = fullPath;
-
-		info.name = entry->d_name;
-		info.size = static_cast<size_t>(entry->d_reclen);
-
-		fileList.push_back(info);
-	}
-
-	closedir(dir);
-
-	if(aRecursive)
-	{
-		std::vector<FileInfo> children;
-		for(const auto& item : fileList)
+		for (const auto& p : std::filesystem::recursive_directory_iterator(loadPath))
 		{
-			if(item.name.find('.') != std::string::npos)
-			{
-				// item is a directory
-				auto childItems = getAllFilesInDirectory(item.path, aRecursive);
+			if (p.is_directory())
+				continue;
 
-				for(const auto& child : childItems)
-				{
-					children.push_back(child);
-				}
-			}
+			const auto& path = p.path();
+			files.push_back({ path.stem().string(), path.extension().string(), path.filename().string(), path.parent_path().string(), path.root_path().string() });
 		}
-
-		for(const auto& child : children)
+	}
+	else
+	{
+		for (const auto& p : std::filesystem::directory_iterator(loadPath))
 		{
-			fileList.push_back(child);
+			if (p.is_directory())
+				continue;
+
+			const auto& path = p.path();
+			files.push_back({ path.stem().string(), path.extension().string(), path.filename().string(), path.parent_path().string(), path.root_path().string() });
 		}
 	}
 
-	return fileList;
+	return files;
 }
-
-
-
-
-
-
-

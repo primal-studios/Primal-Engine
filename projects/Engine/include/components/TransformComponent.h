@@ -5,6 +5,8 @@
 
 #include "ecs/Component.h"
 
+#include "core/Property.h"
+
 class TransformComponent final : public Component
 {
 	public:

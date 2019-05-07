@@ -5,9 +5,10 @@
 
 class Asset
 {
+	friend class AssetManager;
 	public:
-		explicit Asset(const std::string& aName);
-		virtual ~Asset();
+		Asset() = default;
+		virtual ~Asset() = default;
 
 		virtual bool load() = 0;
 		bool isLoaded() const { return mLoaded; }
