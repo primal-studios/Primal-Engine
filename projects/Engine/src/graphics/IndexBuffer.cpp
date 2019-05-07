@@ -4,7 +4,7 @@
 
 IndexBuffer::IndexBuffer(uint32_t* aData, const size_t aSize)
 {
-	mCount = aSize / sizeof(uint32_t);
+	mCount = static_cast<uint32_t>(aSize / sizeof(uint32_t));
 
 	glGenBuffers(1, &mId);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);

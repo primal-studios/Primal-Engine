@@ -3,6 +3,8 @@
 
 #include "core/Log.h"
 
+#include "components/TransformComponent.h"
+
 EntityManager& EntityManager::instance()
 {
 	static EntityManager* instance = new EntityManager();
@@ -24,6 +26,7 @@ Entity* EntityManager::create(const std::string& aName)
 	::new(entity) Entity(aName);
 
 	entity->mManager = this;
+	entity->addComponent<TransformComponent>();
 
 	return entity;
 }

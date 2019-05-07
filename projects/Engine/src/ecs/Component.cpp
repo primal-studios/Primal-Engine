@@ -2,9 +2,11 @@
 #include "ecs/Entity.h"
 #include "ecs/EntityManager.h"
 
-void Component::destroy(Component* aComponent)
+void Component::destroy(Component* aComponent, const bool aRemoveFromEntity)
 {
-	aComponent->entity->_removeComponent(aComponent);
+	if(aRemoveFromEntity)
+		aComponent->entity->_removeComponent(aComponent);
+	
 	EntityManager::instance().mComponentPool->freeBlock(static_cast<void*>(aComponent));
 	aComponent = nullptr;
 }

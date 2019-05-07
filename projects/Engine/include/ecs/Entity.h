@@ -2,10 +2,11 @@
 #define entity_h__
 
 #include <string>
-#include <list>
+#include <vector>
+#include <typeindex>
 
 #include "ecs/Component.h"
-#include <typeindex>
+#include "components/TransformComponent.h"
 
 class EntityManager;
 class Entity
@@ -23,16 +24,31 @@ class Entity
 		T* getComponent();
 
 		template<typename T>
-		std::list<T*> getComponents();
+		std::vector<T*> getComponents();
 
-		std::list<Component*>::iterator begin() { return mComponents.begin(); }
-		std::list<Component*>::iterator end() { return mComponents.end(); }
+		template<typename T>
+		T* getComponentInChildren();
+
+		template<typename T>
+		std::vector<T*> getComponentsInChildren();
+
+		std::vector<Component*>::iterator begin() { return mComponents.begin(); }
+		std::vector<Component*>::iterator end() { return mComponents.end(); }
 
 		const std::string& name() const;
 
+		TransformComponent* transform;
+
+		void setParent(Entity* aParent);
+		Entity* parent() const;
+
+		std::vector<Entity*> children;
+
 	private:
-		std::list<Component*> mComponents;
+		std::vector<Component*> mComponents;
 		std::string mName;
+
+		Entity* mParent;
 
 		EntityManager* mManager;
 
@@ -76,11 +92,11 @@ T* Entity::getComponent()
 }
 
 template <typename T>
-std::list<T*> Entity::getComponents()
+std::vector<T*> Entity::getComponents()
 {
 	static_assert(std::is_base_of<Component, T>::value, "T is not derived from Component");
 
-	std::list<T> components;
+	std::vector<T> components;
 
 	for(const auto& comp : mComponents)
 	{
@@ -91,6 +107,37 @@ std::list<T*> Entity::getComponents()
 	}
 
 	return components;
+}
+
+template <typename T>
+T* Entity::getComponentInChildren()
+{
+	if(getComponent<T>() != nullptr)
+	{
+		return getComponent<T>();
+	}
+
+	for(const auto& child : children)
+	{
+		if(child->getComponent<T>() != nullptr)
+		{
+			return child->getComponent<T>();
+		}
+
+		if(child->getComponentInChildren<T>() != nullptr)
+		{
+			return child->getComponentInChildren<T>();
+		}
+	}
+
+	return nullptr;
+}
+
+template <typename T>
+std::vector<T*> Entity::getComponentsInChildren()
+{
+	// TODO (Roderick): Implement this
+	return std::vector<T*>();
 }
 
 #endif // entity_h__

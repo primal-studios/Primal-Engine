@@ -1,5 +1,4 @@
 #include <Primal.h>
-
 #include <application/EntryPoint.h>
 
 #include "GameLayer.h"

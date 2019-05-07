@@ -1,11 +1,7 @@
 #ifndef gamelayer_h__
 #define gamelayer_h__
 
-#include <application/ApplicationLayer.h>
-
-#include <graphics/VertexArray.h>
-#include <graphics/VertexBuffer.h>
-#include <graphics/IndexBuffer.h>
+#include <Primal.h>
 
 class GameLayer : public ApplicationLayer
 {

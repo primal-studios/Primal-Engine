@@ -4,6 +4,7 @@
 
 VertexArray::VertexArray()
 {
+	mIndexBuffers = nullptr;
 	glGenVertexArrays(1, &mId);
 }
 
@@ -11,7 +12,7 @@ VertexArray::VertexArray(VertexBuffer* aVertexBuffer, IndexBuffer* aIndexBuffer)
 	: VertexArray()
 {
 	pushVertexBuffer(aVertexBuffer);
-	pushIndexBuffer(aIndexBuffer);
+	setIndexBuffer(aIndexBuffer);
 }
 
 VertexArray::~VertexArray()
@@ -32,9 +33,9 @@ void VertexArray::pushVertexBuffer(VertexBuffer* aBuffer)
 	aBuffer->unbind();
 }
 
-void VertexArray::pushIndexBuffer(IndexBuffer* aBuffer)
+void VertexArray::setIndexBuffer(IndexBuffer* aBuffer)
 {
-	mIndexBuffers.push_back(aBuffer);
+	mIndexBuffers = aBuffer;
 
 	bind();
 	aBuffer->bind();
@@ -63,15 +64,9 @@ VertexBuffer* VertexArray::getVertexBuffer(const uint32_t aIndex) const
 	return mVertexBuffers[aIndex];
 }
 
-IndexBuffer* VertexArray::getIndexBuffer(const uint32_t aIndex) const
+IndexBuffer* VertexArray::getIndexBuffer() const
 {
-	if (aIndex >= mIndexBuffers.size())
-	{
-		PRIMAL_INTERNAL_ERROR("Buffer does not exist at index: {0}", aIndex);
-		return nullptr;
-	}
-
-	return mIndexBuffers[aIndex];
+	return mIndexBuffers;
 }
 
 void VertexArray::_applyLayout(const VertexBufferLayout& aLayout) const

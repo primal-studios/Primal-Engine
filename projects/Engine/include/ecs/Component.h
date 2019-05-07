@@ -21,7 +21,7 @@ class Component
 
 		virtual void onDestroy() {};
 
-		static void destroy(Component* aComponent);
+		static void destroy(Component* aComponent, const bool aRemoveFromEntity = true);
 
 		Entity* entity;
 };

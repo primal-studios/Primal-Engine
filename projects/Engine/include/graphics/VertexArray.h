@@ -14,19 +14,19 @@ class VertexArray
 		~VertexArray();
 
 		void pushVertexBuffer(VertexBuffer* aBuffer);
-		void pushIndexBuffer(IndexBuffer* aBuffer);
+		void setIndexBuffer(IndexBuffer* aBuffer);
 
 		void bind() const;
 		void unbind() const;
 
 		VertexBuffer* getVertexBuffer(const uint32_t aIndex = 0) const;
-		IndexBuffer* getIndexBuffer(const uint32_t aIndex = 0) const;
+		IndexBuffer* getIndexBuffer() const;
 
 	private:
 		uint32_t mId;
 
 		std::vector<VertexBuffer*> mVertexBuffers;
-		std::vector<IndexBuffer*> mIndexBuffers;
+		IndexBuffer* mIndexBuffers;
 
 		void _applyLayout(const VertexBufferLayout& aLayout) const;
 };

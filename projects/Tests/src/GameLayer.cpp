@@ -1,7 +1,5 @@
 #include "GameLayer.h"
 
-#include <Primal.h>
-
 GameLayer::GameLayer()
 {
 	vao = nullptr;

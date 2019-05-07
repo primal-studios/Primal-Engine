@@ -3,6 +3,8 @@
 
 Entity::Entity(const std::string& aName)
 {
+	mParent = nullptr;
+	transform = nullptr;
 	mName = aName;
 	mManager = nullptr;
 }
@@ -11,7 +13,7 @@ Entity::~Entity()
 {
 	for(const auto& comp : mComponents)
 	{
-		_removeComponent(comp);
+		Component::destroy(comp, false);
 	}
 	
 	mComponents.clear();
@@ -20,6 +22,18 @@ Entity::~Entity()
 const std::string& Entity::name() const
 {
 	return mName;
+}
+
+void Entity::setParent(Entity* aParent)
+{
+	mParent = aParent;
+
+	aParent->children.push_back(this);
+}
+
+Entity* Entity::parent() const
+{
+	return mParent;
 }
 
 void Entity::_removeComponent(Component* aComponent)
