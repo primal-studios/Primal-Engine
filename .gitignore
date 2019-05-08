@@ -48,3 +48,10 @@
 *.vcxproj.user
 
 *.sln.DotSettings.user
+
+
+
+# libraries ignores
+
+!dependencies/phonon/bin/phonon.dll
+!phonon.pdb
