@@ -116,6 +116,16 @@ class Property
 			mGetCallback = aCallback;
 		}
 
+		void directSet(const T& aValue)
+		{
+			mValue = aValue;
+		}
+
+		T directGet()
+		{
+			return mValue;
+		}
+
 		T operator * ()
 		{
 			if(mGetCallback)
