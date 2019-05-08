@@ -9,6 +9,11 @@ project "Engine"
     targetdir(targetDirectory)
     objdir(objectDirectory)
 
+    dependson {
+        "GLFW",
+        "vma"
+    }
+
     files {
         "include/**.h",
         "src/**.cpp"
@@ -16,34 +21,38 @@ project "Engine"
 
     includedirs {
         "include",
-        "%{IncludeDir.GLFW}",
-        "%{IncludeDir.Glad}",
-        "%{IncludeDir.tbb}",
-        "%{IncludeDir.spdlog}",
-        "%{IncludeDir.glm}",
         "%{IncludeDir.assimp}",
-        "%{IncludeDir.FreeImage}",
         "%{IncludeDir.catch}",
-        "%{IncludeDir.bgfx}",
-        "%{IncludeDir.Eigen}"
+        "%{IncludeDir.Eigen}",
+        "%{IncludeDir.GLFW}",
+        "%{IncludeDir.phonon}",
+        "%{IncludeDir.spdlog}",
+        "%{IncludeDir.stb}",
+        "%{IncludeDir.tbb}",
+        "%{IncludeDir.vma}",
+        "%{IncludeDir.vulkan}"
     }
 
     libdirs {
         "%{LibDir.assimp}",
-        "%{LibDir.FreeImage}",
-        "%{LibDir.tbb}"
+        "%{LibDir.phonon}",
+        "%{LibDir.tbb}",
+        "%{LibDir.vulkan}"
     }
 
     bindirs {
         "%{BinDir.assimp}",
-        "%{BinDir.FreeImage}"
+        "%{BinDir.phonon}",
+        "%{BinDir.tbb}",
+        "%{BinDir.vulkan}"
     }
 
     links {
-        "GLFW",
-        "Glad",
         "assimp",
-        "freeimage"
+        "GLFW",
+        "phonon",
+        "vma",
+        "vulkan-1"
     }
 
     defines {
@@ -78,10 +87,6 @@ project "Engine"
             "PRIMAL_PLATFORM_WINDOWS"
         }
 
-        links {
-            "opengl32.lib"
-        }
-
     filter "system:linux"
         buildoptions {
             "-std=c++17",
@@ -96,10 +101,6 @@ project "Engine"
             "/usr/lib/x86_64-linux-gnu"
         }
 
-        links {
-            "GL"
-        }
-
     filter "configurations:Debug"
         defines { 
             "PRIMAL_DEBUG",
@@ -111,18 +112,10 @@ project "Engine"
 
         symbols "On"
 
-        libdirs {
-            "%{LibDir.bgfx}" .. "/debug"
-        }
-
         links {
             "tbb_debug",
             "tbbmalloc_debug",
-            "tbbmalloc_proxy_debug",
-            "bgfxDebug",
-            "bimg_decodeDebug",
-            "bimgDebug",
-            "bxDebug"
+            "tbbmalloc_proxy_debug"
         }
 
     filter "configurations:Release"
@@ -135,18 +128,10 @@ project "Engine"
 
         optimize "On"
 
-        libdirs {
-            "%{LibDir.bgfx}" .. "/release"
-        }
-
         links {
             "tbb",
             "tbbmalloc",
-            "tbbmalloc_proxy",
-            "bgfxRelease",
-            "bimg_decodeRelease",
-            "bimgRelease",
-            "bxRelease"
+            "tbbmalloc_proxy"
         }
 
     filter "configurations:Dist"
@@ -159,16 +144,8 @@ project "Engine"
 
         optimize "On"
 
-        libdirs {
-            "%{LibDir.bgfx}" .. "/release"
-        }
-
         links {
             "tbb",
             "tbbmalloc",
-            "tbbmalloc_proxy",
-            "bgfxRelease",
-            "bimg_decodeRelease",
-            "bimgRelease",
-            "bxRelease"
+            "tbbmalloc_proxy"
         }

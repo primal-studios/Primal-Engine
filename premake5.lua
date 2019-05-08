@@ -14,35 +14,37 @@ workspace "Primal"
     startproject "Tests"
 
     -- Projects
-    include "Projects/Engine"
-    include "Projects/Tests"
+    include "projects/Engine"
+    include "projects/Tests"
 
     -- Dependencies
     include "dependencies/GLFW"
-    include "dependencies/Glad"
+    include "dependencies/vma"
 
     -- Directories
     IncludeDir = {}
-    IncludeDir["GLFW"] = "%{sln.location}/dependencies/GLFW/include"
-    IncludeDir["Glad"] = "%{sln.location}/dependencies/Glad/include"
-    IncludeDir["tbb"] = "%{sln.location}/dependencies/tbb/include"
-    IncludeDir["spdlog"] = "%{sln.location}/dependencies/spdlog/include"
-    IncludeDir["glm"] = "%{sln.location}/dependencies/glm"
     IncludeDir["assimp"] = "%{sln.location}/dependencies/assimp/include"
-    IncludeDir["FreeImage"] = "%{sln.location}/dependencies/FreeImage/include"
     IncludeDir["catch"] = "%{sln.location}/dependencies/catch2/include"
-    IncludeDir["bgfx"] = "%{sln.location}/dependencies/bgfx/include"
     IncludeDir["Eigen"] = "%{sln.location}/dependencies/Eigen/include"
+    IncludeDir["GLFW"] = "%{sln.location}/dependencies/GLFW/include"
+    IncludeDir["phonon"] = "%{sln.location}/dependencies/phonon/include"
+    IncludeDir["spdlog"] = "%{sln.location}/dependencies/spdlog/include"
+    IncludeDir["stb"] = "%{sln.location}/dependencies/stb/include"
+    IncludeDir["tbb"] = "%{sln.location}/dependencies/tbb/include"
+    IncludeDir["vma"] = "%{sln.location}/dependencies/vma/include"
+    IncludeDir["vulkan"] = "%{sln.location}/dependencies/vulkan/include"
 
     LibDir = {}
     LibDir["assimp"] = "%{sln.location}/dependencies/assimp/lib"
-    LibDir["FreeImage"] = "%{sln.location}/dependencies/FreeImage/lib"
-    LibDir["tbb"] = "%{sln.location}/dependencies/tbb/lib/tbb_x64"
-    LibDir["bgfx"] = "%{sln.location}/dependencies/bgfx/libs"
+    LibDir["phonon"] = "%{sln.location}/dependencies/phonon/lib"
+    LibDir["tbb"] = "%{sln.location}/dependencies/tbb/lib"
+    LibDir["vulkan"] = "%{sln.location}/dependencies/vulkan/lib"
 
     BinDir = {}
     BinDir["assimp"] = "%{sln.location}/dependencies/assimp/bin"
-    BinDir["FreeImage"] = "%{sln.location}/dependencies/FreeImage/bin"
+    BinDir["phonon"] = "%{sln.location}/dependencies/phonon/bin"
+    BinDir["tbb"] = "%{sln.location}/dependencies/tbb/bin"
+    BinDir["vulkan"] = "%{sln.location}/dependencies/vulkan/bin"
 
 
 -- Clean Function

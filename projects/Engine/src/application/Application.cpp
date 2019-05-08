@@ -3,7 +3,6 @@
 #include "core/Log.h"
 #include "input/Input.h"
 #include "ecs/SystemManager.h"
-#include "systems/RenderSystem.h"
 
 Application* Application::sInstance;
 
@@ -16,7 +15,6 @@ Application::Application()
 	mWindow = Window::create();
 	mWindow->setEventCallback(BIND_EVENT_FUNCTION(Application::onEvent));
 
-	SystemManager::instance().addSystem<RenderSystem>();
 	SystemManager::instance().configure();
 }
 

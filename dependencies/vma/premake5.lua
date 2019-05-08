@@ -1,6 +1,6 @@
--- Game Premake
-project "Tests"
-    kind "ConsoleApp"
+-- vma Premake
+project "vma"
+    kind "StaticLib"
     language "C++"
 
     local targetDirectory = "%{sln.location}\\bin"
@@ -8,13 +8,6 @@ project "Tests"
 
     targetdir(targetDirectory)
     objdir(objectDirectory)
-    debugdir("%{sln.location}")
-
-    dependson {
-        "GLFW",
-        "Engine",
-        "vma"
-    }
 
     files {
         "include/**.h",
@@ -23,50 +16,21 @@ project "Tests"
 
     includedirs {
         "include",
-        "%{sln.location}\\projects\\Engine\\include",
-        "%{IncludeDir.assimp}",
-        "%{IncludeDir.catch}",
-        "%{IncludeDir.Eigen}",
-        "%{IncludeDir.GLFW}",
-        "%{IncludeDir.phonon}",
-        "%{IncludeDir.spdlog}",
-        "%{IncludeDir.stb}",
-        "%{IncludeDir.tbb}",
-        "%{IncludeDir.vma}",
         "%{IncludeDir.vulkan}",
     }
 
     libdirs {
-        "%{LibDir.assimp}",
-        "%{LibDir.phonon}",
-        "%{LibDir.tbb}",
         "%{LibDir.vulkan}"
     }
 
     bindirs {
-        "%{BinDir.assimp}",
-        "%{BinDir.phonon}",
-        "%{BinDir.tbb}",
         "%{BinDir.vulkan}"
     }
 
     links {
-        "Engine",
-        "assimp",
-        "GLFW",
-        "phonon",
-        "vma",
         "vulkan-1"
     }
 
-    defines {
-    	"GLFW_INCLUDE_NONE"
-	}
-
-	disablewarnings {
-		"4005"
-    }
-    
     filter "system:windows"
         cppdialect "C++17"
         systemversion "latest"
@@ -112,12 +76,6 @@ project "Tests"
 
         symbols "On"
 
-        links {
-            "tbb_debug",
-            "tbbmalloc_debug",
-            "tbbmalloc_proxy_debug"
-        }
-
     filter "configurations:Release"
         defines { 
             "PRIMAL_RELEASE" 
@@ -128,12 +86,6 @@ project "Tests"
 
         optimize "On"
 
-        links {
-            "tbb",
-            "tbbmalloc",
-            "tbbmalloc_proxy"
-        }
-
     filter "configurations:Dist"
         defines {
             "PRIMAL_DIST"
@@ -143,9 +95,3 @@ project "Tests"
         runtime "Release"
 
         optimize "On"
-
-        links {
-            "tbb",
-            "tbbmalloc",
-            "tbbmalloc_proxy"
-        }

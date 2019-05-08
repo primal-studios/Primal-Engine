@@ -1,7 +1,5 @@
 #include "core/Window.h"
 
-#include <glad/glad.h>
-
 #include "core/Log.h"
 #include "core/PrimalAssert.h"
 
@@ -55,10 +53,7 @@ Window::Window(const WindowProperties& aProps)
 		mWindow = glfwCreateWindow(mData.width, mData.height, mData.title.c_str(), nullptr, nullptr);
 	}
 
-	glfwMakeContextCurrent(mWindow);
-
-	const int32_t status = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
-	PRIMAL_INTERNAL_ASSERT(status, "Could not initialize Glad!");
+	//glfwMakeContextCurrent(mWindow);
 
 	setVSync(mData.vSync);
 

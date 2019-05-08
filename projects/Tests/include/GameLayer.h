@@ -19,7 +19,6 @@ class GameLayer : public ApplicationLayer
 		void onEvent(Event& aEvent) override;
 
 	private:
-		VertexArray* vao;
 };
 
 #endif // gamelayer_h__

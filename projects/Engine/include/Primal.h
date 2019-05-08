@@ -18,7 +18,6 @@
 #define primal_h__
 
 // API includes
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 // Application
@@ -30,8 +29,6 @@
 #include "assets/AssetManager.h"
 
 // Components
-#include "components/MeshContainerComponent.h"
-#include "components/MeshRenderComponent.h"
 #include "components/TransformComponent.h"
 
 // Core
@@ -60,15 +57,5 @@
 // File System
 #include "filesystem/FileSystem.h"
 #include "filesystem/File.h"
-
-// Graphics
-#include "graphics/Mesh.h"
-#include "graphics/VertexArray.h"
-#include "graphics/VertexBuffer.h"
-#include "graphics/VertexBufferLayout.h"
-#include "graphics/IndexBuffer.h"
-
-// Systems
-#include "systems/RenderSystem.h"
 
 #endif // primal_h__
