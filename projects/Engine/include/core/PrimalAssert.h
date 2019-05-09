@@ -21,4 +21,14 @@
 #define PRIMAL_INTERNAL_ASSERT(x, ...)
 #endif
 
+#if defined (_DEBUG)
+#define DEBUG_ONLY_BLOCK(block) block
+#define RELEASE_ONLY_BLOCK(block)
+#define DEBUG_RELEASE_TOGGLE_BLOCK(dbg, rel) dbg
+#else
+#define DEBUG_ONLY_BLOCK(block)
+#define RELEASE_ONLY_BLOCK(block) block
+#define DEBUG_RELEASE_TOGGLE_BLOCK(dbg, rel) rel
+#endif 
+
 #endif // primalassert_h__

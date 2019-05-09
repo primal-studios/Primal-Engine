@@ -3,11 +3,18 @@
 
 #include <graphics/api/IGraphicsContext.h>
 
+#include <optional>
 #include <vector>
 #include <vulkan/vulkan.h>
 
 class VkGraphicsContext final : public IGraphicsContext
 {
+	struct DeviceQueueFamilyIndices
+	{
+		std::optional<int32_t> graphicsFamily;
+		std::optional<int32_t> presentFamily;
+	};
+
 	public:
 		explicit VkGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo);
 		VkGraphicsContext(const VkGraphicsContext&) = delete;
@@ -24,6 +31,7 @@ class VkGraphicsContext final : public IGraphicsContext
 		void _initializeDebugMessenger();
 		bool _checkValidationLayerSupport() const;
 		void _createPhysicalDevice();
+		void _createLogicalDevice();
 		std::vector<const char*> _getRequiredExtensions() const;
 
 		std::vector<VkExtensionProperties> mProps;
@@ -36,12 +44,6 @@ class VkGraphicsContext final : public IGraphicsContext
 		VkSurfaceKHR mSurface{};
 		VkDebugUtilsMessengerEXT mDebugMessenger{};
 		GraphicsContextCreateInfo mCreateInfo;
-
-	#if defined (_DEBUG)
-		const bool mDebugLayersEnabled = true;
-	#else
-		const bool mDebugLayersEnabled = false;
-	#endif
 };
 
 #endif // vkgraphicscontext_h__

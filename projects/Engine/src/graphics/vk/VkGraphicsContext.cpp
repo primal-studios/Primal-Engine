@@ -3,6 +3,7 @@
 #include <graphics/vk/VkGraphicsContext.h>
 #include <GLFW/glfw3.h>
 #include <core/Log.h>
+#include <core/PrimalAssert.h>
 
 #include <map>
 #include <unordered_set>
@@ -102,6 +103,7 @@ VkGraphicsContext::VkGraphicsContext(const GraphicsContextCreateInfo& aCreateInf
 	}
 
 	_createPhysicalDevice();
+	_createLogicalDevice();
 }
 
 VkGraphicsContext::~VkGraphicsContext()
@@ -111,15 +113,14 @@ VkGraphicsContext::~VkGraphicsContext()
 		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
 	}
 
-	if (mDebugLayersEnabled)
-	{
-		const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
-			mInstance, "vkDestroyDebugUtilsMessengerEXT"));
+	DEBUG_ONLY_BLOCK({
+		const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT"));
 		if (func)
 		{
 			func(mInstance, mDebugMessenger, nullptr);
 		}
-	}
+	})
+
 	vkDestroyInstance(mInstance, nullptr);
 }
 
@@ -161,21 +162,23 @@ void VkGraphicsContext::_initializeVulkan()
 
 	const bool validationLayerSupport = _checkValidationLayerSupport();
 
-	if (!validationLayerSupport && mDebugLayersEnabled)
-	{
-		PRIMAL_INTERNAL_CRITICAL("Vulkan validation layers requested, but could not be loaded.");
-	}
-	else if (mDebugLayersEnabled)
-	{
-		PRIMAL_INTERNAL_INFO("Vulkan validation layers requested and available.");
-		mValidationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
-		createInfo.ppEnabledLayerNames = mValidationLayers.data();
-	}
-	else
-	{
+	DEBUG_ONLY_BLOCK({
+		if (!validationLayerSupport)
+		{
+			PRIMAL_INTERNAL_CRITICAL("Vulkan validation layers requested, but could not be loaded.");
+		}
+		else
+		{
+			PRIMAL_INTERNAL_INFO("Vulkan validation layers requested and available.");
+			mValidationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+			createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+			createInfo.ppEnabledLayerNames = mValidationLayers.data();
+		}
+	})
+
+	RELEASE_ONLY_BLOCK({
 		PRIMAL_INTERNAL_INFO("Vulkan validation layers not requested.");
-	}
+	})
 
 	mDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	vector<const char*> extensions = _getRequiredExtensions();
@@ -196,27 +199,24 @@ void VkGraphicsContext::_initializeVulkan()
 
 void VkGraphicsContext::_initializeDebugMessenger()
 {
-	if (!mDebugLayersEnabled)
-	{
-		return;
-	}
+	DEBUG_ONLY_BLOCK({
+		VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+			| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+			| VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.pfnUserCallback = detail::sDebugCallback;
+		createInfo.pUserData = nullptr;
 
-	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
-		| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
-		| VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	createInfo.pfnUserCallback = detail::sDebugCallback;
-	createInfo.pUserData = nullptr;
+		const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
+			mInstance, "vkCreateDebugUtilsMessengerEXT"));
 
-	const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
-		mInstance, "vkCreateDebugUtilsMessengerEXT"));
-
-	if (func)
-	{
-		VkResult result = func != nullptr ? func(mInstance, &createInfo, nullptr, &mDebugMessenger) : VK_ERROR_EXTENSION_NOT_PRESENT;
-	}
+		if (func)
+		{
+			VkResult result = func != nullptr ? func(mInstance, &createInfo, nullptr, &mDebugMessenger) : VK_ERROR_EXTENSION_NOT_PRESENT;
+		}
+	})
 }
 
 bool VkGraphicsContext::_checkValidationLayerSupport() const
@@ -275,13 +275,139 @@ void VkGraphicsContext::_createPhysicalDevice()
 	{
 		if (detail::sIsDeviceSuitable(device, mSurface, mDeviceExtensions))
 		{
-			// TODO: Calulate score
-			deviceMap.insert({ 0, device });
+			VkPhysicalDeviceProperties props;
+			vkGetPhysicalDeviceProperties(device, &props);
+			VkPhysicalDeviceFeatures feats;
+			vkGetPhysicalDeviceFeatures(device, &feats);
+
+			int score = 0;
+
+			if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+			{
+				score += 1000;
+			} 
+			else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+			{
+				score += 100;
+			}
+
+			if (!feats.geometryShader)
+			{
+				score = 0;
+			}
+
+			deviceMap.insert({ score, device });
 		}
 	}
+
+	const auto last = deviceMap.rbegin();
+	mPhysicalDevice = last->second;
+
+	DEBUG_ONLY_BLOCK({
+		VkPhysicalDeviceProperties props;
+		vkGetPhysicalDeviceProperties(mPhysicalDevice, &props);
+		VkPhysicalDeviceFeatures feats;
+		vkGetPhysicalDeviceFeatures(mPhysicalDevice, &feats);
+
+		PRIMAL_INTERNAL_INFO("Selected Device: {0}", props.deviceName);
+	})
 }
 
-std::vector<const char*> VkGraphicsContext::_getRequiredExtensions() const
+void VkGraphicsContext::_createLogicalDevice()
+{
+	using namespace std;
+
+	DeviceQueueFamilyIndices indices;
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, nullptr);
+	vector<VkQueueFamilyProperties> props;
+	props.resize(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, props.data());
+
+	int32_t i = 0;
+	for (const auto& queueFamily : props)
+	{
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.graphicsFamily = i;
+		}
+
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, i, mSurface, &presentSupport);
+
+		if (queueFamily.queueCount > 0 && presentSupport)
+		{
+			indices.presentFamily = i;
+		}
+
+		if (indices.graphicsFamily.has_value() && indices.presentFamily.has_value())
+		{
+			break;
+		}
+
+		i++;
+	}
+
+	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	unordered_set<uint32_t> uniqueFamilies;
+	uniqueFamilies.insert(indices.graphicsFamily.value());
+	uniqueFamilies.insert(indices.presentFamily.value());
+
+	float queuePriority = 0.0f;
+
+	if (queueFamilyCount == 1)
+	{
+		queuePriority = 1.0f;
+
+		VkDeviceQueueCreateInfo queueCreateInfo = {};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfos.push_back(queueCreateInfo);
+	}
+	else
+	{
+		queuePriority = 1.0f / static_cast<float>(uniqueFamilies.size());
+		for (uint32_t queueFamily : uniqueFamilies)
+		{
+			VkDeviceQueueCreateInfo queueCreateInfo = {};
+			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueCreateInfo.queueFamilyIndex = queueFamily;
+			queueCreateInfo.queueCount = 1;
+			queueCreateInfo.pQueuePriorities = &queuePriority;
+			queueCreateInfos.push_back(queueCreateInfo);
+		}
+	}
+
+	VkPhysicalDeviceFeatures deviceFeatures = {};
+	VkDeviceCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	createInfo.pQueueCreateInfos = queueCreateInfos.data();
+	createInfo.pEnabledFeatures = &deviceFeatures;
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(mDeviceExtensions.size());
+	createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();
+
+	DEBUG_RELEASE_TOGGLE_BLOCK({
+		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+		createInfo.ppEnabledLayerNames = mValidationLayers.data();
+		createInfo.enabledLayerCount = 0;
+	},
+	{
+		createInfo.enabledLayerCount = 0;
+	})
+
+	const VkResult res = vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice);
+	if (res != VK_SUCCESS)
+	{
+		PRIMAL_INTERNAL_CRITICAL("Failed to create Vulkan device.");
+		return;
+	}
+	PRIMAL_INTERNAL_INFO("Successfully created Vulkan device.");
+}
+
+	std::vector<const char*> VkGraphicsContext::_getRequiredExtensions() const
 {
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
