@@ -52,7 +52,7 @@ project "Tests"
 
     links {
         "Engine",
-        "assimp",
+        "assimp-vc140-mt",
         "GLFW",
         "phonon",
         "vma",

@@ -173,7 +173,7 @@ void Window::refresh() const
 
 void Window::setVSync(const bool aEnabled)
 {
-	glfwSwapInterval(aEnabled);
+//	glfwSwapInterval(aEnabled);
 
 	mData.vSync = aEnabled;
 }

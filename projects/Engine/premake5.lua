@@ -48,7 +48,7 @@ project "Engine"
     }
 
     links {
-        "assimp",
+        "assimp-vc140-mt",
         "GLFW",
         "phonon",
         "vma",
@@ -61,10 +61,6 @@ project "Engine"
 
     disablewarnings {
 		"4005"
-    }
-
-    postbuildcommands {
-        "{COPY} %{sln.location}/dependencies/FreeImage/bin/FreeImage.dll " .. targetDirectory
     }
 
     filter "system:windows"

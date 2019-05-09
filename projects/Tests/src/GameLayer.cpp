@@ -2,6 +2,8 @@
 
 #include "core/Property.h"
 
+#include <assimp/Importer.hpp>
+
 #include <vulkan/vulkan.h>
 
 GameLayer::GameLayer()
@@ -16,6 +18,8 @@ GameLayer::~GameLayer()
 
 void GameLayer::onAttach()
 {
+	Assimp::Importer importer;
+
 	uint32_t extensionCount = 0;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
