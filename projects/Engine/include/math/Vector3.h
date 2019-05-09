@@ -3,13 +3,15 @@
 
 #include "math/VectorType.h"
 
+#include "math/Vector2.h"
+
 template<typename T>
 class Vector3
 {
 	public:
 		Vector3()
 		{
-			_internal_value = detail::VectorType<T, 3>(0, 0, 0);
+			_internal_value = detail::VectorType<T, 3>(T(0), T(0), T(0));
 		}
 
 		explicit Vector3(const T& aValue)
@@ -17,9 +19,51 @@ class Vector3
 			_internal_value = detail::VectorType<T, 3>(aValue, aValue, aValue);
 		}
 
-		Vector3(const T& aX, const T& aY, const T& aZ)
+		Vector3(const T aX, const T aY, const T aZ)
 		{
 			_internal_value = detail::VectorType<T, 3>(aX, aY, aZ);
+		}
+
+		explicit Vector3(const Vector2<T>& aOther)
+		{
+			_internal_value = detail::VectorType<T, 3>(aOther.x, aOther.y, T(0));
+		}
+
+		Vector3(const Vector2<T>& aOther, const T aZ)
+		{
+			_internal_value = detail::VectorType<T, 3>(aOther.x, aOther.y, aZ);
+		}
+
+		Vector3(const Vector3& aOther)
+		{
+			_internal_value = aOther._internal_value;
+		}
+
+		Vector3(Vector3&& aOther) noexcept
+		{
+			_internal_value = std::move(aOther._internal_value);
+		}
+
+		bool operator == (const Vector3& aOther)
+		{
+			return _internal_value == aOther._internal_value;
+		}
+
+		bool operator != (const Vector3& aOther)
+		{
+			return _internal_value != aOther._internal_value;
+		}
+
+		Vector3& operator = (const Vector3& aOther)
+		{
+			_internal_value = aOther._internal_value;
+			return *this;
+		}
+
+		Vector3& operator = (Vector3&& aOther) noexcept
+		{
+			_internal_value = std::move(aOther._internal_value);
+			return *this;
 		}
 
 		Vector3& operator += (const Vector3& aOther)
@@ -40,7 +84,7 @@ class Vector3
 			return *this;
 		}
 
-		Vector3& operator *= (const T& aOther)
+		Vector3& operator *= (const T aOther)
 		{
 			_internal_value *= aOther;
 			return *this;
@@ -52,7 +96,7 @@ class Vector3
 			return *this;
 		}
 
-		Vector3& operator /= (const T& aOther)
+		Vector3& operator /= (const T aOther)
 		{
 			_internal_value /= aOther;
 			return *this;
@@ -105,6 +149,8 @@ class Vector3
 			{
 				T x, y, z;
 			};
+
+			T v[9];
 			
 			detail::VectorType<T, 3> _internal_value;
 		};
@@ -138,7 +184,7 @@ Vector3<T> operator * (Vector3<T> aLeft, const Vector3<T>& aRight)
 }
 
 template<typename T>
-Vector3<T> operator * (Vector3<T> aLeft, const T& aRight)
+Vector3<T> operator * (Vector3<T> aLeft, const T aRight)
 {
 	aLeft *= aRight;
 	return aLeft;
@@ -152,10 +198,16 @@ Vector3<T> operator / (Vector3<T> aLeft, const Vector3<T>& aRight)
 }
 
 template<typename T>
-Vector3<T> operator / (Vector3<T> aLeft, const T& aRight)
+Vector3<T> operator / (Vector3<T> aLeft, const T aRight)
 {
 	aLeft /= aRight;
 	return aLeft;
 }
+
+using Vector3b = Vector3<bool>;
+using Vector3u = Vector3<uint32_t>;
+using Vector3i = Vector3<int32_t>;
+using Vector3f = Vector3<float>;
+using Vector3d = Vector3<double>;
 
 #endif // vector3_h__
