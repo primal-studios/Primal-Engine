@@ -138,6 +138,8 @@ class Vector2
 				T x, y;
 			};
 
+			T v[2];
+
 			detail::VectorType<T, 2> _internal_value;
 		};
 

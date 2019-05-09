@@ -3,13 +3,15 @@
 
 #include "math/VectorType.h"
 
+#include "math/Vector2.h"
+
 template<typename T>
 class Vector3
 {
 	public:
 		Vector3()
 		{
-			_internal_value = detail::VectorType<T, 3>(0, 0, 0);
+			_internal_value = detail::VectorType<T, 3>(T(0), T(0), T(0));
 		}
 
 		explicit Vector3(const T& aValue)
@@ -20,6 +22,16 @@ class Vector3
 		Vector3(const T aX, const T aY, const T aZ)
 		{
 			_internal_value = detail::VectorType<T, 3>(aX, aY, aZ);
+		}
+
+		explicit Vector3(const Vector2<T>& aOther)
+		{
+			_internal_value = detail::VectorType<T, 3>(aOther.x, aOther.y, T(0));
+		}
+
+		Vector3(const Vector2<T>& aOther, const T aZ)
+		{
+			_internal_value = detail::VectorType<T, 3>(aOther.x, aOther.y, aZ);
 		}
 
 		Vector3(const Vector3& aOther)
@@ -137,6 +149,8 @@ class Vector3
 			{
 				T x, y, z;
 			};
+
+			T v[9];
 			
 			detail::VectorType<T, 3> _internal_value;
 		};

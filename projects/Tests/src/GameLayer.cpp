@@ -1,7 +1,5 @@
 #include "GameLayer.h"
 
-#include <math/Vector3.h>
-
 GameLayer::GameLayer()
 {
 

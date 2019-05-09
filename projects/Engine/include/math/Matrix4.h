@@ -9,6 +9,8 @@
 #include "math/Vector3.h"
 #include "math/Vector4.h"
 
+#include "math/Matrix3.h"
+
 template<typename T>
 class Matrix4
 {
@@ -48,6 +50,26 @@ class Matrix4
 			m32 = aM32;
 			m33 = aM33;
 		}
+
+		explicit Matrix4(const Matrix3<T>& aOther)
+		{
+			m00 = aOther.m00;
+			m01 = aOther.m01;
+			m02 = aOther.m02;
+			m03 = T(0);
+			m10 = aOther.m10;
+			m11 = aOther.m11;
+			m12 = aOther.m12;
+			m13 = T(0);
+			m20 = aOther.m20;
+			m21 = aOther.m21;
+			m22 = aOther.m22;
+			m23 = T(0);
+			m30 = T(0);
+			m31 = T(0);
+			m32 = T(0);
+			m33 = T(1);
+		}
 	
 		Matrix4(const Matrix4& aOther)
 		{
@@ -86,6 +108,12 @@ class Matrix4
 			_internal_value *= aOther._internal_value;
 			return *this;
 		}
+
+		template<typename T2>
+		friend Vector3<T2> operator * (const Matrix4<T2>& aLeft, const Vector3<T2>& aRight);
+
+		template<typename T2>
+		friend Vector4<T2> operator * (const Matrix4<T2>& aLeft, const Vector4<T2>& aRight);
 
 		T& operator [] (size_t aIndex)
 		{
@@ -170,13 +198,16 @@ class Matrix4
 template<typename T>
 Vector3<T> operator * (const Matrix4<T>& aLeft, const Vector3<T>& aRight)
 {
-	return aLeft * aRight;
+	Vector4<T> right = Vector4<T>(aRight.x, aRight.y, aRight.z, T(1));
+	auto value = aLeft._internal_value * right._internal_value;
+	return Vector3<T>(value.x, value.y, value.z);
 }
 
 template<typename T>
 Vector4<T> operator * (const Matrix4<T>& aLeft, const Vector4<T>& aRight)
 {
-	return aLeft * aRight;
+	auto value = aLeft._internal_value * aRight._internal_value;
+	return Vector4<T>(value.x, value.y, value.z, value.w);
 }
 
 using Matrix4f = Matrix4<float>;
