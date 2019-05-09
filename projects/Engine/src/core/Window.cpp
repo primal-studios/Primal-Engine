@@ -44,6 +44,8 @@ Window::Window(const WindowProperties& aProps)
 		sGlfwInitialized = true;
 	}
 
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
 	if(mData.fullscreen)
 	{
 		mWindow = glfwCreateWindow(mData.width, mData.height, mData.title.c_str(), glfwGetPrimaryMonitor(), nullptr);
@@ -168,7 +170,7 @@ void Window::pollEvents() const
 
 void Window::refresh() const
 {
-	glfwSwapBuffers(mWindow);
+//	glfwSwapBuffers(mWindow);
 }
 
 void Window::setVSync(const bool aEnabled)
