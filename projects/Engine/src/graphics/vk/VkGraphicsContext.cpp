@@ -1,8 +1,10 @@
 #include <vulkan/vulkan.h>
-#include <graphics/vk/VkGraphicsContext.h>
 
+#include <graphics/vk/VkGraphicsContext.h>
 #include <GLFW/glfw3.h>
 #include <core/Log.h>
+
+#include <map>
 
 namespace detail
 {
@@ -193,6 +195,30 @@ bool VkGraphicsContext::_checkValidationLayerSupport() const
 	}
 
 	return true;
+}
+
+void VkGraphicsContext::_createPhysicalDevice()
+{
+	using namespace std;
+
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+
+	if (deviceCount == 0)
+	{
+		PRIMAL_INTERNAL_CRITICAL("Failed to find GPU with Vulkan Support.");
+		return;
+	}
+
+	vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+
+	multimap<int, VkPhysicalDevice> deviceMap;
+
+	for (const auto & device : devices)
+	{
+		
+	}
 }
 
 std::vector<const char*> VkGraphicsContext::_getRequiredExtensions() const

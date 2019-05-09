@@ -23,6 +23,7 @@ private:
 	void _initializeVulkan();
 	void _initializeDebugMessenger();
 	bool _checkValidationLayerSupport() const;
+	void _createPhysicalDevice();
 	std::vector<const char*> _getRequiredExtensions() const;
 
 	std::vector<VkExtensionProperties> mProps;
