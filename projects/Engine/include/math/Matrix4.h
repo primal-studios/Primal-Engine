@@ -56,7 +56,7 @@ class Matrix4
 
 		Matrix4(Matrix4&& aOther) noexcept
 		{
-			_internal_value = aOther._internal_value;
+			_internal_value = std::move(aOther._internal_value);
 		}
 
 		bool operator == (const Matrix4& aOther)
@@ -77,7 +77,7 @@ class Matrix4
 
 		Matrix4& operator = (Matrix4&& aOther) noexcept
 		{
-			_internal_value = aOther._internal_value;
+			_internal_value = std::move(aOther._internal_value);
 			return *this;
 		}
 

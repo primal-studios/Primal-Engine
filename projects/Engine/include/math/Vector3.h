@@ -29,7 +29,7 @@ class Vector3
 
 		Vector3(Vector3&& aOther) noexcept
 		{
-			_internal_value = aOther._internal_value;
+			_internal_value = std::move(aOther._internal_value);
 		}
 
 		bool operator == (const Vector3& aOther)
@@ -50,7 +50,7 @@ class Vector3
 
 		Vector3& operator = (Vector3&& aOther) noexcept
 		{
-			_internal_value = aOther._internal_value;
+			_internal_value = std::move(aOther._internal_value);
 			return *this;
 		}
 
