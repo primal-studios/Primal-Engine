@@ -12,10 +12,10 @@ void Log::construct()
 {
 	const std::string patternString = "%^[%T], %t:%P - [%n]: [%l]%v%$";
 
-	const auto coreFileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("../primal.log", true);
-	const auto clientFileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("../client.log", true);
+	const auto coreFileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("primal.log", true);
+	const auto clientFileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("client.log", true);
 
-	const auto combinedFileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("../console.log", true);
+	const auto combinedFileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("console.log", true);
 
 	coreFileSink->set_pattern(patternString);
 	clientFileSink->set_pattern(patternString);
