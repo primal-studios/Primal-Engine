@@ -28,6 +28,7 @@ project "Tests"
         "%{IncludeDir.catch}",
         "%{IncludeDir.Eigen}",
         "%{IncludeDir.GLFW}",
+        "%{IncludeDir.glm}",
         "%{IncludeDir.phonon}",
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.stb}",
