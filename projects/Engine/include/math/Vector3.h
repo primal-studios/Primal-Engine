@@ -17,9 +17,41 @@ class Vector3
 			_internal_value = detail::VectorType<T, 3>(aValue, aValue, aValue);
 		}
 
-		Vector3(const T& aX, const T& aY, const T& aZ)
+		Vector3(const T aX, const T aY, const T aZ)
 		{
 			_internal_value = detail::VectorType<T, 3>(aX, aY, aZ);
+		}
+
+		Vector3(const Vector3& aOther)
+		{
+			_internal_value = aOther._internal_value;
+		}
+
+		Vector3(Vector3&& aOther) noexcept
+		{
+			_internal_value = aOther._internal_value;
+		}
+
+		bool operator == (const Vector3& aOther)
+		{
+			return _internal_value == aOther._internal_value;
+		}
+
+		bool operator != (const Vector3& aOther)
+		{
+			return _internal_value != aOther._internal_value;
+		}
+
+		Vector3& operator = (const Vector3& aOther)
+		{
+			_internal_value = aOther._internal_value;
+			return *this;
+		}
+
+		Vector3& operator = (Vector3&& aOther) noexcept
+		{
+			_internal_value = aOther._internal_value;
+			return *this;
 		}
 
 		Vector3& operator += (const Vector3& aOther)
@@ -40,7 +72,7 @@ class Vector3
 			return *this;
 		}
 
-		Vector3& operator *= (const T& aOther)
+		Vector3& operator *= (const T aOther)
 		{
 			_internal_value *= aOther;
 			return *this;
@@ -52,7 +84,7 @@ class Vector3
 			return *this;
 		}
 
-		Vector3& operator /= (const T& aOther)
+		Vector3& operator /= (const T aOther)
 		{
 			_internal_value /= aOther;
 			return *this;
@@ -138,7 +170,7 @@ Vector3<T> operator * (Vector3<T> aLeft, const Vector3<T>& aRight)
 }
 
 template<typename T>
-Vector3<T> operator * (Vector3<T> aLeft, const T& aRight)
+Vector3<T> operator * (Vector3<T> aLeft, const T aRight)
 {
 	aLeft *= aRight;
 	return aLeft;
@@ -152,10 +184,16 @@ Vector3<T> operator / (Vector3<T> aLeft, const Vector3<T>& aRight)
 }
 
 template<typename T>
-Vector3<T> operator / (Vector3<T> aLeft, const T& aRight)
+Vector3<T> operator / (Vector3<T> aLeft, const T aRight)
 {
 	aLeft /= aRight;
 	return aLeft;
 }
+
+using Vector3b = Vector3<bool>;
+using Vector3u = Vector3<uint32_t>;
+using Vector3i = Vector3<int32_t>;
+using Vector3f = Vector3<float>;
+using Vector3d = Vector3<double>;
 
 #endif // vector3_h__
