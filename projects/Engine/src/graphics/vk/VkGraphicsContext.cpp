@@ -5,6 +5,7 @@
 #include <core/Log.h>
 
 #include <map>
+#include <unordered_set>
 
 namespace detail
 {
@@ -26,6 +27,59 @@ namespace detail
 		}
 		return VK_FALSE;
 	}
+
+	static bool sIsDeviceSuitable(VkPhysicalDevice aDevice, VkSurfaceKHR aSurface, std::vector<const char*> aExtensions)
+	{
+		VkSurfaceCapabilitiesKHR capabilities;
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(aDevice, aSurface, &capabilities);
+
+		uint32_t formatCount = 0;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(aDevice, aSurface, &formatCount, nullptr);
+
+		std::vector<VkSurfaceFormatKHR> formats;
+
+		if (formatCount > 0)
+		{
+			formats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(aDevice, aSurface, &formatCount, formats.data());
+		}
+
+		uint32_t presentModeCount = 0;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(aDevice, aSurface, &presentModeCount, nullptr);
+		
+		std::vector<VkPresentModeKHR> presentModes;
+
+		if(presentModeCount > 0)
+		{
+			presentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(aDevice, aSurface, &presentModeCount, presentModes.data());
+		}
+
+		const bool swapChainAdequate = !presentModes.empty() && !formats.empty();
+		
+		uint32_t extensionCount = 0;
+		vkEnumerateDeviceExtensionProperties(aDevice, nullptr, &extensionCount, nullptr);
+
+		std::vector<VkExtensionProperties> availableExtensions;
+		availableExtensions.resize(extensionCount);
+
+		vkEnumerateDeviceExtensionProperties(aDevice, nullptr, &extensionCount, availableExtensions.data());
+
+		std::unordered_set<std::string> requiredExtensions;
+		for (const auto& extension : aExtensions)
+		{
+			requiredExtensions.insert(extension);
+		}
+
+		for(const auto& extension : availableExtensions)
+		{
+			requiredExtensions.erase(extension.extensionName);
+		}
+		
+		const bool extensionsSupported = requiredExtensions.empty();
+
+		return swapChainAdequate && extensionsSupported;
+	}
 }
 
 VkGraphicsContext::VkGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo)
@@ -46,6 +100,8 @@ VkGraphicsContext::VkGraphicsContext(const GraphicsContextCreateInfo& aCreateInf
 			PRIMAL_INTERNAL_INFO("Successfully created Vulkan window surface.");
 		}
 	}
+
+	_createPhysicalDevice();
 }
 
 VkGraphicsContext::~VkGraphicsContext()
@@ -217,7 +273,11 @@ void VkGraphicsContext::_createPhysicalDevice()
 
 	for (const auto & device : devices)
 	{
-		
+		if (detail::sIsDeviceSuitable(device, mSurface, mDeviceExtensions))
+		{
+			// TODO: Calulate score
+			deviceMap.insert({ 0, device });
+		}
 	}
 }
 

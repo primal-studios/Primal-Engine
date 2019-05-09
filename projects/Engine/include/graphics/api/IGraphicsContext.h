@@ -17,17 +17,17 @@ struct GraphicsContextCreateInfo
 
 class IGraphicsContext
 {
-public:
-	explicit IGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo);
-	IGraphicsContext(const IGraphicsContext&) = delete;
-	IGraphicsContext(IGraphicsContext&&) noexcept = delete;
-	virtual ~IGraphicsContext() = default;
+	public:
+		explicit IGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo);
+		IGraphicsContext(const IGraphicsContext&) = delete;
+		IGraphicsContext(IGraphicsContext&&) noexcept = delete;
+		virtual ~IGraphicsContext() = default;
 
-	IGraphicsContext& operator=(const IGraphicsContext&) = delete;
-	IGraphicsContext& operator=(IGraphicsContext&&) noexcept = delete;
+		IGraphicsContext& operator=(const IGraphicsContext&) = delete;
+		IGraphicsContext& operator=(IGraphicsContext&&) noexcept = delete;
 
-	virtual void idle() const = 0;
-	virtual uint64_t getSurfaceHandle() const = 0;
+		virtual void idle() const = 0;
+		virtual uint64_t getSurfaceHandle() const = 0;
 };
 
 #endif // igraphicscontext_h__
