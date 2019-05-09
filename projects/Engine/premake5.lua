@@ -83,6 +83,10 @@ project "Engine"
             "PRIMAL_PLATFORM_WINDOWS"
         }
 
+        postbuildcommands {
+            "xcopy \"%{sln.location}dependencies\\assimp\\bin\\assimp-vc140-mt.dll\" \"%{sln.location}bin\" /D /Y"
+        }
+
     filter "system:linux"
         buildoptions {
             "-std=c++17",
