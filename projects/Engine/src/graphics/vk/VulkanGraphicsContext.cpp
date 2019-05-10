@@ -1,6 +1,6 @@
 #include <vulkan/vulkan.h>
 
-#include <graphics/vk/VkGraphicsContext.h>
+#include <graphics/vk/VulkanGraphicsContext.h>
 #include <GLFW/glfw3.h>
 #include <core/Log.h>
 #include <core/PrimalAssert.h>
@@ -83,7 +83,7 @@ namespace detail
 	}
 }
 
-VkGraphicsContext::VkGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo)
+VulkanGraphicsContext::VulkanGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo)
 	: IGraphicsContext(aCreateInfo), mCreateInfo(aCreateInfo)
 {
 	_initializeVulkan();
@@ -106,7 +106,7 @@ VkGraphicsContext::VkGraphicsContext(const GraphicsContextCreateInfo& aCreateInf
 	_createLogicalDevice();
 }
 
-VkGraphicsContext::~VkGraphicsContext()
+VulkanGraphicsContext::~VulkanGraphicsContext()
 {
 	if (mCreateInfo.window)
 	{
@@ -124,16 +124,32 @@ VkGraphicsContext::~VkGraphicsContext()
 	vkDestroyInstance(mInstance, nullptr);
 }
 
-void VkGraphicsContext::idle() const
+void VulkanGraphicsContext::idle() const
 {
+	vkDeviceWaitIdle(mDevice);
 }
 
-uint64_t VkGraphicsContext::getSurfaceHandle() const
+VkSurfaceKHR VulkanGraphicsContext::getSurfaceHandle() const
 {
-	return reinterpret_cast<uint64_t>(mSurface);
+	return mSurface;
 }
 
-void VkGraphicsContext::_initializeVulkan()
+VkDevice VulkanGraphicsContext::getDevice() const
+{
+	return mDevice;
+}
+
+uint32_t VulkanGraphicsContext::getGraphicsQueueIndex() const
+{
+	return mGraphicsQueueFamily;
+}
+
+uint32_t VulkanGraphicsContext::getPresentQueueIndex() const
+{
+	return mPresentQueueFamily;
+}
+
+void VulkanGraphicsContext::_initializeVulkan()
 {
 	using namespace std;
 
@@ -197,7 +213,7 @@ void VkGraphicsContext::_initializeVulkan()
 	}
 }
 
-void VkGraphicsContext::_initializeDebugMessenger()
+void VulkanGraphicsContext::_initializeDebugMessenger()
 {
 	DEBUG_ONLY_BLOCK({
 		VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
@@ -219,7 +235,7 @@ void VkGraphicsContext::_initializeDebugMessenger()
 	})
 }
 
-bool VkGraphicsContext::_checkValidationLayerSupport() const
+bool VulkanGraphicsContext::_checkValidationLayerSupport() const
 {
 	using namespace std;
 
@@ -253,7 +269,7 @@ bool VkGraphicsContext::_checkValidationLayerSupport() const
 	return true;
 }
 
-void VkGraphicsContext::_createPhysicalDevice()
+void VulkanGraphicsContext::_createPhysicalDevice()
 {
 	using namespace std;
 
@@ -313,7 +329,7 @@ void VkGraphicsContext::_createPhysicalDevice()
 	})
 }
 
-void VkGraphicsContext::_createLogicalDevice()
+void VulkanGraphicsContext::_createLogicalDevice()
 {
 	using namespace std;
 
@@ -324,7 +340,7 @@ void VkGraphicsContext::_createLogicalDevice()
 	props.resize(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, props.data());
 
-	int32_t i = 0;
+	uint32_t i = 0;
 	for (const auto& queueFamily : props)
 	{
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -347,6 +363,9 @@ void VkGraphicsContext::_createLogicalDevice()
 
 		i++;
 	}
+
+	mGraphicsQueueFamily = indices.graphicsFamily.value();
+	mPresentQueueFamily = indices.presentFamily.value();
 
 	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	unordered_set<uint32_t> uniqueFamilies;
@@ -407,7 +426,7 @@ void VkGraphicsContext::_createLogicalDevice()
 	PRIMAL_INTERNAL_INFO("Successfully created Vulkan device.");
 }
 
-	std::vector<const char*> VkGraphicsContext::_getRequiredExtensions() const
+	std::vector<const char*> VulkanGraphicsContext::_getRequiredExtensions() const
 {
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);

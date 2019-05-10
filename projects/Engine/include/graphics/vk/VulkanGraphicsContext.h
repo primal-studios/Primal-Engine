@@ -7,25 +7,29 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-class VkGraphicsContext final : public IGraphicsContext
+class VulkanGraphicsContext final : public IGraphicsContext
 {
 	struct DeviceQueueFamilyIndices
 	{
-		std::optional<int32_t> graphicsFamily;
-		std::optional<int32_t> presentFamily;
+		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 	};
 
 	public:
-		explicit VkGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo);
-		VkGraphicsContext(const VkGraphicsContext&) = delete;
-		VkGraphicsContext(VkGraphicsContext&&) noexcept = delete;
-		~VkGraphicsContext() override;
+		explicit VulkanGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo);
+		VulkanGraphicsContext(const VulkanGraphicsContext&) = delete;
+		VulkanGraphicsContext(VulkanGraphicsContext&&) noexcept = delete;
+		~VulkanGraphicsContext() override;
 
-		VkGraphicsContext& operator=(const VkGraphicsContext&) = delete;
-		VkGraphicsContext& operator=(VkGraphicsContext&&) noexcept = delete;
+		VulkanGraphicsContext& operator=(const VulkanGraphicsContext&) = delete;
+		VulkanGraphicsContext& operator=(VulkanGraphicsContext&&) noexcept = delete;
 
 		void idle() const override;
-		uint64_t getSurfaceHandle() const override;
+		VkSurfaceKHR getSurfaceHandle() const;
+		VkDevice getDevice() const;
+
+		uint32_t getGraphicsQueueIndex() const;
+		uint32_t getPresentQueueIndex() const;
 	private:
 		void _initializeVulkan();
 		void _initializeDebugMessenger();
@@ -37,6 +41,9 @@ class VkGraphicsContext final : public IGraphicsContext
 		std::vector<VkExtensionProperties> mProps;
 		std::vector<const char*> mValidationLayers;
 		std::vector<const char*> mDeviceExtensions;
+
+		uint32_t mGraphicsQueueFamily = 0;
+		uint32_t mPresentQueueFamily = 0;
 
 		VkInstance mInstance{};
 		VkDevice mDevice{};

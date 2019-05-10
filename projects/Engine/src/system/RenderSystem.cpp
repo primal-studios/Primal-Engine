@@ -1,8 +1,6 @@
 #include "systems/RenderSystem.h"
 
 #include "ecs/EntityManager.h"
-#include "components/MeshRenderComponent.h"
-#include "graphics/vk/VkGraphicsContext.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 {
@@ -12,11 +10,20 @@ RenderSystem::RenderSystem(Window* aWindow)
 	info.versionMinor = 0;
 	info.window = aWindow->getNativeWindow();
 
-	mContext = new VkGraphicsContext(info);
+	mContext = new VulkanGraphicsContext(info);
+
+	const CommandPoolCreateInfo commandPoolInfo = {
+		0,
+		mContext->getGraphicsQueueIndex()
+	};
+
+	mPool = new VulkanCommandPool(mContext);
+	mPool->construct(commandPoolInfo);
 }
 
 RenderSystem::~RenderSystem()
 {
+	delete mPool;
 	delete mContext;
 }
 

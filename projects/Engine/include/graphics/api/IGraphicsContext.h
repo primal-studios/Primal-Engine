@@ -27,7 +27,6 @@ class IGraphicsContext
 		IGraphicsContext& operator=(IGraphicsContext&&) noexcept = delete;
 
 		virtual void idle() const = 0;
-		virtual uint64_t getSurfaceHandle() const = 0;
 };
 
 #endif // igraphicscontext_h__

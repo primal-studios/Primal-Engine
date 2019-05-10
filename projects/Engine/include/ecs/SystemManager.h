@@ -85,7 +85,7 @@ void SystemManager::removeSystem()
 
 	for (const auto& system : mSystems)
 	{
-		if (auto check = dynamic_cast<T>(system))
+		if (auto check = dynamic_cast<T*>(system))
 		{
 			auto iter = std::find(mSystems.begin(), mSystems.end(), check);
 			mSystems.erase(iter);
