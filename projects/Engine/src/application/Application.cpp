@@ -22,7 +22,7 @@ Application::Application()
 
 Application::~Application()
 {
-//	SystemManager::instance().removeSystem<RenderSystem>();
+	SystemManager::instance().removeSystem<RenderSystem>();
 	delete mWindow;
 	sInstance = nullptr;
 }

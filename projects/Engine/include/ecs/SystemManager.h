@@ -89,6 +89,8 @@ void SystemManager::removeSystem()
 		{
 			auto iter = std::find(mSystems.begin(), mSystems.end(), check);
 			mSystems.erase(iter);
+			
+			break;
 		}
 	}
 }
