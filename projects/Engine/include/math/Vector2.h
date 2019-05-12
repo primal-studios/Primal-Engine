@@ -1,6 +1,7 @@
 #ifndef vector2_h__
 #define vector2_h__
 
+#include <glm/gtx/compatibility.hpp>
 #include "math/VectorType.h"
 
 template<typename T>
@@ -129,6 +130,12 @@ class Vector2
 		Vector2 refract(const Vector2& aN, T aEta) const
 		{
 			return glm::refract(_internal_value, aN._internal_value, aEta);
+		}
+
+		Vector2& lerp(const Vector2& aOther, T aBlend)
+		{
+			_internal_value = glm::lerp(_internal_value, aOther._internal_value, aBlend);
+			return *this;
 		}
 
 		union

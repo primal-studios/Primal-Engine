@@ -25,7 +25,6 @@ workspace "Primal"
     IncludeDir = {}
     IncludeDir["assimp"] = "%{sln.location}/dependencies/assimp/include"
     IncludeDir["catch"] = "%{sln.location}/dependencies/catch2/include"
-    IncludeDir["Eigen"] = "%{sln.location}/dependencies/Eigen/include"
     IncludeDir["GLFW"] = "%{sln.location}/dependencies/GLFW/include"
     IncludeDir["glm"] = "%{sln.location}/dependencies/glm/include"
     IncludeDir["phonon"] = "%{sln.location}/dependencies/phonon/include"

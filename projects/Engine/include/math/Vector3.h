@@ -1,6 +1,8 @@
 #ifndef vector3_h__
 #define vector3_h__
 
+#include <glm/gtx/compatibility.hpp>
+
 #include "math/VectorType.h"
 
 #include "math/Vector2.h"
@@ -141,6 +143,12 @@ class Vector3
 		Vector3 refract(const Vector3& aN, T aEta) const
 		{
 			return glm::refract(_internal_value, aN._internal_value, aEta);
+		}
+
+		Vector3& lerp(const Vector3& aOther, T aBlend)
+		{
+			_internal_value = glm::lerp(_internal_value, aOther._internal_value, aBlend);
+			return *this;
 		}
 
 		union

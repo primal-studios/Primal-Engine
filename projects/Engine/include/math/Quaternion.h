@@ -169,18 +169,18 @@ class Quaternion
 			return result;
 		}
 
-		static T angle(const Quaternion& aFrom, const Quaternion& aTo)
+		static T angle(Quaternion& aFrom, Quaternion& aTo)
 		{
 			T f = aFrom.dot(aTo);
 			return static_cast<T>(glm::degrees(acosf(std::min(abs(f), T(1)) * T(2))));
 		}
 
-		static Quaternion fromToRotation(const Vector3<T>& aFromDirection, const Vector3<T>& aToDirection)
+		static Quaternion fromToRotation(Vector3<T>& aFromDirection, Vector3<T>& aToDirection)
 		{
 			return rotateTowards(lookRotation(aFromDirection), lookRotation(aToDirection), std::numeric_limits<T>::max());
 		}
 
-		static Quaternion lookRotation(const Vector3<T>& aForward, const Vector3<T>& aUp = Vector3<T>(0, 1, 0))
+		static Quaternion lookRotation(Vector3<T>& aForward, Vector3<T>& aUp = Vector3<T>(0, 1, 0))
 		{
 			aForward.normalize();
 			Vector3<T> right = aUp.cross(aForward).normalized();
@@ -237,7 +237,7 @@ class Quaternion
 			return quaternion;
 		}
 
-		static Quaternion rotateTowards(const Quaternion& aFrom, const Quaternion& aTo, T aMaxDegreesDelta)
+		static Quaternion rotateTowards(Quaternion& aFrom, Quaternion& aTo, T aMaxDegreesDelta)
 		{
 			T num = angle(aFrom, aTo);
 			if(num == T(0))
@@ -246,7 +246,7 @@ class Quaternion
 			}
 
 			T t = static_cast<T>(std::min(T(1), aMaxDegreesDelta / num));
-			return glm::slerp(aFrom, aTo, t);
+			return glm::slerp(aFrom._internal_value, aTo._internal_value, t);
 		}
 
 		static Quaternion euler(const Vector3<T>& aEuler)
@@ -305,5 +305,8 @@ Vector3<T> operator * (const Quaternion<T>& aLeft, const Vector3<T>& aRight)
 	auto value = aLeft._internal_value * aRight._internal_value;
 	return Vector3<T>(value.x, value.y, value.z);
 }
+
+using Quaternionf = Quaternion<float>;
+using Quaterniond = Quaternion<double>;
 
 #endif // quaternion_h__

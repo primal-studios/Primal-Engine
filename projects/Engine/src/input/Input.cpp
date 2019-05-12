@@ -6,8 +6,8 @@ EKeyState Input::sKeyLastStates[KEY_LAST];
 EKeyState Input::sMouseStates[MOUSE_BUTTON_LAST];
 EKeyState Input::sMouseLastStates[MOUSE_BUTTON_LAST];
 
-Eigen::Vector2d Input::sMousePosition;
-Eigen::Vector2f Input::sMouseScroll;
+Vector2d Input::sMousePosition;
+Vector2f Input::sMouseScroll;
 
 bool Input::isKeyDown(const uint32_t aKeyCode)
 {
@@ -39,12 +39,12 @@ bool Input::isMouseButtonUp(const uint32_t aMouseCode)
 	return sMouseStates[aMouseCode] == EKeyState::Up;
 }
 
-const Eigen::Vector2d& Input::getMousePosition()
+const Vector2d& Input::getMousePosition()
 {
 	return sMousePosition;
 }
 
-const Eigen::Vector2f& Input::getScroll()
+const Vector2f& Input::getScroll()
 {
 	return sMouseScroll;
 }
@@ -122,10 +122,10 @@ void Input::_setMouseReleased(const uint32_t aMouseCode)
 
 void Input::_setMouseScroll(const float aXOffset, const float aYOffset)
 {
-	sMouseScroll = Eigen::Vector2f(aXOffset, aYOffset);
+	sMouseScroll = Vector2f(aXOffset, aYOffset);
 }
 
 void Input::_setMousePosition(const double aX, const double aY)
 {
-	sMousePosition = Eigen::Vector2d(aX, aY);
+	sMousePosition = Vector2d(aX, aY);
 }

@@ -2,7 +2,8 @@
 #define input_h__
 
 #include <cstdint>
-#include <Eigen/Eigen>
+
+#include "math/Vector2.h"
 
 #include "input/KeyCodes.h"
 #include "input/MouseCodes.h"
@@ -29,8 +30,8 @@ class Input
 		static bool isMouseButtonPressed(const uint32_t aMouseCode);
 		static bool isMouseButtonUp(const uint32_t aMouseCode);
 
-		static const Eigen::Vector2d& getMousePosition();
-		static const Eigen::Vector2f& getScroll();
+		static const Vector2d& getMousePosition();
+		static const Vector2f& getScroll();
 
 	private:
 		static void _poll();
@@ -41,8 +42,8 @@ class Input
 		static EKeyState sMouseStates[MOUSE_BUTTON_LAST];
 		static EKeyState sMouseLastStates[MOUSE_BUTTON_LAST];
 
-		static Eigen::Vector2d sMousePosition;
-		static Eigen::Vector2f sMouseScroll;
+		static Vector2d sMousePosition;
+		static Vector2f sMouseScroll;
 
 		static void _setKeyPressed(const uint32_t aKeyCode);
 		static void _setKeyReleased(const uint32_t aKeyCode);

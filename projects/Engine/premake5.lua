@@ -23,7 +23,6 @@ project "Engine"
         "include",
         "%{IncludeDir.assimp}",
         "%{IncludeDir.catch}",
-        "%{IncludeDir.Eigen}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.phonon}",

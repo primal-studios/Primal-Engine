@@ -26,7 +26,6 @@ project "Tests"
         "%{sln.location}\\projects\\Engine\\include",
         "%{IncludeDir.assimp}",
         "%{IncludeDir.catch}",
-        "%{IncludeDir.Eigen}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.phonon}",

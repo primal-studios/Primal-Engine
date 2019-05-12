@@ -1,6 +1,7 @@
 #ifndef vector4_h__
 #define vector4_h__
 
+#include <glm/gtx/compatibility.hpp>
 #include "math/VectorType.h"
 
 #include "math/Vector3.h"
@@ -141,6 +142,12 @@ class Vector4
 		Vector4 refract(const Vector4& aN, T aEta) const
 		{
 			return glm::refract(_internal_value, aN._internal_value, aEta);
+		}
+
+		Vector4& lerp(const Vector4& aOther, T aBlend)
+		{
+			_internal_value = glm::lerp(_internal_value, aOther._internal_value, aBlend);
+			return *this;
 		}
 
 		union
