@@ -104,10 +104,17 @@ VulkanGraphicsContext::VulkanGraphicsContext(const GraphicsContextCreateInfo& aC
 
 	_createPhysicalDevice();
 	_createLogicalDevice();
+
+	VmaAllocatorCreateInfo imageAllocatorCreateInfo = {};
+	imageAllocatorCreateInfo.device = mDevice;
+	imageAllocatorCreateInfo.physicalDevice = mPhysicalDevice;
+	vmaCreateAllocator(&imageAllocatorCreateInfo, &mImageAllocator);
 }
 
 VulkanGraphicsContext::~VulkanGraphicsContext()
 {
+	vmaDestroyAllocator(mImageAllocator);
+	
 	if (mCreateInfo.window)
 	{
 		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
@@ -149,7 +156,12 @@ uint32_t VulkanGraphicsContext::getPresentQueueIndex() const
 	return mPresentQueueFamily;
 }
 
-void VulkanGraphicsContext::_initializeVulkan()
+VmaAllocator VulkanGraphicsContext::getImageAllocator() const
+{
+	return mImageAllocator;
+}
+
+	void VulkanGraphicsContext::_initializeVulkan()
 {
 	using namespace std;
 

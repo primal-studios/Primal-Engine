@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include <vulkan/vulkan.h>
+#include <vma/vk_mem_alloc.h>
 
 class VulkanGraphicsContext final : public IGraphicsContext
 {
@@ -30,6 +31,8 @@ class VulkanGraphicsContext final : public IGraphicsContext
 
 		uint32_t getGraphicsQueueIndex() const;
 		uint32_t getPresentQueueIndex() const;
+
+		VmaAllocator getImageAllocator() const;
 	private:
 		void _initializeVulkan();
 		void _initializeDebugMessenger();
@@ -51,6 +54,7 @@ class VulkanGraphicsContext final : public IGraphicsContext
 		VkSurfaceKHR mSurface{};
 		VkDebugUtilsMessengerEXT mDebugMessenger{};
 		GraphicsContextCreateInfo mCreateInfo;
+		VmaAllocator mImageAllocator{};
 };
 
 #endif // vkgraphicscontext_h__
