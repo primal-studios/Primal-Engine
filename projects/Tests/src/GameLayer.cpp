@@ -28,16 +28,6 @@ GameLayer::~GameLayer()
 
 void GameLayer::onAttach()
 {
-	B* b = new B();
-
-	A* a = primal_cast<A*>(b);
-
-	Quaternion<float> quatf = Quaternion<float>::euler(Vector3f(0, 20, 40));
-
-	auto vec = *quatf.eulerAngles;
-
-	int jonathan = 0;
-
 	//SystemManager::instance().addSystem<RenderSystem>();
 
 	//SystemManager::instance().configure();

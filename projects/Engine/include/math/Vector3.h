@@ -150,7 +150,7 @@ class Vector3
 				T x, y, z;
 			};
 
-			T v[9];
+			T v[3];
 			
 			detail::VectorType<T, 3> _internal_value;
 		};

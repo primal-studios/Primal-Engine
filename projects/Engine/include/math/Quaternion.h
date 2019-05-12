@@ -9,6 +9,8 @@
 
 #include "math/QuaternionType.h"
 
+#include "math/Matrix3.h"
+
 #include "core/Property.h"
 
 template<typename T>
@@ -26,21 +28,21 @@ class Quaternion
 			});
 			
 			eulerAngles.setCallback([=](Vector3<T> & aValue)
-				{
-					T xx = glm::radians(aValue.x);
-					T yy = glm::radians(aValue.y);
-					T zz = glm::radians(aValue.z);
+			{
+				T cy = cos(glm::radians(aValue.z) * T(0.5));
+				T sy = sin(glm::radians(aValue.z) * T(0.5));
+				T cp = cos(glm::radians(aValue.y) * T(0.5));
+				T sp = sin(glm::radians(aValue.y) * T(0.5));
+				T cr = cos(glm::radians(aValue.x) * T(0.5));
+				T sr = sin(glm::radians(aValue.x) * T(0.5));
 
-					T sx = sin(xx / 2); T sy = sin(yy / 2); T sz = sin(zz / 2);
-					T cx = cos(xx / 2); T cy = cos(yy / 2); T cz = cos(zz / 2);
+				w = cy * cp * cr + sy * sp * sr;
+				x = cy * cp * sr - sy * sp * cr;
+				y = sy * cp * sr + cy * sp * cr;
+				z = sy * cp * cr - cy * sp * sr;
 
-					x = cx * cy * cz + sx * sy * sz;
-					y = sx * cy * cz - cx * sy * sz;
-					z = cx * sy * cz + sx * cy * sz;
-					w = cx * cy * sz - sx * sy * cz;
-
-					return aValue;
-				});
+				return aValue;
+			});
 		}
 
 		Quaternion(const T aX, const T aY, const T aZ, const T aW) : Quaternion()
@@ -56,6 +58,52 @@ class Quaternion
 		explicit Quaternion(const Vector4<T>& aValue) : Quaternion()
 		{
 			_internal_value = detail::QuaternionType<T>(aValue.x, aValue.y, aValue.z, aValue.w);
+		}
+
+		explicit Quaternion(const Matrix3<T>& aMatrix) : Quaternion()
+		{
+			T scale = pow(aMatrix.determinant(), T(1) / T(3));
+
+			w = static_cast<T>(sqrt(std::max(0, scale + aMatrix[0] + aMatrix[4] + aMatrix[9])) / T(2));
+			x = static_cast<T>(sqrt(std::max(0, scale + aMatrix[0] - aMatrix[4] - aMatrix[9])) / T(2));
+			y = static_cast<T>(sqrt(std::max(0, scale - aMatrix[0] + aMatrix[4] - aMatrix[9])) / T(2));
+			z = static_cast<T>(sqrt(std::max(0, scale - aMatrix[0] - aMatrix[4] + aMatrix[9])) / T(2));
+
+			if (aMatrix[5] - aMatrix[7] < T(0)) x = -x;
+			if (aMatrix[6] - aMatrix[2] < T(0)) y = -y;
+			if (aMatrix[1] - aMatrix[3] < T(0)) z = -z;
+		}
+
+		Quaternion(const Quaternion& aOther) : Quaternion()
+		{
+			_internal_value = aOther._internal_value;
+		}
+
+		Quaternion(Quaternion&& aOther) noexcept
+		{
+			_internal_value = std::move(aOther._internal_value);
+		}
+
+		bool operator == (const Quaternion& aOther)
+		{
+			return dot(aOther) > T(0.999999);
+		}
+
+		bool operator != (const Quaternion& aOther)
+		{
+			return dot(aOther) <= T(0.999999);
+		}
+
+		Quaternion& operator = (const Quaternion& aOther)
+		{
+			_internal_value = aOther._internal_value;
+			return *this;
+		}
+
+		Quaternion& operator = (Quaternion&& aOther) noexcept
+		{
+			_internal_value = std::move(aOther._internal_value);
+			return *this;
 		}
 
 		Quaternion& operator *= (const Quaternion& aOther)
@@ -91,9 +139,34 @@ class Quaternion
 			return glm::dot(_internal_value, aOther._internal_value);
 		}
 
-		Quaternion angleAxis(T aAngle, const Vector3<T>& aAxis)
+		Quaternion axisAngle(const Vector3<T>& aAxis, T aAngle)
 		{
 			return glm::angleAxis(aAngle, aAxis._internal_value);
+		}
+
+		Vector4<T> toAxisAngle()
+		{
+			Quaternion q = this;
+			if (abs(w) > 1.0f)
+				q.normalize();
+
+			Vector4<T> result;
+
+			result.w = T(2) * static_cast<T>(acos(q.w));
+			T den = static_cast<T>(sqrt(T(1) - q.w * q.w));
+			if(den > T(0.0001))
+			{
+				result.x = q.x / den;
+				result.y = q.y / den;
+				result.z = q.z / den;
+			}
+			else
+			{
+				result.x = T(1);
+				result.y = result.z = T(0);
+			}
+
+			return result;
 		}
 
 		static T angle(const Quaternion& aFrom, const Quaternion& aTo)
@@ -196,6 +269,17 @@ class Quaternion
 			return glm::inverse(_internal_value);
 		}
 
+		void conjugate()
+		{
+			glm::conjugate(_internal_value);
+		}
+
+		Quaternion& slerp(const Quaternion& aOther, T aBlend)
+		{
+			_internal_value = glm::slerp(_internal_value, aOther._internal_value, aBlend);
+			return *this;
+		}
+
 		union
 		{
 			struct
@@ -214,5 +298,12 @@ class Quaternion
 			_internal_value = aValue;
 		}
 };
+
+template<typename T>
+Vector3<T> operator * (const Quaternion<T>& aLeft, const Vector3<T>& aRight)
+{
+	auto value = aLeft._internal_value * aRight._internal_value;
+	return Vector3<T>(value.x, value.y, value.z);
+}
 
 #endif // quaternion_h__

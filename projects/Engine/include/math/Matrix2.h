@@ -85,7 +85,7 @@ class Matrix2
 			return detail::MatrixType<T, 2, 2>(1.0f);
 		}
 
-		Matrix2& determinant() const
+		T determinant() const
 		{
 			return glm::determinant(_internal_value);
 		}

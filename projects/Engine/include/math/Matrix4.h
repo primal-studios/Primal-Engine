@@ -145,7 +145,7 @@ class Matrix4
 			return glm::lookAt(aEye._internal_value, aTarget._internal_value, aUp._internal_value);
 		}
 
-		Matrix4& determinant() const
+		T determinant() const
 		{
 			return glm::determinant(_internal_value);
 		}

@@ -150,7 +150,7 @@ class Vector4
 				T x, y, z, w;
 			};
 
-			T v[16];
+			T v[4];
 
 			detail::VectorType<T, 4> _internal_value;
 		};

@@ -41,7 +41,7 @@ class Matrix3
 			m22 = aM22;
 		}
 
-		explicit Matrix3(const Matrix2& aOther)
+		explicit Matrix3(const Matrix2<T>& aOther)
 		{
 			m00 = aOther.m00;
 			m01 = aOther.m01;
@@ -110,7 +110,7 @@ class Matrix3
 			return detail::MatrixType<T, 3, 3>(1.0f);
 		}
 
-		Matrix3& determinant() const
+		T determinant() const
 		{
 			return glm::determinant(_internal_value);
 		}
