@@ -10,12 +10,13 @@ class Asset
 		Asset() = default;
 		virtual ~Asset() = default;
 
-		virtual bool load() = 0;
 		bool isLoaded() const { return mLoaded; }
 
 	protected:
-		bool mLoaded;
-		std::string mName;
+		bool mLoaded = false;
+		std::string mName = "Asset";
+
+		virtual void _load() {}
 };
 
 #endif // asset_h__

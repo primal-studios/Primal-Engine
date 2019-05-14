@@ -8,7 +8,6 @@
 #include "events/KeyEvents.h"
 
 #include "application/ApplicationLayerStack.h"
-#include "application/ApplicationLayer.h"
 #include "events/MouseEvent.h"
 
 class Application

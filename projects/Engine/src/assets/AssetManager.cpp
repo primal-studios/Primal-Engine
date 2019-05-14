@@ -1,6 +1,7 @@
 #include "assets/AssetManager.h"
 
 #include <tbb/task_scheduler_init.h>
+#include <thread>
 
 AssetManager& AssetManager::instance()
 {
@@ -13,7 +14,10 @@ void AssetManager::_loadAssetAsync(std::list<std::string>::iterator& aIter, cons
 	const auto asset = mAssets.find(*aIter);
 	if (asset != mAssets.end())
 	{
-		mAsyncTaskGroup.run([=] {asset->second->load(); });
+		mAsyncTaskGroup.run([=] 
+		{
+				asset->second->_load();
+		});
 	}
 
 	switch (aPrio)

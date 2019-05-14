@@ -11,7 +11,8 @@
 #include <tbb/task_group.h>
 
 #include "assets/Asset.h"
-#include "core/Log.h"
+#include <typeindex>
+#include <functional>
 
 constexpr uint8_t assetLoadLowPrio = 0;
 constexpr uint8_t assetLoadMedPrio = 1;
@@ -29,6 +30,10 @@ class AssetManager
 		template<typename T, typename ... Arguments>
 		std::shared_ptr<T> loadAsync(const std::string& aName,
 			const uint8_t aPrio,
+			Arguments&& ... aArgs);
+
+		template<typename T, typename ... Arguments>
+		std::shared_ptr<T> add(const std::string& aName,
 			Arguments&& ... aArgs);
 
 		template<typename T>
@@ -60,7 +65,7 @@ std::shared_ptr<T> AssetManager::load(const std::string& aName,
 	std::shared_ptr<T> asset = std::make_shared<T>(std::forward<Arguments>(aArgs)...);
 	asset->mName = aName;
 
-	asset->load();
+	asset->_load();
 
 	mAssets[aName] = asset;
 
@@ -94,6 +99,21 @@ std::shared_ptr<T> AssetManager::loadAsync(const std::string& aName,
 		default:
 			break;
 	}
+
+	mAssets[aName] = asset;
+
+	return asset;
+}
+
+template<typename T, typename ... Arguments>
+std::shared_ptr<T> AssetManager::add(const std::string& aName,
+	Arguments&& ... aArgs)
+{
+	static_assert(std::is_base_of<Asset, T>::value, "T is not derived from Asset");
+
+	std::shared_ptr<T> asset = std::make_shared<T>(std::forward<Arguments>(aArgs)...);
+	asset->mName = aName;
+	asset->mLoaded = true;
 
 	mAssets[aName] = asset;
 
