@@ -88,7 +88,7 @@ void SystemManager::removeSystem()
 		if (auto check = dynamic_cast<T*>(system))
 		{
 			auto iter = std::find(mSystems.begin(), mSystems.end(), check);
-			delete* iter;
+			delete *iter;
 			mSystems.erase(iter);
 			
 			break;
