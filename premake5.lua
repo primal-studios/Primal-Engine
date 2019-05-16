@@ -28,6 +28,8 @@ workspace "Primal"
     IncludeDir["GLFW"] = "%{sln.location}/dependencies/GLFW/include"
     IncludeDir["glm"] = "%{sln.location}/dependencies/glm/include"
     IncludeDir["phonon"] = "%{sln.location}/dependencies/phonon/include"
+    IncludeDir["physx"] = "%{sln.location}/dependencies/physx/include"
+    IncludeDir["pxshared"] = "%{sln.location}/dependencies/physx/pxshared/include"
     IncludeDir["spdlog"] = "%{sln.location}/dependencies/spdlog/include"
     IncludeDir["stb"] = "%{sln.location}/dependencies/stb/include"
     IncludeDir["tbb"] = "%{sln.location}/dependencies/tbb/include"
@@ -37,12 +39,14 @@ workspace "Primal"
     LibDir = {}
     LibDir["assimp"] = "%{sln.location}/dependencies/assimp/lib"
     LibDir["phonon"] = "%{sln.location}/dependencies/phonon/lib"
+    LibDir["physx"] = "%{sln.location}/dependencies/physx/lib"
     LibDir["tbb"] = "%{sln.location}/dependencies/tbb/lib"
     LibDir["vulkan"] = "%{sln.location}/dependencies/vulkan/lib"
 
     BinDir = {}
     BinDir["assimp"] = "%{sln.location}/dependencies/assimp/bin"
     BinDir["phonon"] = "%{sln.location}/dependencies/phonon/bin"
+    BinDir["physx"] = "%{sln.location}/dependencies/physx/bin"
     BinDir["tbb"] = "%{sln.location}/dependencies/tbb/bin"
     BinDir["vulkan"] = "%{sln.location}/dependencies/vulkan/bin"
 

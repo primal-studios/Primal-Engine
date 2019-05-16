@@ -26,6 +26,8 @@ project "Engine"
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.phonon}",
+        "%{IncludeDir.physx}",
+        "%{IncludeDir.pxshared}",
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.stb}",
         "%{IncludeDir.tbb}",
@@ -51,6 +53,16 @@ project "Engine"
         "assimp-vc140-mt",
         "GLFW",
         "phonon",
+        "PhysX_64",
+        "PhysXCharacterKinematic_static_64",
+        "PhysXCommon_64",
+        "PhysXCooking_64",
+        "PhysXExtensions_static_64",
+        "PhysXFoundation_64",
+        "PhysXPvdSDK_static_64",
+        "PhysXTask_static_64",
+        "SceneQuery_static_64",
+        "SimulationController_static_64",
         "vma",
         "vulkan-1"
     }
@@ -107,6 +119,14 @@ project "Engine"
             "PRIMAL_ENABLE_ASSERTS"
         }
 
+        libdirs {
+            "%{LibDir.physx}" .. "/debug/"
+        }
+
+        bindirs {
+            "%{BinDir.physx}" .. "/debug/"
+        }
+
         staticruntime "Off"
         runtime "Debug"
 
@@ -123,6 +143,14 @@ project "Engine"
             "PRIMAL_RELEASE" 
         }
 
+        libdirs {
+            "%{LibDir.physx}" .. "/release/"
+        }
+
+        bindirs {
+            "%{BinDir.physx}" .. "/release/"
+        }
+
         staticruntime "Off"
         runtime "Release"
 
@@ -137,6 +165,16 @@ project "Engine"
     filter "configurations:Dist"
         defines {
             "PRIMAL_DIST"
+        }
+
+        libdirs
+        {
+            "%{LibDir.physx}" .. "/release/"
+        }
+
+        bindirs
+        {
+            "%{BinDir.physx}" .. "/release/"
         }
 
         staticruntime "Off"

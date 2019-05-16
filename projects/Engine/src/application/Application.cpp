@@ -4,6 +4,7 @@
 #include "input/Input.h"
 #include "ecs/SystemManager.h"
 #include "systems/RenderSystem.h"
+#include "application/ApplicationLayer.h"
 
 Application* Application::sInstance;
 
