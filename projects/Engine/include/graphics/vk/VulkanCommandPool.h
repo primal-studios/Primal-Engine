@@ -1,5 +1,5 @@
-#ifndef vkcommandpool_h__
-#define vkcommandpool_h__
+#ifndef vulkancommandpool_h__
+#define vulkancommandpool_h__
 
 #include <graphics/api/ICommandPool.h>
 
@@ -22,4 +22,4 @@ class VulkanCommandPool final : public ICommandPool
 		VkCommandPool mPool{};
 };
 
-#endif // vkcommandpool_h__
+#endif // vulkancommandpool_h__

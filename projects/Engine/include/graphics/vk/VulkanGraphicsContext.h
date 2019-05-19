@@ -1,5 +1,5 @@
-#ifndef vkgraphicscontext_h__
-#define vkgraphicscontext_h__
+#ifndef vulkangraphicscontext_h__
+#define vulkangraphicscontext_h__
 
 #include <graphics/api/IGraphicsContext.h>
 
@@ -57,4 +57,4 @@ class VulkanGraphicsContext final : public IGraphicsContext
 		VmaAllocator mImageAllocator{};
 };
 
-#endif // vkgraphicscontext_h__
+#endif // vulkangraphicscontext_h__

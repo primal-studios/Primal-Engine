@@ -25,7 +25,7 @@ struct AttachmentDescription
 
 struct AttachmentReference
 {
-	uint32_t index;
+	uint32_t index = 0xFFFFFFFF;
 	EImageLayout layout;
 };
 
@@ -34,7 +34,7 @@ struct SubPassDescription
 	std::vector<AttachmentReference> inputs;
 	std::vector<AttachmentReference> colors;
 	std::vector<AttachmentReference> resolve;
-	std::vector<AttachmentReference> depthStencil;
+	AttachmentReference depthStencil;
 	std::vector<uint32_t> preserve;
 };
 
@@ -58,16 +58,16 @@ struct RenderPassCreateInfo
 
 class IRenderPass
 {
-public:
-	explicit IRenderPass(IGraphicsContext* aContext);
-	IRenderPass(const IRenderPass&) = delete;
-	IRenderPass(IRenderPass&&) noexcept = delete;
-	virtual ~IRenderPass() = delete;
+	public:
+		explicit IRenderPass(IGraphicsContext* aContext);
+		IRenderPass(const IRenderPass&) = delete;
+		IRenderPass(IRenderPass&&) noexcept = delete;
+		virtual ~IRenderPass() = default;
 
-	IRenderPass& operator=(const IRenderPass&) = delete;
-	IRenderPass& operator=(IRenderPass&&) noexcept = delete;
+		IRenderPass& operator=(const IRenderPass&) = delete;
+		IRenderPass& operator=(IRenderPass&&) noexcept = delete;
 
-	virtual void construct(const RenderPassCreateInfo&) = 0;
+		virtual void construct(const RenderPassCreateInfo&) = 0;
 };
 
 #endif // irenderpass_h__
