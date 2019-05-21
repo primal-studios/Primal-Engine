@@ -7,6 +7,8 @@
 
 class PhysicsSystem final : public System
 {
+	friend class RigidBody;
+	friend class StaticBody;
 	public:
 		PhysicsSystem() = default;
 		~PhysicsSystem() = default;
