@@ -40,3 +40,8 @@ void VulkanImageView::construct(const ImageViewCreateInfo& aInfo)
 		PRIMAL_INTERNAL_INFO("Successfully created Vulkan image view.");
 	}
 }
+
+VkImageView VulkanImageView::getHandle() const
+{
+	return mImageView;
+}
