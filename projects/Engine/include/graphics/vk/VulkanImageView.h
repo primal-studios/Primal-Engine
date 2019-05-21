@@ -16,6 +16,7 @@ class VulkanImageView final : public IImageView
 		VulkanImageView& operator=(const VulkanImageView&) = delete;
 		VulkanImageView& operator=(VulkanImageView&&) noexcept = delete;
 		void construct(const ImageViewCreateInfo&) override;
+		VkImageView getHandle() const;
 	private:
 		VkImageView mImageView{};
 		IGraphicsContext* mContext;
