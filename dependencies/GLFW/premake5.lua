@@ -21,7 +21,7 @@ project "GLFW"
 	filter "system:windows"
         cdialect "C11"
         systemversion "latest"
-        staticruntime "On"
+        staticruntime "Off"
 
         links
         {
@@ -49,7 +49,7 @@ project "GLFW"
 
     filter "system:linux"
         buildoptions "-std=c11"
-        staticruntime "On"
+        staticruntime "Off"
         
         files
         {

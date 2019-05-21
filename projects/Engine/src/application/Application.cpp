@@ -4,6 +4,7 @@
 #include "input/Input.h"
 #include "ecs/SystemManager.h"
 #include "systems/RenderSystem.h"
+#include "physics/PhysicsSystem.h"
 #include "application/ApplicationLayer.h"
 
 Application* Application::sInstance;
@@ -18,12 +19,14 @@ Application::Application()
 	mWindow->setEventCallback(BIND_EVENT_FUNCTION(Application::onEvent));
 
 	SystemManager::instance().addSystem<RenderSystem>(mWindow);
+	SystemManager::instance().addSystem<PhysicsSystem>();
 	SystemManager::instance().configure();
 }
 
 Application::~Application()
 {
 	SystemManager::instance().removeSystem<RenderSystem>();
+	SystemManager::instance().removeSystem<PhysicsSystem>();
 	delete mWindow;
 	sInstance = nullptr;
 }

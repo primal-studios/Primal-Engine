@@ -42,7 +42,8 @@ project "Tests"
         "%{LibDir.assimp}",
         "%{LibDir.phonon}",
         "%{LibDir.tbb}",
-        "%{LibDir.vulkan}"
+        "%{LibDir.vulkan}",
+		targetDirectory
     }
 
     bindirs {
@@ -57,16 +58,16 @@ project "Tests"
         "assimp-vc140-mt",
         "GLFW",
         "phonon",
-        "PhysX_64",
-        "PhysXCharacterKinematic_static_64",
-        "PhysXCommon_64",
-        "PhysXCooking_64",
-        "PhysXExtensions_static_64",
-        "PhysXFoundation_64",
-        "PhysXPvdSDK_static_64",
         "PhysXTask_static_64",
-        "SceneQuery_static_64",
-        "SimulationController_static_64",
+		"PhysX_64",
+		"PhysXCommon_64",
+		"PhysXExtensions_static_64",
+		"PhysXPvdSDK_static_64",
+		"PhysXCooking_64",
+		"PhysXCharacterKinematic_static_64",
+		"SceneQuery_static_64",
+		"SimulationController_static_64",
+		"PhysXFoundation_64",
         "vma",
         "vulkan-1"
     }
@@ -82,6 +83,7 @@ project "Tests"
     filter "system:windows"
         cppdialect "C++17"
         systemversion "latest"
+        staticruntime "Off"
 
         ignoredefaultlibraries {
             "LIBCMT",
@@ -100,6 +102,8 @@ project "Tests"
         }
 
     filter "system:linux"
+        staticruntime "Off"
+    
         buildoptions {
             "-std=c++17",
             "-fPIC"
@@ -140,7 +144,8 @@ project "Tests"
 
     filter "configurations:Release"
         defines { 
-            "PRIMAL_RELEASE" 
+            "PRIMAL_RELEASE",
+			"NDEBUG"
         }
 
         libdirs {
@@ -164,7 +169,8 @@ project "Tests"
 
     filter "configurations:Dist"
         defines {
-            "PRIMAL_DIST"
+            "PRIMAL_DIST",
+			"NDEBUG"
         }
 
         libdirs {

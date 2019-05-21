@@ -53,16 +53,16 @@ project "Engine"
         "assimp-vc140-mt",
         "GLFW",
         "phonon",
-        "PhysX_64",
-        "PhysXCharacterKinematic_static_64",
-        "PhysXCommon_64",
-        "PhysXCooking_64",
-        "PhysXExtensions_static_64",
-        "PhysXFoundation_64",
-        "PhysXPvdSDK_static_64",
         "PhysXTask_static_64",
-        "SceneQuery_static_64",
-        "SimulationController_static_64",
+		"PhysX_64",
+		"PhysXCommon_64",
+		"PhysXExtensions_static_64",
+		"PhysXPvdSDK_static_64",
+		"PhysXCooking_64",
+		"PhysXCharacterKinematic_static_64",
+		"SceneQuery_static_64",
+		"SimulationController_static_64",
+		"PhysXFoundation_64",
         "vma",
         "vulkan-1"
     }
@@ -78,6 +78,7 @@ project "Engine"
     filter "system:windows"
         cppdialect "C++17"
         systemversion "latest"
+        staticruntime "Off"
 
         ignoredefaultlibraries {
             "LIBCMT",
@@ -100,6 +101,8 @@ project "Engine"
         }
 
     filter "system:linux"
+        staticruntime "Off"
+    
         buildoptions {
             "-std=c++17",
             "-fPIC"
@@ -114,6 +117,15 @@ project "Engine"
         }
 
     filter "configurations:Debug"
+		postbuildcommands {
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysX_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXCommon_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXCooking_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXDevice64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXFoundation_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXGpu_64.dll\" \"%{sln.location}bin\" /D /Y"
+		}
+
         defines { 
             "PRIMAL_DEBUG",
             "PRIMAL_ENABLE_ASSERTS"
@@ -139,8 +151,18 @@ project "Engine"
         }
 
     filter "configurations:Release"
+		postbuildcommands {
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysX_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXCommon_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXCooking_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXDevice64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXFoundation_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXGpu_64.dll\" \"%{sln.location}bin\" /D /Y"
+		}
+
         defines { 
-            "PRIMAL_RELEASE" 
+            "PRIMAL_RELEASE",
+			"NDEBUG"
         }
 
         libdirs {
@@ -163,8 +185,18 @@ project "Engine"
         }
 
     filter "configurations:Dist"
-        defines {
-            "PRIMAL_DIST"
+        postbuildcommands {
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysX_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXCommon_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXCooking_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXDevice64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXFoundation_64.dll\" \"%{sln.location}bin\" /D /Y",
+			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXGpu_64.dll\" \"%{sln.location}bin\" /D /Y"
+		}
+		
+		defines {
+            "PRIMAL_DIST",
+			"NDEBUG"
         }
 
         libdirs

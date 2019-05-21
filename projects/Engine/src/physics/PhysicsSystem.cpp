@@ -26,6 +26,9 @@ static physx::PxFilterFlags sCollisionFilterShader(
 
 void PhysicsSystem::initialize()
 {
+	mDefaultAllocator = new physx::PxDefaultAllocator();
+	mDefaultErrorCallback = new physx::PxDefaultErrorCallback();
+
 	mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, *mDefaultAllocator, *mDefaultErrorCallback);
 
 	PRIMAL_ASSERT(mFoundation != nullptr, "Failed to create PhysX Foundation!");
@@ -51,8 +54,6 @@ void PhysicsSystem::initialize()
 
 	const bool result = PxInitExtensions(*mPhysics, mPvd);
 	PRIMAL_ASSERT(result, "Failed to initialize PhysX Extension!");
-
-
 
 	physx::PxSceneDesc sceneDesc(mPhysics->getTolerancesScale());
 	sceneDesc.gravity = physx::PxVec3(0.0f, -9.81f, 0.0f);
