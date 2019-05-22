@@ -53,7 +53,7 @@ T* SystemManager::getSystem()
 
 	for (const auto& system : mSystems)
 	{
-		if (auto check = dynamic_cast<T>(system))
+		if (auto check = dynamic_cast<T*>(system))
 		{
 			return check;
 		}
@@ -69,7 +69,7 @@ bool SystemManager::hasSystem()
 
 	for (const auto& system : mSystems)
 	{
-		if (auto check = dynamic_cast<T>(system))
+		if (auto check = dynamic_cast<T*>(system))
 		{
 			return true;
 		}

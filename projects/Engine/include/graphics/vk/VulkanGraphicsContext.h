@@ -33,6 +33,7 @@ class VulkanGraphicsContext final : public IGraphicsContext
 		uint32_t getPresentQueueIndex() const;
 
 		VmaAllocator getImageAllocator() const;
+		VmaAllocator getBufferAllocator() const;
 	private:
 		void _initializeVulkan();
 		void _initializeDebugMessenger();
@@ -55,6 +56,7 @@ class VulkanGraphicsContext final : public IGraphicsContext
 		VkDebugUtilsMessengerEXT mDebugMessenger{};
 		GraphicsContextCreateInfo mCreateInfo;
 		VmaAllocator mImageAllocator{};
+		VmaAllocator mBufferAllocator{};
 };
 
 #endif // vulkangraphicscontext_h__

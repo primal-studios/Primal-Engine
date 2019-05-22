@@ -161,7 +161,12 @@ VmaAllocator VulkanGraphicsContext::getImageAllocator() const
 	return mImageAllocator;
 }
 
-	void VulkanGraphicsContext::_initializeVulkan()
+VmaAllocator VulkanGraphicsContext::getBufferAllocator() const
+{
+	return mBufferAllocator;
+}
+
+void VulkanGraphicsContext::_initializeVulkan()
 {
 	using namespace std;
 

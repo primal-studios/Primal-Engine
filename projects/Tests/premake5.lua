@@ -30,6 +30,7 @@ project "Tests"
         "%{IncludeDir.glm}",
         "%{IncludeDir.phonon}",
         "%{IncludeDir.physx}",
+        "%{IncludeDir.physxinternal}",
         "%{IncludeDir.pxshared}",
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.stb}",
