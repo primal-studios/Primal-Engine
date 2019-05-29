@@ -15,6 +15,8 @@ VulkanIndexBuffer::~VulkanIndexBuffer()
 {
 	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
 	vmaDestroyBuffer(context->getBufferAllocator(), mBuffer, mAllocation);
+	vmaFreeMemory(context->getBufferAllocator(), mAllocation);
+
 	mBuffer = nullptr;
 
 	free(mData);
