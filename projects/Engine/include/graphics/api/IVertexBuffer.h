@@ -5,17 +5,20 @@
 
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/api/VertexBufferLayout.h"
+#include "graphics/api/ICommandPool.h"
 
-enum EVertexBufferCreateFlagBits : uint32_t
+#include "graphics/BufferFlags.h"
+#include "graphics/SharingMode.h"
+
+struct VertexBufferCreateInfo
 {
-	VERTEX_BUFFER_STATIC = 0x01,
-	VERTEX_BUFFER_DYNAMIC = 0x02,
-	VERTEX_BUFFER_INSTANCED = 0x04,
-	VERTEX_BUFFER_SHARING_MODE_CONCLUSIVE = 0x08,
-	VERTEX_BUFFER_SHARING_MODE_EXCLUSIVE = 0x10
-};
+	EBufferCreateFlags flags;
+	EBufferUsageFlags usage;
+	ESharingMode sharingMode;
+	std::vector<uint32_t> queueFamilyIndices;
 
-using VertexBufferCreateFlags = uint32_t;
+	ICommandPool* commandPool;
+};
 
 class IVertexBuffer
 {
@@ -28,7 +31,7 @@ class IVertexBuffer
 		IVertexBuffer& operator = (const IVertexBuffer& aOther) = delete;
 		IVertexBuffer& operator = (IVertexBuffer&& aOther) noexcept = delete;
 
-		virtual void construct(const VertexBufferCreateFlags& aInfo) = 0;
+		virtual void construct(const VertexBufferCreateInfo& aInfo) = 0;
 
 		virtual void setData(void* aData, const size_t aSize) = 0;
 		virtual void setLayout(const VertexBufferLayout& aLayout) = 0;

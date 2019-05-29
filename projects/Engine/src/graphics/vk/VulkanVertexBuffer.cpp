@@ -2,7 +2,9 @@
 
 #include "graphics/vk/VulkanGraphicsContext.h"
 
-static VkFormat sVertexAttributeFormat(const EVertexBufferLayoutElementTypes& aType)
+#include "graphics/vk/VulkanCommandPool.h"
+
+static constexpr VkFormat sVertexAttributeFormat(const EVertexBufferLayoutElementTypes& aType)
 {
 	switch(aType)
 	{
@@ -29,6 +31,7 @@ static VkFormat sVertexAttributeFormat(const EVertexBufferLayoutElementTypes& aT
 VulkanVertexBuffer::VulkanVertexBuffer(IGraphicsContext* aContext) : IVertexBuffer(aContext)
 {
 	mBuffer = nullptr;
+	mStagingBuffer = nullptr;
 
 	mBindingDescription = {};
 
@@ -45,28 +48,95 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 	free(mData);
 }
 
-void VulkanVertexBuffer::construct(const VertexBufferCreateFlags& aInfo)
+void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 {
 	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
 
-	VkBufferCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	createInfo.size = mSize;
-	createInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	const bool usesStaging = (aInfo.usage & EBufferUsageFlags::BUFFER_USAGE_TRANSFER_DST) != 0;
+	const bool isExclusive = (aInfo.sharingMode & ESharingMode::SHARING_MODE_EXCLUSIVE) != 0;
 
-	const bool isExclusive = aInfo & EVertexBufferCreateFlagBits::VERTEX_BUFFER_SHARING_MODE_EXCLUSIVE;
-	createInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	if (usesStaging)
+	{
+		VkBufferCreateInfo stagingBufferInfo = {};
+		stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		stagingBufferInfo.size = mSize;
+		stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		stagingBufferInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		VmaAllocationCreateInfo stagingAllocInfo = {};
+		stagingAllocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-	vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
+		vmaCreateBuffer(context->getBufferAllocator(), &stagingBufferInfo, &stagingAllocInfo, &mStagingBuffer, &mStagingAllocation, nullptr);
+		
+		void* data;
+		vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
+		memcpy(data, mData, mSize);
+		vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
 
-	void* data;
-	vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
-	memcpy(data, mData, mSize);
-	vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
+		VkBufferCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		createInfo.size = mSize;
+		createInfo.usage = aInfo.usage;
+		createInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+		vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
+
+		// Copy buffers
+		const auto vulkanCommandPool = (VulkanCommandPool*)aInfo.commandPool;
+
+		VkCommandBufferAllocateInfo copyAllocInfo = {};
+		copyAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		copyAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		copyAllocInfo.commandPool = vulkanCommandPool->getPool();
+		copyAllocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer;
+		vkAllocateCommandBuffers(context->getDevice(), &copyAllocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		VkBufferCopy copyRegion = {};
+		copyRegion.size = mSize;
+		vkCmdCopyBuffer(commandBuffer, mStagingBuffer, mBuffer, 1, &copyRegion);
+
+		vkEndCommandBuffer(commandBuffer);
+
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		vkQueueSubmit(reinterpret_cast<VkQueue>(static_cast<uint64_t>(context->getGraphicsQueueIndex())), 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(reinterpret_cast<VkQueue>(static_cast<uint64_t>(context->getGraphicsQueueIndex())));
+		vkFreeCommandBuffers(context->getDevice(), vulkanCommandPool->getPool(), 1, &commandBuffer);
+	}
+	else
+	{
+		VkBufferCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		createInfo.size = mSize;
+		createInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		createInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+		vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
+
+		void* data;
+		vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
+		memcpy(data, mData, mSize);
+		vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
+	}
 }
 
 void VulkanVertexBuffer::setData(void* aData, const size_t aSize)

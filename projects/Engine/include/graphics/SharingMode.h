@@ -3,10 +3,10 @@
 
 #include <cstdint>
 
-enum class ESharingMode : uint32_t
+enum ESharingMode : uint32_t
 {
-	EXCLUSIVE  = 0x0,
-	CONCURRENT = 0x1
+	SHARING_MODE_EXCLUSIVE  = 0x0,
+	SHARING_MODE_CONCURRENT = 0x1
 };
 
 #endif // sharingmode_h__

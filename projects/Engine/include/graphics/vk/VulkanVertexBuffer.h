@@ -17,7 +17,7 @@ class VulkanVertexBuffer final : public IVertexBuffer
 		VulkanVertexBuffer& operator = (const VulkanVertexBuffer& aOther) = delete;
 		VulkanVertexBuffer& operator = (VulkanVertexBuffer&& aOther) noexcept = delete;
 
-		void construct(const VertexBufferCreateFlags& aInfo) override;
+		void construct(const VertexBufferCreateInfo& aInfo) override;
 
 		void setData(void* aData, const size_t aSize) override;
 		void setLayout(const VertexBufferLayout& aLayout) override;
@@ -27,6 +27,8 @@ class VulkanVertexBuffer final : public IVertexBuffer
 
 	private:
 		VkBuffer mBuffer;
+		VkBuffer mStagingBuffer;
+		VmaAllocation mStagingAllocation{};
 		VmaAllocation mAllocation{};
 
 		VkVertexInputBindingDescription mBindingDescription;
