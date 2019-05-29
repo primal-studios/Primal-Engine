@@ -146,6 +146,11 @@ VkDevice VulkanGraphicsContext::getDevice() const
 	return mDevice;
 }
 
+VkPhysicalDevice VulkanGraphicsContext::getPhysicalDevice() const
+{
+	return mPhysicalDevice;
+}
+
 uint32_t VulkanGraphicsContext::getGraphicsQueueIndex() const
 {
 	return mGraphicsQueueFamily;

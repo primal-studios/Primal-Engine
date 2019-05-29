@@ -19,7 +19,10 @@ public:
 
 	void construct(const ImageCreateInfo&) override;
 	VkImage getHandle() const;
+
+	void setHandle(VkImage aImage);
 private:
+	bool mOwning = true;
 	VkImage mImage{};
 	IGraphicsContext* mContext;
 	VmaAllocator mAllocator{};

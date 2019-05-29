@@ -8,14 +8,14 @@
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
 
+struct DeviceQueueFamilyIndices
+{
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+};
+
 class VulkanGraphicsContext final : public IGraphicsContext
 {
-	struct DeviceQueueFamilyIndices
-	{
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
-	};
-
 	public:
 		explicit VulkanGraphicsContext(const GraphicsContextCreateInfo& aCreateInfo);
 		VulkanGraphicsContext(const VulkanGraphicsContext&) = delete;
@@ -28,6 +28,7 @@ class VulkanGraphicsContext final : public IGraphicsContext
 		void idle() const override;
 		VkSurfaceKHR getSurfaceHandle() const;
 		VkDevice getDevice() const;
+		VkPhysicalDevice getPhysicalDevice() const;
 
 		uint32_t getGraphicsQueueIndex() const;
 		uint32_t getPresentQueueIndex() const;

@@ -12,14 +12,17 @@ VulkanImage::VulkanImage(IGraphicsContext* aContext)
 
 VulkanImage::~VulkanImage()
 {
-	vmaDestroyImage(mAllocator, mImage, mAllocation);
+	if (mOwning)
+	{
+		vmaDestroyImage(mAllocator, mImage, mAllocation);
+	}
 }
 
 void VulkanImage::construct(const ImageCreateInfo& aInfo)
 {
 	using namespace std;
 
-	VkImageCreateInfo createInfo = {};
+	VkImageCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	createInfo.pNext = nullptr;
 	createInfo.flags = aInfo.flags;
@@ -74,4 +77,10 @@ void VulkanImage::construct(const ImageCreateInfo& aInfo)
 VkImage VulkanImage::getHandle() const
 {
 	return mImage;
+}
+
+void VulkanImage::setHandle(const VkImage aImage)
+{
+	mOwning = false;
+	mImage = aImage;
 }

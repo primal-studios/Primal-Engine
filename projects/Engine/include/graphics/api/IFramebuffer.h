@@ -19,17 +19,17 @@ struct FramebufferCreateInfo
 
 class IFramebuffer
 {
-public:
-	explicit IFramebuffer(IGraphicsContext* aContext);
-	IFramebuffer(const IFramebuffer&) = delete;
-	IFramebuffer(IFramebuffer&&) noexcept = delete;
-	virtual ~IFramebuffer() = default;
+	public:
+		explicit IFramebuffer(IGraphicsContext* aContext);
+		IFramebuffer(const IFramebuffer&) = delete;
+		IFramebuffer(IFramebuffer&&) noexcept = delete;
+		virtual ~IFramebuffer() = default;
 
-	IFramebuffer& operator=(const IFramebuffer&) = delete;
-	IFramebuffer& operator=(IFramebuffer&&) noexcept = delete;
+		IFramebuffer& operator=(const IFramebuffer&) = delete;
+		IFramebuffer& operator=(IFramebuffer&&) noexcept = delete;
 
-	virtual void construct(const FramebufferCreateInfo&) = 0;
-	virtual void reconstruct(const FramebufferCreateInfo&) = 0;
+		virtual void construct(const FramebufferCreateInfo&) = 0;
+		virtual void reconstruct(const FramebufferCreateInfo&) = 0;
 };
 
 #endif // iframebuffer_h__
