@@ -247,8 +247,14 @@ void VulkanSwapChain::_createImageViews()
 	}
 }
 
-void VulkanSwapChain::_destroy() const
+void VulkanSwapChain::_destroy()
 {
+	for (IImageView* view : mImageViews)
+	{
+		delete view;
+	}
+	mImageViews.clear();
+
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkDestroySwapchainKHR(context->getDevice(), mSwapchain, nullptr);
 }

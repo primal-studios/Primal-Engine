@@ -36,7 +36,7 @@ class VulkanSwapChain final : public ISwapChain
 		void swap() const;
 	private:
 		void _createImageViews();
-		void _destroy() const;
+		void _destroy();
 
 		uint8_t mFlightSize;
 		uint32_t mCurrentImage = 0;

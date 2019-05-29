@@ -128,6 +128,7 @@ VulkanGraphicsContext::~VulkanGraphicsContext()
 		}
 	})
 
+	vkDestroyDevice(mDevice, nullptr);
 	vkDestroyInstance(mInstance, nullptr);
 }
 

@@ -1,11 +1,12 @@
 #ifndef rendersystem_h__
 #define rendersystem_h__
 
-#include "core/Window.h"
-#include "ecs/System.h"
+#include <core/Window.h>
+#include <ecs/System.h>
 
-#include "graphics/vk/VulkanCommandPool.h"
-#include "graphics/vk/VulkanGraphicsContext.h"
+#include <graphics/vk/VulkanCommandPool.h>
+#include <graphics/vk/VulkanGraphicsContext.h>
+#include <graphics/vk/VulkanSwapChain.h>
 
 class RenderSystem final : public System
 {
@@ -25,6 +26,7 @@ class RenderSystem final : public System
 		void postRender() override;
 	private:
 		VulkanGraphicsContext* mContext;
+		VulkanSwapChain* mSwapChain;
 		VulkanCommandPool* mPool;
 };
 

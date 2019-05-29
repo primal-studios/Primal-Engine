@@ -19,10 +19,20 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 	mPool = new VulkanCommandPool(mContext);
 	mPool->construct(commandPoolInfo);
+
+	mSwapChain = new VulkanSwapChain(mContext);
+
+	SwapChainCreateInfo swapChainInfo = {};
+	swapChainInfo.surfaceHandle = reinterpret_cast<uint64_t>(mContext->getSurfaceHandle());
+	swapChainInfo.width = aWindow->width();
+	swapChainInfo.height = aWindow->height();
+
+	mSwapChain->construct(swapChainInfo);
 }
 
 RenderSystem::~RenderSystem()
 {
+	delete mSwapChain;
 	delete mPool;
 	delete mContext;
 }
