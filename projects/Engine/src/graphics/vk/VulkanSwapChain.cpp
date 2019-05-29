@@ -1,5 +1,6 @@
 #include <core/Log.h>
 #include <core/PrimalCast.h>
+#include <graphics/vk/VulkanCommandBuffer.h>
 #include <graphics/vk/VulkanGraphicsContext.h>
 #include <graphics/vk/VulkanImage.h>
 #include <graphics/vk/VulkanImageView.h>
@@ -208,6 +209,7 @@ const std::vector<IImageView*>& VulkanSwapChain::getImageViews() const
 void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
 {
 	// TODO: Submit Buffers
+	VulkanCommandBuffer* buffer = primal_cast<VulkanCommandBuffer*>(aBuffer);
 }
 
 void VulkanSwapChain::swap() const

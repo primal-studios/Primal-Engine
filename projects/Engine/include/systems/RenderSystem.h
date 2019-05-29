@@ -4,6 +4,7 @@
 #include <core/Window.h>
 #include <ecs/System.h>
 
+#include <graphics/vk/VulkanCommandBuffer.h>
 #include <graphics/vk/VulkanCommandPool.h>
 #include <graphics/vk/VulkanGraphicsContext.h>
 #include <graphics/vk/VulkanSwapChain.h>
@@ -28,6 +29,9 @@ class RenderSystem final : public System
 		VulkanGraphicsContext* mContext;
 		VulkanSwapChain* mSwapChain;
 		VulkanCommandPool* mPool;
+		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
+		const uint32_t mFlightSize = 2;
+		uint32_t mCurrentFrame = 0;
 };
 
 #endif // rendersystem_h__

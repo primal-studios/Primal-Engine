@@ -25,7 +25,7 @@ public:
 	VkCommandBuffer getHandle() const;
 	VkSemaphore getSemaphore() const;
 private:
-	void _destroy() const;
+	void _destroy();
 
 	IGraphicsContext* mContext;
 	VkCommandBuffer mBuffer{};
@@ -34,6 +34,9 @@ private:
 
 	std::vector<VulkanCommandBuffer*> mDependsOnThis;
 	std::vector<VulkanCommandBuffer*> mThisDependsOn;
+
+	std::vector<VkSemaphore> mSemDependsOnThis;
+	std::vector<VkSemaphore> mSemThisDependsOn;
 };
 
 #endif // vulkancommandbuffer_h__

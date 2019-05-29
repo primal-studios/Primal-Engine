@@ -9,6 +9,20 @@
 VulkanCommandBuffer::VulkanCommandBuffer(IGraphicsContext* aContext)
 	: ICommandBuffer(aContext), mContext(aContext)
 {
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+
+	VkSemaphoreCreateInfo semInfo = {};
+	semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	const VkResult res = vkCreateSemaphore(context->getDevice(), &semInfo, nullptr, &mSemaphore);
+	if (res != VK_SUCCESS)
+	{
+		PRIMAL_INTERNAL_CRITICAL("Failed to create Vulkan semaphore.");
+	}
+	else
+	{
+		PRIMAL_INTERNAL_INFO("Successfully created Vulkan semaphore.");
+	}
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
@@ -50,8 +64,20 @@ void VulkanCommandBuffer::construct(const CommandBufferCreateInfo& aInfo)
 	}
 	else
 	{
-		PRIMAL_INTERNAL_INFO("Successfully craeted Vulkan command buffer.");
+		PRIMAL_INTERNAL_INFO("Successfully created Vulkan command buffer.");
 	}
+
+	for (auto dependsOnThis : mDependsOnThis)
+	{
+		mSemDependsOnThis.push_back(dependsOnThis->getSemaphore());
+	}
+
+	for (auto thisDependsOn : mThisDependsOn)
+	{
+		mSemThisDependsOn.push_back(thisDependsOn->getSemaphore());
+	}
+
+	mPool = pool->getPool();
 }
 
 void VulkanCommandBuffer::reconstruct(const CommandBufferCreateInfo& aInfo)
@@ -70,8 +96,14 @@ VkSemaphore VulkanCommandBuffer::getSemaphore() const
 	return mSemaphore;
 }
 
-void VulkanCommandBuffer::_destroy() const
+void VulkanCommandBuffer::_destroy() 
 {
+	mDependsOnThis.clear();
+	mThisDependsOn.clear();
+	mSemDependsOnThis.clear();
+	mSemThisDependsOn.clear();
+
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkFreeCommandBuffers(context->getDevice(), mPool, 1, &mBuffer);
+	vkDestroySemaphore(context->getDevice(), mSemaphore, nullptr);
 }

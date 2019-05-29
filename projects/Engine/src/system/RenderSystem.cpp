@@ -32,6 +32,13 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 RenderSystem::~RenderSystem()
 {
+	for (uint32_t i = 0; i < mFlightSize; i++)
+	{
+		delete mPrimaryBuffer[i];
+	}
+
+	delete[] mPrimaryBuffer;
+
 	delete mSwapChain;
 	delete mPool;
 	delete mContext;
@@ -39,7 +46,30 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::initialize()
 {
+	mPrimaryBuffer = new VulkanCommandBuffer*[mFlightSize];
 
+	const CommandBufferCreateInfo commandBufferInfo = 
+	{
+		mPool,
+		true
+	};
+
+	for (uint32_t i = 0; i < mFlightSize; i++)
+	{
+		mPrimaryBuffer[i] = new VulkanCommandBuffer(mContext);
+	}
+
+	for (uint32_t i = 0; i < mFlightSize; i++)
+	{
+		const auto nextFrame = (i + 1) % mFlightSize;
+		const auto handle = *(mPrimaryBuffer + nextFrame);
+		mPrimaryBuffer[i]->addDependency(handle);
+	}
+
+	for (uint32_t i = 0; i < mFlightSize; i++)
+	{
+		mPrimaryBuffer[i]->construct(commandBufferInfo);
+	}
 }
 
 void RenderSystem::preRender()
