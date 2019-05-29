@@ -41,6 +41,8 @@ void VulkanFramebuffer::construct(const FramebufferCreateInfo& aInfo)
 	info.height = aInfo.height;
 	info.layers = aInfo.layers;
 	info.renderPass = rp->getHandle();
+	info.attachmentCount = attachments.size();
+	info.pAttachments = attachments.data();
 
 	const VkResult res = vkCreateFramebuffer(context->getDevice(), &info, nullptr, &mBuffer);
 

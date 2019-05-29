@@ -28,18 +28,22 @@ class VulkanSwapChain final : public ISwapChain
 
 		void construct(const SwapChainCreateInfo& aInfo) override;
 		void reconstruct(const SwapChainCreateInfo& aInfo) override;
+		uint32_t getImageCount() override;
 
 		VkSwapchainKHR getHandle() const;
 		const std::vector<IImageView*>& getImageViews() const;
 
 		void submit(ICommandBuffer* aBuffer) const;
 		void swap() const;
+
+		EDataFormat getSwapchainFormat() const;
 	private:
 		void _createImageViews();
 		void _destroy();
 
 		uint8_t mFlightSize;
 		uint32_t mCurrentImage = 0;
+		uint32_t mImageCount = 0;
 		std::vector<IImageView*> mImageViews;
 
 		VkSwapchainKHR mSwapchain{};

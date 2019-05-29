@@ -2,7 +2,9 @@
 #include <core/PrimalCast.h>
 #include <graphics/vk/VulkanCommandBuffer.h>
 #include <graphics/vk/VulkanCommandPool.h>
+#include <graphics/vk/VulkanFramebuffer.h>
 #include <graphics/vk/VulkanGraphicsContext.h>
+#include <graphics/vk/VulkanRenderPass.h>
 
 #include <algorithm>
 
@@ -84,6 +86,31 @@ void VulkanCommandBuffer::reconstruct(const CommandBufferCreateInfo& aInfo)
 {
 	_destroy();
 	construct(aInfo);
+}
+
+void VulkanCommandBuffer::record(const CommandBufferRecordInfo& aInfo)
+{
+	VkCommandBufferInheritanceInfo inheritanceInfo = {};
+	inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+	inheritanceInfo.framebuffer = primal_cast<VulkanFramebuffer*>(aInfo.inheritance->frameBuffer)->getHandle();
+	inheritanceInfo.occlusionQueryEnable = aInfo.inheritance->occlusionQueryEnable;
+	inheritanceInfo.pipelineStatistics = aInfo.inheritance->pipelineStatistics;
+	inheritanceInfo.renderPass = primal_cast<VulkanRenderPass*>(aInfo.inheritance->renderPass)->getHandle();
+	inheritanceInfo.subpass = aInfo.inheritance->subPass;
+	inheritanceInfo.queryFlags = aInfo.inheritance->queryPrecsise ? VK_QUERY_CONTROL_PRECISE_BIT : 0;
+
+	VkCommandBufferBeginInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	info.flags = aInfo.flags;
+	info.pInheritanceInfo = &inheritanceInfo;
+
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkBeginCommandBuffer(mBuffer, &info);
+}
+
+void VulkanCommandBuffer::end()
+{
+	vkEndCommandBuffer(mBuffer);
 }
 
 VkCommandBuffer VulkanCommandBuffer::getHandle() const

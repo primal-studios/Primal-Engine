@@ -146,6 +146,8 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 		imageCount = details.capabilities.maxImageCount;
 	}
 
+	imageCount = imageCount > aInfo.maxImageCount ? aInfo.maxImageCount : imageCount;
+
 	info.pNext = nullptr;
 	info.surface = surface;
 	info.minImageCount = imageCount;
@@ -187,6 +189,8 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 
 	mSwapchainImageFormat = static_cast<EDataFormat>(surfaceFormat.format);
 	mImageViews.clear();
+
+	mImageCount = imageCount;
 	_createImageViews();
 }
 
@@ -194,6 +198,11 @@ void VulkanSwapChain::reconstruct(const SwapChainCreateInfo& aInfo)
 {
 	_destroy();
 	construct(aInfo);
+}
+
+uint32_t VulkanSwapChain::getImageCount()
+{
+	return mImageCount;
 }
 
 VkSwapchainKHR VulkanSwapChain::getHandle() const
@@ -215,6 +224,11 @@ void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
 void VulkanSwapChain::swap() const
 {
 	// TODO: Swap Buffers
+}
+
+EDataFormat VulkanSwapChain::getSwapchainFormat() const
+{
+	return mSwapchainImageFormat;
 }
 
 void VulkanSwapChain::_createImageViews()

@@ -130,7 +130,7 @@ void VulkanRenderPass::construct(const RenderPassCreateInfo& aInfo)
 		PRIMAL_ASSERT(resolveAttachments[i].empty() || resolveAttachments[i].size() != colorAttachments[i].size(), 
 			"Illegal number of resolve attachments.  Must be 0 or equal to the number of color attachments.");
 
-		if (resolveAttachments.empty())
+		if (resolveAttachments[i].empty())
 		{
 			desc.pResolveAttachments = nullptr;
 		}
@@ -164,22 +164,6 @@ void VulkanRenderPass::construct(const RenderPassCreateInfo& aInfo)
 		dep.srcSubpass = dependency.srcSubPass;
 
 		dependencies.push_back(dep);
-	}
-
-	for (const auto& attachment : aInfo.attachments)
-	{
-		VkAttachmentDescription att = {};
-		att.finalLayout = static_cast<VkImageLayout>(attachment.final);
-		att.flags = 0;
-		att.format = static_cast<VkFormat>(attachment.format);
-		att.initialLayout = static_cast<VkImageLayout>(attachment.initial);
-		att.loadOp = static_cast<VkAttachmentLoadOp>(attachment.load);
-		att.storeOp = static_cast<VkAttachmentStoreOp>(attachment.store);
-		att.stencilLoadOp = static_cast<VkAttachmentLoadOp>(attachment.loadStencil);
-		att.stencilStoreOp = static_cast<VkAttachmentStoreOp>(attachment.storeStencil);
-		att.samples = static_cast<VkSampleCountFlagBits>(attachment.samples);
-
-		attachments.push_back(att);
 	}
 
 	VkRenderPassCreateInfo info = {};

@@ -22,11 +22,13 @@ public:
 	void construct(const CommandBufferCreateInfo& aInfo) override;
 	void reconstruct(const CommandBufferCreateInfo& aInfo) override;
 
+	void record(const CommandBufferRecordInfo& aInfo) override;
+	void end() override;
+
 	VkCommandBuffer getHandle() const;
 	VkSemaphore getSemaphore() const;
 private:
 	void _destroy();
-
 	IGraphicsContext* mContext;
 	VkCommandBuffer mBuffer{};
 	VkCommandPool mPool{};
