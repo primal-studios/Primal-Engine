@@ -47,27 +47,27 @@ struct VertexBufferLayoutElement
 
 class VertexBufferLayout
 {
-public:
-	VertexBufferLayout() = default;
-	~VertexBufferLayout() = default;
+	public:
+		VertexBufferLayout() = default;
+		~VertexBufferLayout() = default;
 
-	const std::vector<VertexBufferLayoutElement>& getLayout() const { return mLayout; }
-	size_t getStride() const { return mSize; }
+		const std::vector<VertexBufferLayoutElement>& getLayout() const { return mLayout; }
+		size_t getStride() const { return mSize; }
 
-	template<typename T>
-	void push(const std::string& aName, const uint32_t aCount = 1, const bool aNormalize = false)
-	{
-		PRIMAL_ASSERT(false);
-	}
-private:
-	size_t mSize = 0;
-	std::vector<VertexBufferLayoutElement> mLayout;
+		template<typename T>
+		void push(const std::string& aName, const uint32_t aCount = 1, const bool aNormalize = false)
+		{
+			PRIMAL_ASSERT(false);
+		}
+	private:
+		size_t mSize = 0;
+		std::vector<VertexBufferLayoutElement> mLayout;
 
-	void _push(const std::string& aName, const EVertexBufferLayoutElementTypes& aType, const size_t aSize, const uint32_t aCount, const bool aNormalized)
-	{
-		mLayout.push_back({ aName, aType, aSize, aCount, mSize, aNormalized });
-		mSize += aSize * aCount;
-	}
+		void _push(const std::string& aName, const EVertexBufferLayoutElementTypes& aType, const size_t aSize, const uint32_t aCount, const bool aNormalized)
+		{
+			mLayout.push_back({ aName, aType, aSize, aCount, mSize, aNormalized });
+			mSize += aSize * aCount;
+		}
 };
 
 template<>

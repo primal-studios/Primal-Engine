@@ -1,45 +1,17 @@
-#include "graphics/vk/VulkanVertexBuffer.h"
-
+#include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 
 #include "graphics/vk/VulkanCommandPool.h"
 
-static constexpr VkFormat sVertexAttributeFormat(const EVertexBufferLayoutElementTypes& aType)
-{
-	switch(aType)
-	{
-		case EVertexBufferLayoutElementTypes::UBYTE: return VK_FORMAT_R8_UINT;
-		case EVertexBufferLayoutElementTypes::BYTE: return VK_FORMAT_R8_SINT;
-		case EVertexBufferLayoutElementTypes::USHORT: return VK_FORMAT_R16_UINT;
-		case EVertexBufferLayoutElementTypes::SHORT: return VK_FORMAT_R16_SINT;
-		case EVertexBufferLayoutElementTypes::UINT: return VK_FORMAT_R32_UINT;
-		case EVertexBufferLayoutElementTypes::INT: return VK_FORMAT_R32_SINT;
-		case EVertexBufferLayoutElementTypes::ULONG: return VK_FORMAT_R64_UINT;
-		case EVertexBufferLayoutElementTypes::LONG: return VK_FORMAT_R64_SINT;
-		case EVertexBufferLayoutElementTypes::FLOAT: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::DOUBLE: return VK_FORMAT_R64_SFLOAT;
-		case EVertexBufferLayoutElementTypes::VEC2: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::VEC3: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::VEC4: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::MAT2: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::MAT3: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::MAT4: return VK_FORMAT_R32_SFLOAT;
-		default: return VkFormat(0);
-	}
-}
-
-VulkanVertexBuffer::VulkanVertexBuffer(IGraphicsContext* aContext) : IVertexBuffer(aContext)
+VulkanIndexBuffer::VulkanIndexBuffer(IGraphicsContext* aContext) : IIndexBuffer(aContext)
 {
 	mBuffer = nullptr;
-	mStagingBuffer = nullptr;
-
-	mBindingDescription = {};
 
 	mSize = 0;
 	mData = nullptr;
 }
 
-VulkanVertexBuffer::~VulkanVertexBuffer()
+VulkanIndexBuffer::~VulkanIndexBuffer()
 {
 	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
 	vmaDestroyBuffer(context->getBufferAllocator(), mBuffer, mAllocation);
@@ -48,7 +20,7 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 	free(mData);
 }
 
-void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
+void VulkanIndexBuffer::construct(const IndexBufferCreateInfo& aInfo)
 {
 	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
 
@@ -68,7 +40,7 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 		stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 		vmaCreateBuffer(context->getBufferAllocator(), &stagingBufferInfo, &stagingAllocInfo, &mStagingBuffer, &mStagingAllocation, nullptr);
-		
+
 		void* data;
 		vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
 		memcpy(data, mData, mSize);
@@ -142,38 +114,18 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 	}
 }
 
-void VulkanVertexBuffer::setData(void* aData, const size_t aSize)
+void VulkanIndexBuffer::setData(void* aData, const size_t aSize)
 {
 	mSize = aSize;
 	memcpy(mData, aData, aSize);
 }
 
-void VulkanVertexBuffer::setLayout(const VertexBufferLayout& aLayout)
-{
-	mLayout = aLayout;
-
-	mBindingDescription.binding = 0;
-	mBindingDescription.stride = static_cast<uint32_t>(aLayout.getStride());
-	mBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-	for(size_t i = 0; i < aLayout.getLayout().size(); i++)
-	{
-		VkVertexInputAttributeDescription desc = {};
-		desc.binding = 0;
-		desc.location = static_cast<uint32_t>(i);
-		desc.format = sVertexAttributeFormat(aLayout.getLayout()[i].type);
-		desc.offset = static_cast<uint32_t>(aLayout.getLayout()[i].offset);
-
-		mAttributeDescriptions.push_back(desc);
-	}
-}
-
-void VulkanVertexBuffer::bind()
+void VulkanIndexBuffer::bind()
 {
 	// TODO: Implement
 }
 
-void VulkanVertexBuffer::unbind()
+void VulkanIndexBuffer::unbind()
 {
 	// TODO: Implement
 }

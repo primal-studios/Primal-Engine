@@ -2,6 +2,7 @@
 #define ivertexbuffer_h__
 
 #include <cstdint>
+#include <vector>
 
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/api/VertexBufferLayout.h"
