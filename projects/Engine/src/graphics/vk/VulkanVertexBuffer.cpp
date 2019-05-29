@@ -4,26 +4,26 @@
 
 #include "graphics/vk/VulkanCommandPool.h"
 
-static constexpr VkFormat sVertexAttributeFormat(const EVertexBufferLayoutElementTypes& aType)
+static constexpr VkFormat sVertexAttributeFormat(const EBufferLayoutElementTypes& aType)
 {
 	switch(aType)
 	{
-		case EVertexBufferLayoutElementTypes::UBYTE: return VK_FORMAT_R8_UINT;
-		case EVertexBufferLayoutElementTypes::BYTE: return VK_FORMAT_R8_SINT;
-		case EVertexBufferLayoutElementTypes::USHORT: return VK_FORMAT_R16_UINT;
-		case EVertexBufferLayoutElementTypes::SHORT: return VK_FORMAT_R16_SINT;
-		case EVertexBufferLayoutElementTypes::UINT: return VK_FORMAT_R32_UINT;
-		case EVertexBufferLayoutElementTypes::INT: return VK_FORMAT_R32_SINT;
-		case EVertexBufferLayoutElementTypes::ULONG: return VK_FORMAT_R64_UINT;
-		case EVertexBufferLayoutElementTypes::LONG: return VK_FORMAT_R64_SINT;
-		case EVertexBufferLayoutElementTypes::FLOAT: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::DOUBLE: return VK_FORMAT_R64_SFLOAT;
-		case EVertexBufferLayoutElementTypes::VEC2: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::VEC3: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::VEC4: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::MAT2: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::MAT3: return VK_FORMAT_R32_SFLOAT;
-		case EVertexBufferLayoutElementTypes::MAT4: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::UBYTE: return VK_FORMAT_R8_UINT;
+		case EBufferLayoutElementTypes::BYTE: return VK_FORMAT_R8_SINT;
+		case EBufferLayoutElementTypes::USHORT: return VK_FORMAT_R16_UINT;
+		case EBufferLayoutElementTypes::SHORT: return VK_FORMAT_R16_SINT;
+		case EBufferLayoutElementTypes::UINT: return VK_FORMAT_R32_UINT;
+		case EBufferLayoutElementTypes::INT: return VK_FORMAT_R32_SINT;
+		case EBufferLayoutElementTypes::ULONG: return VK_FORMAT_R64_UINT;
+		case EBufferLayoutElementTypes::LONG: return VK_FORMAT_R64_SINT;
+		case EBufferLayoutElementTypes::FLOAT: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::DOUBLE: return VK_FORMAT_R64_SFLOAT;
+		case EBufferLayoutElementTypes::VEC2: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::VEC3: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::VEC4: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::MAT2: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::MAT3: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::MAT4: return VK_FORMAT_R32_SFLOAT;
 		default: return VkFormat(0);
 	}
 }
@@ -88,7 +88,7 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 		vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
 
 		// Copy buffers
-		const auto vulkanCommandPool = (VulkanCommandPool*)aInfo.commandPool;
+		const auto vulkanCommandPool = static_cast<VulkanCommandPool*>(aInfo.commandPool);
 
 		VkCommandBufferAllocateInfo copyAllocInfo = {};
 		copyAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -150,7 +150,7 @@ void VulkanVertexBuffer::setData(void* aData, const size_t aSize)
 	memcpy(mData, aData, aSize);
 }
 
-void VulkanVertexBuffer::setLayout(const VertexBufferLayout& aLayout)
+void VulkanVertexBuffer::setLayout(const BufferLayout& aLayout)
 {
 	mLayout = aLayout;
 

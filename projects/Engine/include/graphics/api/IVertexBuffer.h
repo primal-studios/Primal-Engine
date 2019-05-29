@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "graphics/api/IGraphicsContext.h"
-#include "graphics/api/VertexBufferLayout.h"
 #include "graphics/api/ICommandPool.h"
 
+#include "graphics/BufferLayout.h"
 #include "graphics/BufferFlags.h"
 #include "graphics/SharingMode.h"
 
@@ -35,7 +35,7 @@ class IVertexBuffer
 		virtual void construct(const VertexBufferCreateInfo& aInfo) = 0;
 
 		virtual void setData(void* aData, const size_t aSize) = 0;
-		virtual void setLayout(const VertexBufferLayout& aLayout) = 0;
+		virtual void setLayout(const BufferLayout& aLayout) = 0;
 
 		virtual void bind() = 0;
 		virtual void unbind() = 0;
@@ -46,7 +46,7 @@ class IVertexBuffer
 		size_t mSize;
 		void* mData;
 
-		VertexBufferLayout mLayout;
+		BufferLayout mLayout;
 };
 
 #endif // ivertexbuffer_h__

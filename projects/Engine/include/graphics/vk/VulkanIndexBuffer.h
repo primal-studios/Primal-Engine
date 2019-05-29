@@ -1,6 +1,9 @@
 #ifndef vulkanindexbuffer_h__
 #define vulkanindexbuffer_h__
 
+#include <vulkan/vulkan.h>
+#include <vma/vk_mem_alloc.h>
+
 #include "graphics/api/IIndexBuffer.h"
 
 class VulkanIndexBuffer : public IIndexBuffer

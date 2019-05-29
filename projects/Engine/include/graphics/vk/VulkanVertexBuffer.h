@@ -20,7 +20,7 @@ class VulkanVertexBuffer final : public IVertexBuffer
 		void construct(const VertexBufferCreateInfo& aInfo) override;
 
 		void setData(void* aData, const size_t aSize) override;
-		void setLayout(const VertexBufferLayout& aLayout) override;
+		void setLayout(const BufferLayout& aLayout) override;
 
 		void bind() override;
 		void unbind() override;
