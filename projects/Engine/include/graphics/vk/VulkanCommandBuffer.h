@@ -27,12 +27,18 @@ public:
 
 	VkCommandBuffer getHandle() const;
 	VkSemaphore getSemaphore() const;
+
+	std::vector<VkSemaphore>& getSemaphoresToSignal();
+	std::vector<VkSemaphore>& getSemaphoresToWaitOn();
+	VkFence& getFence();
 private:
 	void _destroy();
 	IGraphicsContext* mContext;
 	VkCommandBuffer mBuffer{};
 	VkCommandPool mPool{};
+
 	VkSemaphore mSemaphore{};
+	VkFence mFence{};
 
 	std::vector<VulkanCommandBuffer*> mDependsOnThis;
 	std::vector<VulkanCommandBuffer*> mThisDependsOn;

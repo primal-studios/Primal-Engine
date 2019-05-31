@@ -1,5 +1,6 @@
 #include "systems/RenderSystem.h"
 
+#include "core/PrimalCast.h"
 #include "ecs/EntityManager.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
@@ -34,6 +35,10 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 RenderSystem::~RenderSystem()
 {
+	vkDeviceWaitIdle(primal_cast<VulkanGraphicsContext*>(mContext)->getDevice());
+
+	delete mSwapChain;
+
 	for (uint32_t i = 0; i < mFlightSize; i++)
 	{
 		delete mFramebuffers[i];
@@ -44,7 +49,6 @@ RenderSystem::~RenderSystem()
 	delete[] mPrimaryBuffer;
 
 	delete mRenderPass;
-	delete mSwapChain;
 	delete mPool;
 	delete mContext;
 }
@@ -59,15 +63,15 @@ void RenderSystem::initialize()
 		true
 	};
 
-	const AttachmentDescription colorAttachment {
+	const AttachmentDescription colorAttachment{
 		mSwapChain->getSwapchainFormat(),
-		EImageSampleFlagBits::IMAGE_SAMPLE_1,
+		IMAGE_SAMPLE_1,
 		EAttachmentLoadOperation::CLEAR,
 		EAttachmentStoreOperation::STORE,
 		EAttachmentLoadOperation::DONT_CARE,
 		EAttachmentStoreOperation::DONT_CARE,
-		EImageLayout::IMAGE_LAYOUT_UNDEFINED,
-		EImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		IMAGE_LAYOUT_UNDEFINED,
+		IMAGE_LAYOUT_PRESENT_SRC_KHR,
 	};
 
 	const AttachmentReference colorRef = {
@@ -124,13 +128,6 @@ void RenderSystem::initialize()
 
 	for (uint32_t i = 0; i < mFlightSize; i++)
 	{
-		const auto nextFrame = (i + 1) % mFlightSize;
-		const auto handle = *(mPrimaryBuffer + nextFrame);
-		mPrimaryBuffer[i]->addDependency(handle);
-	}
-
-	for (uint32_t i = 0; i < mFlightSize; i++)
-	{
 		mPrimaryBuffer[i]->construct(commandBufferInfo);
 	}
 }
@@ -154,9 +151,25 @@ void RenderSystem::render()
 	mPrimaryRecordInfo.inheritance = &mPrimaryInheritance;
 	mPrimaryRecordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
 
+	mSwapChain->beginFrame();
+
 	handle->record(mPrimaryRecordInfo);
 
 	// TODO: RENDER STUFF HERE
+
+	VkRenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = mRenderPass->getHandle();
+	renderPassInfo.framebuffer = mFramebuffers[mCurrentFrame]->getHandle();
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = {mWindow->width(), mWindow->height()};
+
+	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(handle->getHandle(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdEndRenderPass(handle->getHandle());
 
 	handle->end();
 

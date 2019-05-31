@@ -33,15 +33,16 @@ class VulkanSwapChain final : public ISwapChain
 		VkSwapchainKHR getHandle() const;
 		const std::vector<IImageView*>& getImageViews() const;
 
+		void beginFrame();
 		void submit(ICommandBuffer* aBuffer) const;
-		void swap() const;
+		void swap();
 
 		EDataFormat getSwapchainFormat() const;
 	private:
 		void _createImageViews();
 		void _destroy();
 
-		uint8_t mFlightSize;
+		uint8_t mFlightSize = 2;
 		uint32_t mCurrentImage = 0;
 		uint32_t mImageCount = 0;
 		std::vector<IImageView*> mImageViews;
@@ -51,6 +52,15 @@ class VulkanSwapChain final : public ISwapChain
 
 		SwapChainCreateInfo mInfo{};
 		EDataFormat mSwapchainImageFormat = EDataFormat::UNDEFINED;
+
+		std::vector<VkSemaphore> mImageAvailable;
+		std::vector<VkSemaphore> mRenderFinished;
+		std::vector<VkFence> mFences;
+
+		VkQueue mPresentQueue{};
+		VkQueue mGraphicsQueue{};
+
+		uint32_t mCurrentImageInChain = 0;
 };
 
 #endif // vulkanswapchain_h__

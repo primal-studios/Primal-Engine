@@ -192,6 +192,33 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 
 	mImageCount = imageCount;
 	_createImageViews();
+
+	mImageAvailable.resize(mFlightSize);
+	mRenderFinished.resize(mFlightSize);
+	mFences.resize(mFlightSize);
+
+	VkSemaphoreCreateInfo semInfo = {};
+	semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (uint32_t i = 0; i < mFlightSize; i++)
+	{
+		if (vkCreateSemaphore(context->getDevice(), &semInfo, nullptr, &mImageAvailable[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(context->getDevice(), &semInfo, nullptr, &mRenderFinished[i]) != VK_SUCCESS ||
+			vkCreateFence(context->getDevice(), &fenceInfo, nullptr, &mFences[i]) != VK_SUCCESS)
+		{
+			PRIMAL_INTERNAL_CRITICAL("Failed to create synchronization primitives for frame {0}.", i);
+		}
+	}
+
+	vkGetDeviceQueue(context->getDevice(), context->getPresentQueueIndex(), 0, &mPresentQueue);
+	vkGetDeviceQueue(context->getDevice(), context->getGraphicsQueueIndex(), 0, &mGraphicsQueue);
+
+	vkWaitForFences(context->getDevice(), 1, &mFences[mCurrentImage], VK_TRUE, 0xFFFFFFFFFFFFFFFF);
+	vkResetFences(context->getDevice(), 1, &mFences[mCurrentImage]);
 }
 
 void VulkanSwapChain::reconstruct(const SwapChainCreateInfo& aInfo)
@@ -215,15 +242,80 @@ const std::vector<IImageView*>& VulkanSwapChain::getImageViews() const
 	return mImageViews;
 }
 
+void VulkanSwapChain::beginFrame()
+{
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	const VkDevice device = context->getDevice();
+
+	vkAcquireNextImageKHR(device, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailable[mCurrentImage], VK_NULL_HANDLE, &mCurrentImageInChain);
+}
+
 void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
 {
 	// TODO: Submit Buffers
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	VulkanCommandBuffer* buffer = primal_cast<VulkanCommandBuffer*>(aBuffer);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	auto& toWaitOn = buffer->getSemaphoresToWaitOn();
+	auto& toSignal = buffer->getSemaphoresToSignal();
+	
+	if (toWaitOn.empty())
+	{
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &mImageAvailable[mCurrentImage];
+	}
+	else
+	{
+		submitInfo.waitSemaphoreCount = static_cast<uint32_t>(toWaitOn.size());
+		submitInfo.pWaitSemaphores = toWaitOn.data();
+	}
+
+	if (toSignal.empty())
+	{
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &mRenderFinished[mCurrentImage];
+	}
+	else
+	{
+		submitInfo.signalSemaphoreCount = static_cast<uint32_t>(toSignal.size());
+		submitInfo.pSignalSemaphores = toSignal.data();
+	}
+
+	VkCommandBuffer buf = buffer->getHandle();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &buf;
+
+	vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mFences[mCurrentImage]);
 }
 
-void VulkanSwapChain::swap() const
+void VulkanSwapChain::swap()
 {
-	// TODO: Swap Buffers
+	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &mRenderFinished[mCurrentImage];
+
+	VkSwapchainKHR swapChains[] = { mSwapchain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	presentInfo.pImageIndices = &mCurrentImageInChain;
+
+	vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+	mCurrentImage = (mCurrentImage + 1) % mFlightSize;
+
+	vkWaitForFences(context->getDevice(), 1, &mFences[mCurrentImage], VK_TRUE, 0xFFFFFFFFFFFFFFFF);
+	vkResetFences(context->getDevice(), 1, &mFences[mCurrentImage]);
 }
 
 EDataFormat VulkanSwapChain::getSwapchainFormat() const
@@ -269,8 +361,27 @@ void VulkanSwapChain::_destroy()
 	{
 		delete view;
 	}
+
 	mImageViews.clear();
 
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkDestroySwapchainKHR(context->getDevice(), mSwapchain, nullptr);
+
+	for (auto sem : mImageAvailable)
+	{
+		vkDestroySemaphore(context->getDevice(), sem, nullptr);
+	}
+
+	for (auto sem : mRenderFinished)
+	{
+		vkDestroySemaphore(context->getDevice(), sem, nullptr);
+	}
+
+	for (auto fence : mFences)
+	{
+		vkDestroyFence(context->getDevice(), fence, nullptr);
+	}
+
+	mImageAvailable.clear();
+	mRenderFinished.clear();
 }

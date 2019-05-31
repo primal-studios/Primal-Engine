@@ -16,14 +16,33 @@ VulkanCommandBuffer::VulkanCommandBuffer(IGraphicsContext* aContext)
 	VkSemaphoreCreateInfo semInfo = {};
 	semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	const VkResult res = vkCreateSemaphore(context->getDevice(), &semInfo, nullptr, &mSemaphore);
-	if (res != VK_SUCCESS)
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
 	{
-		PRIMAL_INTERNAL_CRITICAL("Failed to create Vulkan semaphore.");
+		const VkResult res = vkCreateSemaphore(context->getDevice(), &semInfo, nullptr, &mSemaphore);
+		if (res != VK_SUCCESS)
+		{
+			PRIMAL_INTERNAL_CRITICAL("Failed to create Vulkan semaphore.");
+		}
+		else
+		{
+			PRIMAL_INTERNAL_INFO("Successfully created Vulkan semaphore.");
+		}
+
 	}
-	else
+
 	{
-		PRIMAL_INTERNAL_INFO("Successfully created Vulkan semaphore.");
+		const VkResult res = vkCreateFence(context->getDevice(), &fenceInfo, nullptr, &mFence);
+		if (res != VK_SUCCESS)
+		{
+			PRIMAL_INTERNAL_CRITICAL("Failed to create Vulkan fence.");
+		}
+		else
+		{
+			PRIMAL_INTERNAL_INFO("Successfully created Vulkan fence.");
+		}
 	}
 }
 
@@ -123,6 +142,21 @@ VkSemaphore VulkanCommandBuffer::getSemaphore() const
 	return mSemaphore;
 }
 
+std::vector<VkSemaphore>& VulkanCommandBuffer::getSemaphoresToSignal()
+{
+	return mSemDependsOnThis;
+}
+
+std::vector<VkSemaphore>& VulkanCommandBuffer::getSemaphoresToWaitOn()
+{
+	return mSemThisDependsOn;
+}
+
+VkFence& VulkanCommandBuffer::getFence()
+{
+	return mFence;
+}
+
 void VulkanCommandBuffer::_destroy() 
 {
 	mDependsOnThis.clear();
@@ -132,5 +166,7 @@ void VulkanCommandBuffer::_destroy()
 
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkFreeCommandBuffers(context->getDevice(), mPool, 1, &mBuffer);
+
 	vkDestroySemaphore(context->getDevice(), mSemaphore, nullptr);
+	vkDestroyFence(context->getDevice(), mFence, nullptr);
 }
