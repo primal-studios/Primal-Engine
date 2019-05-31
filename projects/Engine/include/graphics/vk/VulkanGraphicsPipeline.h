@@ -1,6 +1,8 @@
 #ifndef vulkangraphicspipeline_h__
 #define vulkangraphicspipeline_h__
 
+#include <vulkan/vulkan.h>
+
 #include "graphics/api/IGraphicsPipeline.h"
 
 class VulkanGraphicsPipeline final : public IGraphicsPipeline
@@ -15,6 +17,11 @@ class VulkanGraphicsPipeline final : public IGraphicsPipeline
 		VulkanGraphicsPipeline& operator=(VulkanGraphicsPipeline&&) noexcept = delete;
 
 		void construct(const GraphicsPipelineCreateInfo& aInfo) override;
+
+		VkPipeline getHandle() const;
+
+	private:
+		VkPipeline mPipeline;
 };
 
 #endif // vulkangraphicspipeline_h__

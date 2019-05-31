@@ -8,11 +8,14 @@
 #include "graphics/api/IRenderPass.h"
 #include "graphics/api/ISampler.h"
 #include "graphics/api/IDescriptorSetLayout.h"
+#include "graphics/api/IPipelineLayout.h"
 
 #include "graphics/CompareOp.h"
 #include "graphics/DataFormat.h"
 #include "graphics/ShaderStageFlags.h"
 #include "math/Vector4.h"
+
+class IGraphicsPipeline;
 
 enum EPipelineCreateFlagBits : uint32_t
 {
@@ -352,12 +355,6 @@ struct PipelineDynamicStateCreateInfo
 	std::vector<EDynamicState> dynamicStates;
 };
 
-struct PipelineLayoutCreateInfo
-{
-	PipelineLayoutCreateFlags flags;
-	std::vector<IDescriptorSetLayout*> descriptorLayouts;
-};
-
 struct GraphicsPipelineCreateInfo
 {
 	PipelineCreateFlags flags;
@@ -371,10 +368,10 @@ struct GraphicsPipelineCreateInfo
 	PipelineDepthStencilStateCreateInfo depthStencilState;
 	PipelineColorBlendStateCreateInfo colorBlendState;
 	PipelineDynamicStateCreateInfo dynamicState;
-	//PipelineLayout layout;
+	IPipelineLayout* layout;
 	IRenderPass* renderPass;
 	uint32_t subPass;
-	//Pipeline basePipelineHandle;
+	IGraphicsPipeline* basePipelineHandle;
 	int32_t basePipelineIndex;
 };
 

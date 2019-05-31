@@ -2,4 +2,5 @@
 
 IRenderPass::IRenderPass(IGraphicsContext* aContext)
 {
+
 }
