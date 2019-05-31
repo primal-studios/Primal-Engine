@@ -11,7 +11,7 @@ class VulkanShaderModule final : public IShaderModule
 		explicit VulkanShaderModule(IGraphicsContext* aContext);
 		VulkanShaderModule(const VulkanShaderModule&) = delete;
 		VulkanShaderModule(VulkanShaderModule&&) noexcept = delete;
-		virtual ~VulkanShaderModule() = default;
+		virtual ~VulkanShaderModule() override;
 
 		VulkanShaderModule& operator=(const VulkanShaderModule&) = delete;
 		VulkanShaderModule& operator=(VulkanShaderModule&&) noexcept = delete;

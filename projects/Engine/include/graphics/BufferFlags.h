@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-enum EBufferUsageFlags : uint32_t
+enum EBufferUsageFlagBits : uint32_t
 {
 	BUFFER_USAGE_TRANSFER_SRC = 0x00000001,
 	BUFFER_USAGE_TRANSFER_DST = 0x00000002,
@@ -16,12 +16,16 @@ enum EBufferUsageFlags : uint32_t
 	BUFFER_USAGE_INDIRECT_BUFFER = 0x00000100
 };
 
-enum EBufferCreateFlags : uint32_t
+using BufferUsageFlags = uint32_t;
+
+enum EBufferCreateFlagBits : uint32_t
 {
 	BUFFER_CREATE_SPARSE_BINDING = 0x00000001,
 	BUFFER_CREATE_SPARSE_RESIDENCY = 0x00000002,
 	BUFFER_CREATE_SPARSE_ALIASED = 0x00000004,
 	BUFFER_CREATE_PROTECTED = 0x00000008,
 };
+
+using BufferCreateFlags = uint32_t;
 
 #endif // bufferflags_h__

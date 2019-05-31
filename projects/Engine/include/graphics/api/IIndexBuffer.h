@@ -11,8 +11,8 @@
 
 struct IndexBufferCreateInfo
 {
-	EBufferCreateFlags flags;
-	EBufferUsageFlags usage;
+	BufferCreateFlags flags;
+	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
 

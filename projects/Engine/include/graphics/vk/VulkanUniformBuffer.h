@@ -12,7 +12,7 @@ class VulkanUniformBuffer final : public IUniformBuffer
 		explicit VulkanUniformBuffer(IGraphicsContext* aContext);
 		VulkanUniformBuffer(const VulkanUniformBuffer& aOther) = delete;
 		VulkanUniformBuffer(VulkanUniformBuffer&& aOther) noexcept = delete;
-		virtual ~VulkanUniformBuffer();
+		virtual ~VulkanUniformBuffer() override;
 
 		VulkanUniformBuffer& operator = (const VulkanUniformBuffer& aOther) = delete;
 		VulkanUniformBuffer& operator = (VulkanUniformBuffer&& aOther) noexcept = delete;

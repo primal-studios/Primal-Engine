@@ -1,6 +1,7 @@
 #include "graphics/vk/VulkanCommandPool.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
+#include "core/PrimalCast.h"
 
 static constexpr VkFormat sVertexAttributeFormat(const EBufferLayoutElementTypes& aType)
 {
@@ -39,7 +40,7 @@ VulkanVertexBuffer::VulkanVertexBuffer(IGraphicsContext* aContext) : IVertexBuff
 
 VulkanVertexBuffer::~VulkanVertexBuffer()
 {
-	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vmaDestroyBuffer(context->getBufferAllocator(), mBuffer, mAllocation);
 	vmaFreeMemory(context->getBufferAllocator(), mAllocation);
 
@@ -50,9 +51,9 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 
 void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 {
-	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
-	const bool usesStaging = (aInfo.usage & EBufferUsageFlags::BUFFER_USAGE_TRANSFER_DST) != 0;
+	const bool usesStaging = (aInfo.usage & BUFFER_USAGE_TRANSFER_DST) != 0;
 	const bool isExclusive = (aInfo.sharingMode & ESharingMode::SHARING_MODE_EXCLUSIVE) != 0;
 
 	if (usesStaging)
@@ -114,8 +115,10 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
-		vkQueueSubmit(reinterpret_cast<VkQueue>(static_cast<uint64_t>(context->getGraphicsQueueIndex())), 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(reinterpret_cast<VkQueue>(static_cast<uint64_t>(context->getGraphicsQueueIndex())));
+		VkQueue graphicsQueue;
+		vkGetDeviceQueue(context->getDevice(), context->getPresentQueueIndex(), 0, &graphicsQueue);
+		vkQueueSubmit(graphicsQueue, 1, &submitInfo, nullptr);
+		vkQueueWaitIdle(graphicsQueue);
 		vkFreeCommandBuffers(context->getDevice(), vulkanCommandPool->getPool(), 1, &commandBuffer);
 
 		vmaDestroyBuffer(context->getBufferAllocator(), mStagingBuffer, mStagingAllocation);

@@ -12,7 +12,7 @@ class VulkanIndexBuffer final : public IIndexBuffer
 		explicit VulkanIndexBuffer(IGraphicsContext* aContext);
 		VulkanIndexBuffer(const VulkanIndexBuffer& aOther) = delete;
 		VulkanIndexBuffer(VulkanIndexBuffer&& aOther) noexcept = delete;
-		~VulkanIndexBuffer();
+		virtual ~VulkanIndexBuffer() override;
 
 		VulkanIndexBuffer& operator = (const VulkanIndexBuffer& aOther) = delete;
 		VulkanIndexBuffer& operator = (VulkanIndexBuffer&& aOther) noexcept = delete;

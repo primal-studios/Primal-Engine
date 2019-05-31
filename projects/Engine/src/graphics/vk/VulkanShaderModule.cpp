@@ -9,6 +9,12 @@ VulkanShaderModule::VulkanShaderModule(IGraphicsContext* aContext) : IShaderModu
 	mModule = nullptr;
 }
 
+VulkanShaderModule::~VulkanShaderModule()
+{
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkDestroyShaderModule(context->getDevice(), mModule, nullptr);
+}
+
 void VulkanShaderModule::construct(const ShaderModuleCreateInfo& aInfo)
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);

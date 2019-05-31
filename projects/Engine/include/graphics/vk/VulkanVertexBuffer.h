@@ -12,7 +12,7 @@ class VulkanVertexBuffer final : public IVertexBuffer
 		explicit VulkanVertexBuffer(IGraphicsContext* aContext);
 		VulkanVertexBuffer(const VulkanVertexBuffer& aOther) = delete;
 		VulkanVertexBuffer(VulkanVertexBuffer&& aOther) noexcept = delete;
-		~VulkanVertexBuffer();
+		virtual ~VulkanVertexBuffer() override;
 
 		VulkanVertexBuffer& operator = (const VulkanVertexBuffer& aOther) = delete;
 		VulkanVertexBuffer& operator = (VulkanVertexBuffer&& aOther) noexcept = delete;

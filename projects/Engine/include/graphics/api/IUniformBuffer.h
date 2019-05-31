@@ -32,10 +32,10 @@ struct UniformBufferCreateInfo
 	EDescriptorType descriptorType;
 	size_t size;
 
-	EShaderStageFlags shaderStageFlags;
+	ShaderStageFlags shaderStageFlags;
 
-	EBufferCreateFlags flags;
-	EBufferUsageFlags usage;
+	BufferCreateFlags flags;
+	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
 
