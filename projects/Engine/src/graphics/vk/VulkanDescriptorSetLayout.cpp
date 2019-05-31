@@ -1,16 +1,17 @@
+#include "core/Log.h"
+#include "core/PrimalCast.h"
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanSampler.h"
-#include "core/PrimalCast.h"
 
-VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(IGraphicsContext* aContext) : IDescriptorSetLayout(aContext)
+VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(IGraphicsContext* aContext) 
+	: IDescriptorSetLayout(aContext)
 {
-	mLayout = nullptr;
 }
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
 {
-	
+	_destroy();
 }
 
 void VulkanDescriptorSetLayout::construct(const DescriptorSetLayoutCreateInfo& aInfo)
@@ -20,7 +21,6 @@ void VulkanDescriptorSetLayout::construct(const DescriptorSetLayoutCreateInfo& a
 	VkDescriptorSetLayoutCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	createInfo.flags = aInfo.flags;
-	createInfo.bindingCount = static_cast<uint32_t>(aInfo.layoutBindings.size());
 
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
 	std::vector<std::vector<VkSampler>> samplers;
@@ -51,5 +51,30 @@ void VulkanDescriptorSetLayout::construct(const DescriptorSetLayoutCreateInfo& a
 	createInfo.pBindings = bindings.data();
 	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 
-	vkCreateDescriptorSetLayout(context->getDevice(), &createInfo, nullptr, &mLayout);
+	const VkResult res = vkCreateDescriptorSetLayout(context->getDevice(), &createInfo, nullptr, &mLayout);
+	if (res != VK_SUCCESS)
+	{
+		PRIMAL_INTERNAL_CRITICAL("Failed to create Vulkan descriptor set layout.");
+	}
+	else
+	{
+		PRIMAL_INTERNAL_INFO("Successfully created Vulkan descriptor set layout.");
+	}
+}
+
+void VulkanDescriptorSetLayout::reconstruct(const DescriptorSetLayoutCreateInfo& aInfo)
+{
+	_destroy();
+	construct(aInfo);
+}
+
+VkDescriptorSetLayout VulkanDescriptorSetLayout::getHandle() const
+{
+	return mLayout;
+}
+
+void VulkanDescriptorSetLayout::_destroy() const
+{
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkDestroyDescriptorSetLayout(context->getDevice(), mLayout, nullptr);
 }

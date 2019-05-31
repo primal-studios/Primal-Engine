@@ -56,7 +56,7 @@ class IDescriptorSetLayout
 		IDescriptorSetLayout& operator=(IDescriptorSetLayout&&) noexcept = delete;
 
 		virtual void construct(const DescriptorSetLayoutCreateInfo& aInfo) = 0;
-
+		virtual void reconstruct(const DescriptorSetLayoutCreateInfo& aInfo) = 0;
 	protected:
 		IGraphicsContext* mContext;
 };

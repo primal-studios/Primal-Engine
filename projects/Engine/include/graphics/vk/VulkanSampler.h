@@ -1,9 +1,9 @@
 #ifndef vulkansampler_h__
 #define vulkansampler_h__
 
-#include <vulkan/vulkan.h>
-
 #include "graphics/api/ISampler.h"
+
+#include <vulkan/vulkan.h>
 
 class VulkanSampler final : public ISampler
 {
@@ -19,9 +19,10 @@ class VulkanSampler final : public ISampler
 		void construct(const SamplerCreateInfo& aInfo) override;
 
 		VkSampler getHandle() const;
-
 	private:
-		VkSampler mSampler;
+		void _destroy() const;
+
+		VkSampler mSampler{};
 };
 
 

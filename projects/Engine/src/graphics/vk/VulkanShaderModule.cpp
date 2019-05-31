@@ -29,7 +29,7 @@ void VulkanShaderModule::construct(const ShaderModuleCreateInfo& aInfo)
 
 	if (result != VK_SUCCESS)
 	{
-		PRIMAL_INTERNAL_ERROR("Failed to create Vulkan shader module.");
+		PRIMAL_INTERNAL_CRITICAL("Failed to create Vulkan shader module.");
 	}
 	else
 	{

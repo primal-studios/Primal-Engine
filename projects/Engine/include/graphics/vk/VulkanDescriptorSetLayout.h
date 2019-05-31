@@ -17,9 +17,13 @@ class VulkanDescriptorSetLayout final : public IDescriptorSetLayout
 		VulkanDescriptorSetLayout& operator=(VulkanDescriptorSetLayout&&) noexcept = delete;
 
 		void construct(const DescriptorSetLayoutCreateInfo& aInfo) override;
+		void reconstruct(const DescriptorSetLayoutCreateInfo& aInfo) override;
 
+		VkDescriptorSetLayout getHandle() const;
 	private:
-		VkDescriptorSetLayout mLayout;
+		void _destroy() const;
+
+		VkDescriptorSetLayout mLayout{};
 };
 
 #endif // vulkandescriptorsetlayout_h__
