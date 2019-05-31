@@ -1,12 +1,13 @@
 #include <vulkan/vulkan.h>
 
-#include <graphics/vk/VulkanGraphicsContext.h>
-#include <GLFW/glfw3.h>
-#include <core/Log.h>
-#include <core/PrimalAssert.h>
+#include "core/Log.h"
+#include "core/PrimalAssert.h"
+#include "graphics/vk/VulkanGraphicsContext.h"
 
 #include <map>
 #include <unordered_set>
+
+#include <GLFW/glfw3.h>
 
 namespace detail
 {

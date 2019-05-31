@@ -1,12 +1,12 @@
 #ifndef vulkanuniformbuffer_h__
 #define vulkanuniformbuffer_h__
 
+#include "graphics/api/IUniformBuffer.h"
+
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
 
-#include "graphics/api/IUniformBuffer.h"
-
-class VulkanUniformBuffer : public IUniformBuffer
+class VulkanUniformBuffer final : public IUniformBuffer
 {
 	public:
 		explicit VulkanUniformBuffer(IGraphicsContext* aContext);

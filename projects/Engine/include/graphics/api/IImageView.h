@@ -1,9 +1,9 @@
 #ifndef iimageview_h__
 #define iimageview_h__
 
-#include <graphics/api/IGraphicsContext.h>
-#include <graphics/api/IImage.h>
-#include <graphics/DataFormat.h>
+#include "graphics/api/IGraphicsContext.h"
+#include "graphics/api/IImage.h"
+#include "graphics/DataFormat.h"
 
 #include <cstdint>
 

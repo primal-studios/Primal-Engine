@@ -1,7 +1,6 @@
+#include "graphics/vk/VulkanCommandPool.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
-
-#include "graphics/vk/VulkanCommandPool.h"
 
 VulkanIndexBuffer::VulkanIndexBuffer(IGraphicsContext* aContext) : IIndexBuffer(aContext)
 {

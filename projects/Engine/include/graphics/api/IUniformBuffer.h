@@ -1,16 +1,16 @@
 #ifndef iuniformbuffer_h__
 #define iuniformbuffer_h__
 
-#include <cstdint>
-#include <vector>
-
-#include "graphics/api/IGraphicsContext.h"
-#include "graphics/api/ICommandPool.h"
 
 #include "graphics/BufferLayout.h"
 #include "graphics/BufferFlags.h"
 #include "graphics/SharingMode.h"
 #include "graphics/ShaderStageFlags.h"
+#include "graphics/api/IGraphicsContext.h"
+#include "graphics/api/ICommandPool.h"
+
+#include <cstdint>
+#include <vector>
 
 enum EDescriptorType : uint32_t
 {

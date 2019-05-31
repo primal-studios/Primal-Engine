@@ -1,10 +1,10 @@
 #ifndef vulkanvertexbuffer_h__
 #define vulkanvertexbuffer_h__
 
+#include "graphics/api/IVertexBuffer.h"
+
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
-
-#include "graphics/api/IVertexBuffer.h"
 
 class VulkanVertexBuffer final : public IVertexBuffer
 {

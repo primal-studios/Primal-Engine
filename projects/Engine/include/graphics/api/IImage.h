@@ -1,9 +1,10 @@
 #ifndef iimage_h__
 #define iimage_h__
 
-#include <graphics/api/IGraphicsContext.h>
-#include <graphics/DataFormat.h>
+#include "graphics/api/IGraphicsContext.h"
+#include "graphics/DataFormat.h"
 
+#include <cstdint>
 #include <vector>
 
 using ImageCreateFlags = uint32_t;

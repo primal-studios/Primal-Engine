@@ -1,14 +1,13 @@
 #ifndef iindexbuffer_h__
 #define iindexbuffer_h__
 
-#include <cstdint>
-#include <vector>
-
-#include "graphics/api/IGraphicsContext.h"
-#include "graphics/api/ICommandPool.h"
-
 #include "graphics/BufferFlags.h"
 #include "graphics/SharingMode.h"
+#include "graphics/api/ICommandPool.h"
+#include "graphics/api/IGraphicsContext.h"
+
+#include <cstdint>
+#include <vector>
 
 struct IndexBufferCreateInfo
 {

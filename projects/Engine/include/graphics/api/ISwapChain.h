@@ -1,8 +1,10 @@
 #ifndef iswapchain_h__
 #define iswapchain_h__
 
-#include <graphics/api/IGraphicsContext.h>
-#include <graphics/api/IImage.h>
+#include "graphics/api/IGraphicsContext.h"
+#include "graphics/api/IImage.h"
+
+#include <cstdint>
 
 struct SwapChainCreateInfo
 {

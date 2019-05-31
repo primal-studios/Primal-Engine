@@ -6,7 +6,6 @@
 #include "graphics/api/IFramebuffer.h"
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/api/IRenderPass.h"
-
 #include "math/Vector4.h"
 
 #include <cstdint>

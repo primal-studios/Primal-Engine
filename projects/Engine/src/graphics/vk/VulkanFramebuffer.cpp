@@ -1,10 +1,9 @@
-#include <graphics/vk/VulkanFramebuffer.h>
-#include <graphics/vk/VulkanImageView.h>
-#include <graphics/vk/VulkanGraphicsContext.h>
-#include <graphics/vk/VulkanRenderPass.h>
-
-#include <core/Log.h>
-#include <core/PrimalCast.h>
+#include "core/Log.h"
+#include "core/PrimalCast.h"
+#include "graphics/vk/VulkanFramebuffer.h"
+#include "graphics/vk/VulkanImageView.h"
+#include "graphics/vk/VulkanGraphicsContext.h"
+#include "graphics/vk/VulkanRenderPass.h"
 
 VulkanFramebuffer::VulkanFramebuffer(IGraphicsContext* aContext)
 	: IFramebuffer(aContext), mContext(aContext)
@@ -35,7 +34,6 @@ void VulkanFramebuffer::construct(const FramebufferCreateInfo& aInfo)
 	
 	VkFramebufferCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	info.pNext = nullptr;
 	info.flags = 0;
 	info.width = aInfo.width;
 	info.height = aInfo.height;

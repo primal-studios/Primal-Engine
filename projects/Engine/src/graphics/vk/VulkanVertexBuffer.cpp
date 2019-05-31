@@ -1,8 +1,6 @@
-#include "graphics/vk/VulkanVertexBuffer.h"
-
-#include "graphics/vk/VulkanGraphicsContext.h"
-
 #include "graphics/vk/VulkanCommandPool.h"
+#include "graphics/vk/VulkanGraphicsContext.h"
+#include "graphics/vk/VulkanVertexBuffer.h"
 
 static constexpr VkFormat sVertexAttributeFormat(const EBufferLayoutElementTypes& aType)
 {

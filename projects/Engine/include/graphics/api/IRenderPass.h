@@ -1,14 +1,15 @@
 #ifndef irenderpass_h__
 #define irenderpass_h__
 
-#include <graphics/AccessFlags.h>
-#include <graphics/AttachmentOperations.h>
-#include <graphics/DataFormat.h>
-#include <graphics/DependencyFlags.h>
-#include <graphics/PipelineStageFlags.h>
-#include <graphics/api/IGraphicsContext.h>
-#include <graphics/api/IImage.h>
+#include "graphics/AccessFlags.h"
+#include "graphics/AttachmentOperations.h"
+#include "graphics/DataFormat.h"
+#include "graphics/DependencyFlags.h"
+#include "graphics/PipelineStageFlags.h"
+#include "graphics/api/IGraphicsContext.h"
+#include "graphics/api/IImage.h"
 
+#include <cstdint>
 #include <vector>
 
 struct AttachmentDescription

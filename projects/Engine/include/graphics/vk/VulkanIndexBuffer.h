@@ -1,12 +1,12 @@
 #ifndef vulkanindexbuffer_h__
 #define vulkanindexbuffer_h__
 
+#include "graphics/api/IIndexBuffer.h"
+
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
 
-#include "graphics/api/IIndexBuffer.h"
-
-class VulkanIndexBuffer : public IIndexBuffer
+class VulkanIndexBuffer final : public IIndexBuffer
 {
 	public:
 		explicit VulkanIndexBuffer(IGraphicsContext* aContext);
@@ -25,8 +25,8 @@ class VulkanIndexBuffer : public IIndexBuffer
 		void unbind() override;
 
 	private:
-		VkBuffer mBuffer;
-		VkBuffer mStagingBuffer;
+		VkBuffer mBuffer{};
+		VkBuffer mStagingBuffer{};
 		VmaAllocation mStagingAllocation{};
 		VmaAllocation mAllocation{};
 };
