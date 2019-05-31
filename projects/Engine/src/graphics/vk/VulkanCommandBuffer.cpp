@@ -132,6 +132,35 @@ void VulkanCommandBuffer::end()
 	vkEndCommandBuffer(mBuffer);
 }
 
+void VulkanCommandBuffer::recordRenderPass(const RenderPassRecordInfo& aInfo)
+{
+	VkRenderPassBeginInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	info.framebuffer = primal_cast<VulkanFramebuffer*>(aInfo.frameBuffer)->getHandle();
+	info.renderPass = primal_cast<VulkanRenderPass*>(aInfo.renderPass)->getHandle();
+	info.renderArea = { {aInfo.renderArea.x, aInfo.renderArea.y}, {static_cast<uint32_t>(aInfo.renderArea.z), static_cast<uint32_t>(aInfo.renderArea.w)} };
+	info.clearValueCount = static_cast<uint32_t>(aInfo.clearValues.size());
+
+	std::vector<VkClearValue> clearValues;
+	clearValues.reserve(info.clearValueCount);
+
+	for (auto clear : aInfo.clearValues)
+	{
+		VkClearValue val;
+		memcpy(val.color.float32, clear.color.float32, 4 * sizeof(float));
+		clearValues.emplace_back(val);
+	}
+
+	info.pClearValues = clearValues.data();
+
+	vkCmdBeginRenderPass(mBuffer, &info, static_cast<VkSubpassContents>(aInfo.subpassContents));
+}
+
+void VulkanCommandBuffer::endRenderPass()
+{
+	vkCmdEndRenderPass(mBuffer);
+}
+
 VkCommandBuffer VulkanCommandBuffer::getHandle() const
 {
 	return mBuffer;

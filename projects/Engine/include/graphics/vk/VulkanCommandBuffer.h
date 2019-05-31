@@ -25,6 +25,9 @@ public:
 	void record(const CommandBufferRecordInfo& aInfo) override;
 	void end() override;
 
+	void recordRenderPass(const RenderPassRecordInfo& aInfo) override;
+	void endRenderPass() override;
+
 	VkCommandBuffer getHandle() const;
 	VkSemaphore getSemaphore() const;
 

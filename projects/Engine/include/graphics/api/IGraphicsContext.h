@@ -9,10 +9,10 @@
 struct GraphicsContextCreateInfo
 {
 	std::string applicationName;
-	GLFWwindow* window;
-	uint32_t versionMajor;
-	uint32_t versionMinor;
-	uint32_t versionPatch;
+	GLFWwindow* window = nullptr;
+	uint32_t versionMajor = 0;
+	uint32_t versionMinor = 0;
+	uint32_t versionPatch = 0;
 };
 
 class IGraphicsContext

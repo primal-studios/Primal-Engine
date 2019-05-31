@@ -157,19 +157,20 @@ void RenderSystem::render()
 
 	// TODO: RENDER STUFF HERE
 
-	VkRenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = mRenderPass->getHandle();
-	renderPassInfo.framebuffer = mFramebuffers[mCurrentFrame]->getHandle();
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = {mWindow->width(), mWindow->height()};
+	RenderPassRecordInfo recordInfo = {};
+	recordInfo.renderPass = mRenderPass;
+	recordInfo.frameBuffer = mFramebuffers[mCurrentFrame];
+	recordInfo.renderArea = { 0, 0, static_cast<int32_t>(mWindow->width()), static_cast<int32_t>(mWindow->height()) };
+	
+	ClearValue clear = {};
+	clear.color.float32[0] = 0.0f;
+	clear.color.float32[1] = 0.0f;
+	clear.color.float32[2] = 0.0f;
+	clear.color.float32[3] = 0.0f;
+	recordInfo.clearValues.push_back(clear);
 
-	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearColor;
-
-	vkCmdBeginRenderPass(handle->getHandle(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	vkCmdEndRenderPass(handle->getHandle());
+	handle->recordRenderPass(recordInfo);
+	handle->endRenderPass();
 
 	handle->end();
 

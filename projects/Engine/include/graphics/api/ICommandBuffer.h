@@ -1,10 +1,13 @@
 #ifndef icommandbuffer_h__
 #define icommandbuffer_h__
 
-#include <graphics/api/ICommandPool.h>
-#include <graphics/api/IFramebuffer.h>
-#include <graphics/api/IGraphicsContext.h>
-#include <graphics/api/IRenderPass.h>
+#include "graphics/ClearValue.h"
+#include "graphics/api/ICommandPool.h"
+#include "graphics/api/IFramebuffer.h"
+#include "graphics/api/IGraphicsContext.h"
+#include "graphics/api/IRenderPass.h"
+
+#include "math/Vector4.h"
 
 #include <cstdint>
 
@@ -56,6 +59,21 @@ struct CommandBufferRecordInfo
 	CommandBufferInheritanceInfo* inheritance;
 };
 
+enum class ESubpassContents
+{
+	SUBPASS_CONTENTS_INLINE						= 0,
+	SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS	= 1
+};
+
+struct RenderPassRecordInfo
+{
+	IRenderPass* renderPass;
+	IFramebuffer* frameBuffer;
+	Vector4i renderArea;
+	std::vector<ClearValue> clearValues;
+	ESubpassContents subpassContents;
+};
+
 class ICommandBuffer
 {
 	public:
@@ -75,6 +93,9 @@ class ICommandBuffer
 
 		virtual void record(const CommandBufferRecordInfo&) = 0;
 		virtual void end() = 0;
+
+		virtual void recordRenderPass(const RenderPassRecordInfo&) = 0;
+		virtual void endRenderPass() = 0;
 };
 
 #endif // icommandbuffer_h__
