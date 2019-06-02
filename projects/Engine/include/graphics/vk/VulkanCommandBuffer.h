@@ -30,6 +30,7 @@ public:
 	void endRenderPass() override;
 
 	void bindGraphicsPipeline(IGraphicsPipeline* aPipeline) override;
+	void draw(uint32_t aVertexCount, uint32_t aInstanceCount, uint32_t aFirstVertex, uint32_t aFirstInstance) override;
 
 	VkCommandBuffer getHandle() const;
 	VkSemaphore getSemaphore() const;

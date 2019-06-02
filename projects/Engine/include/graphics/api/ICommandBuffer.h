@@ -98,6 +98,7 @@ class ICommandBuffer
 		virtual void endRenderPass() = 0;
 
 		virtual void bindGraphicsPipeline(IGraphicsPipeline*) = 0;
+		virtual void draw(uint32_t aVertexCount, uint32_t aInstanceCount = 1, uint32_t aFirstVertex = 0, uint32_t aFirstInstance = 0) = 0;
 };
 
 #endif // icommandbuffer_h__

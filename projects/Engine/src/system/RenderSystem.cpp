@@ -278,7 +278,8 @@ void RenderSystem::render()
 
 	handle->bindGraphicsPipeline(mGraphicsPipeline);
 
-	vkCmdDraw(handle->getHandle(), 3, 1, 0, 0);
+	// vkCmdDraw(handle->getHandle(), 3, 1, 0, 0);
+	handle->draw(3, 1, 0, 0);
 
 	handle->endRenderPass();
 

@@ -168,6 +168,12 @@ void VulkanCommandBuffer::bindGraphicsPipeline(IGraphicsPipeline* aPipeline)
 	vkCmdBindPipeline(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getHandle());
 }
 
+void VulkanCommandBuffer::draw(const uint32_t aVertexCount, const uint32_t aInstanceCount, const uint32_t aFirstVertex,
+                               const uint32_t aFirstInstance)
+{
+	vkCmdDraw(mBuffer, aVertexCount, aInstanceCount, aFirstVertex, aFirstInstance);
+}
+
 VkCommandBuffer VulkanCommandBuffer::getHandle() const
 {
 	return mBuffer;
