@@ -6,13 +6,10 @@
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/api/IShaderStage.h"
 #include "graphics/api/IRenderPass.h"
-#include "graphics/api/ISampler.h"
-#include "graphics/api/IDescriptorSetLayout.h"
 #include "graphics/api/IPipelineLayout.h"
 
 #include "graphics/CompareOp.h"
 #include "graphics/DataFormat.h"
-#include "graphics/ShaderStageFlags.h"
 #include "math/Vector4.h"
 
 class IGraphicsPipeline;
@@ -359,15 +356,15 @@ struct GraphicsPipelineCreateInfo
 {
 	PipelineCreateFlags flags;
 	std::vector<IShaderStage*> stages;
-	PipelineVertexStateCreateInfo vertexState;
-	PipelineInputAssemblyStateCreateInfo assemblyState;
-	PipelineTesselationStateCreateInfo tesselationState;
-	PipelineViewportStateCreateInfo viewportState;
-	PipelineRasterizationStateCreateInfo rasterizationState;
-	PipelineMultisampleStateCreateInfo multisampleState;
-	PipelineDepthStencilStateCreateInfo depthStencilState;
-	PipelineColorBlendStateCreateInfo colorBlendState;
-	PipelineDynamicStateCreateInfo dynamicState;
+	PipelineVertexStateCreateInfo* vertexState;
+	PipelineInputAssemblyStateCreateInfo* assemblyState;
+	PipelineTesselationStateCreateInfo* tesselationState;
+	PipelineViewportStateCreateInfo* viewportState;
+	PipelineRasterizationStateCreateInfo* rasterizationState;
+	PipelineMultisampleStateCreateInfo* multisampleState;
+	PipelineDepthStencilStateCreateInfo* depthStencilState;
+	PipelineColorBlendStateCreateInfo* colorBlendState;
+	PipelineDynamicStateCreateInfo* dynamicState;
 	IPipelineLayout* layout;
 	IRenderPass* renderPass;
 	uint32_t subPass;
@@ -387,7 +384,7 @@ class IGraphicsPipeline
 		IGraphicsPipeline& operator=(IGraphicsPipeline&&) noexcept = delete;
 
 		virtual void construct(const GraphicsPipelineCreateInfo& aInfo) = 0;
-
+		virtual void reconstruct(const GraphicsPipelineCreateInfo& aInfo) = 0;
 	protected:
 		IGraphicsContext* mContext;
 };

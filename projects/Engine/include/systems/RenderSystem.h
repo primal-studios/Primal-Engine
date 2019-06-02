@@ -1,17 +1,14 @@
 #ifndef rendersystem_h__
 #define rendersystem_h__
 
-#include <core/Window.h>
-#include <ecs/System.h>
-
-#include <graphics/vk/VulkanCommandBuffer.h>
-#include <graphics/vk/VulkanCommandPool.h>
-#include <graphics/vk/VulkanFramebuffer.h>
-#include <graphics/vk/VulkanGraphicsContext.h>
-#include <graphics/vk/VulkanRenderPass.h>
-#include <graphics/vk/VulkanSwapChain.h>
-
-#include <vector>
+#include "core/Window.h"
+#include "ecs/System.h"
+#include "graphics/vk/VulkanCommandBuffer.h"
+#include "graphics/vk/VulkanCommandPool.h"
+#include "graphics/vk/VulkanFramebuffer.h"
+#include "graphics/vk/VulkanGraphicsContext.h"
+#include "graphics/vk/VulkanRenderPass.h"
+#include "graphics/vk/VulkanSwapChain.h"
 
 class RenderSystem final : public System
 {

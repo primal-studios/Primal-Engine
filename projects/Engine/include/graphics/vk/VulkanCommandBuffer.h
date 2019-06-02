@@ -29,6 +29,8 @@ public:
 	void recordRenderPass(const RenderPassRecordInfo& aInfo) override;
 	void endRenderPass() override;
 
+	void bindGraphicsPipeline(IGraphicsPipeline* aPipeline) override;
+
 	VkCommandBuffer getHandle() const;
 	VkSemaphore getSemaphore() const;
 
@@ -37,6 +39,7 @@ public:
 	VkFence& getFence();
 private:
 	void _destroy();
+
 	IGraphicsContext* mContext;
 	VkCommandBuffer mBuffer{};
 	VkCommandPool mPool{};

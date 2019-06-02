@@ -4,6 +4,7 @@
 #include "graphics/vk/VulkanCommandPool.h"
 #include "graphics/vk/VulkanFramebuffer.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
+#include "graphics/vk/VulkanGraphicsPipeline.h"
 #include "graphics/vk/VulkanRenderPass.h"
 
 #include <algorithm>
@@ -159,6 +160,12 @@ void VulkanCommandBuffer::recordRenderPass(const RenderPassRecordInfo& aInfo)
 void VulkanCommandBuffer::endRenderPass()
 {
 	vkCmdEndRenderPass(mBuffer);
+}
+
+void VulkanCommandBuffer::bindGraphicsPipeline(IGraphicsPipeline* aPipeline)
+{
+	VulkanGraphicsPipeline* pipeline = primal_cast<VulkanGraphicsPipeline*>(aPipeline);
+	vkCmdBindPipeline(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getHandle());
 }
 
 VkCommandBuffer VulkanCommandBuffer::getHandle() const

@@ -5,6 +5,7 @@
 #include "graphics/api/ICommandPool.h"
 #include "graphics/api/IFramebuffer.h"
 #include "graphics/api/IGraphicsContext.h"
+#include "graphics/api/IGraphicsPipeline.h"
 #include "graphics/api/IRenderPass.h"
 #include "math/Vector4.h"
 
@@ -95,6 +96,8 @@ class ICommandBuffer
 
 		virtual void recordRenderPass(const RenderPassRecordInfo&) = 0;
 		virtual void endRenderPass() = 0;
+
+		virtual void bindGraphicsPipeline(IGraphicsPipeline*) = 0;
 };
 
 #endif // icommandbuffer_h__

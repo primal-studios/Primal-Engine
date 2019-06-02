@@ -17,11 +17,12 @@ class VulkanGraphicsPipeline final : public IGraphicsPipeline
 		VulkanGraphicsPipeline& operator=(VulkanGraphicsPipeline&&) noexcept = delete;
 
 		void construct(const GraphicsPipelineCreateInfo& aInfo) override;
+		void reconstruct(const GraphicsPipelineCreateInfo& aInfo) override;
 
 		VkPipeline getHandle() const;
-
 	private:
-		VkPipeline mPipeline;
+		void _destroy() const;
+		VkPipeline mPipeline{};
 };
 
 #endif // vulkangraphicspipeline_h__
