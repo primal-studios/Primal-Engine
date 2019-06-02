@@ -9,6 +9,8 @@
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanRenderPass.h"
 #include "graphics/vk/VulkanSwapChain.h"
+#include "graphics/api/IVertexBuffer.h"
+#include "graphics/api/IIndexBuffer.h"
 
 class RenderSystem final : public System
 {
@@ -38,6 +40,9 @@ class RenderSystem final : public System
 
 		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
 		VulkanFramebuffer** mFramebuffers = nullptr;
+
+		IVertexBuffer* mVertexBuffer;
+		IIndexBuffer* mIndexBuffer;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};

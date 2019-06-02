@@ -17,9 +17,9 @@ static constexpr VkFormat sVertexAttributeFormat(const EBufferLayoutElementTypes
 		case EBufferLayoutElementTypes::LONG: return VK_FORMAT_R64_SINT;
 		case EBufferLayoutElementTypes::FLOAT: return VK_FORMAT_R32_SFLOAT;
 		case EBufferLayoutElementTypes::DOUBLE: return VK_FORMAT_R64_SFLOAT;
-		case EBufferLayoutElementTypes::VEC2: return VK_FORMAT_R32_SFLOAT;
-		case EBufferLayoutElementTypes::VEC3: return VK_FORMAT_R32_SFLOAT;
-		case EBufferLayoutElementTypes::VEC4: return VK_FORMAT_R32_SFLOAT;
+		case EBufferLayoutElementTypes::VEC2: return VK_FORMAT_R32G32_SFLOAT;
+		case EBufferLayoutElementTypes::VEC3: return VK_FORMAT_R32G32B32_SFLOAT;
+		case EBufferLayoutElementTypes::VEC4: return VK_FORMAT_R32G32B32A32_SFLOAT;
 		case EBufferLayoutElementTypes::MAT2: return VK_FORMAT_R32_SFLOAT;
 		case EBufferLayoutElementTypes::MAT3: return VK_FORMAT_R32_SFLOAT;
 		case EBufferLayoutElementTypes::MAT4: return VK_FORMAT_R32_SFLOAT;
@@ -42,7 +42,6 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vmaDestroyBuffer(context->getBufferAllocator(), mBuffer, mAllocation);
-	vmaFreeMemory(context->getBufferAllocator(), mAllocation);
 
 	mBuffer = nullptr;
 
@@ -54,7 +53,7 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
 	const bool usesStaging = (aInfo.usage & BUFFER_USAGE_TRANSFER_DST) != 0;
-	const bool isExclusive = (aInfo.sharingMode & ESharingMode::SHARING_MODE_EXCLUSIVE) != 0;
+	const bool isExclusive = (aInfo.sharingMode == ESharingMode::SHARING_MODE_EXCLUSIVE);
 
 	if (usesStaging)
 	{
@@ -70,10 +69,10 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 
 		vmaCreateBuffer(context->getBufferAllocator(), &stagingBufferInfo, &stagingAllocInfo, &mStagingBuffer, &mStagingAllocation, nullptr);
 		
-		void* data;
-		vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
+		void* data = malloc(mSize);
+		vmaMapMemory(context->getBufferAllocator(), mStagingAllocation, &data);
 		memcpy(data, mData, mSize);
-		vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
+		vmaUnmapMemory(context->getBufferAllocator(), mStagingAllocation);
 
 		VkBufferCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -122,7 +121,6 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 		vkFreeCommandBuffers(context->getDevice(), vulkanCommandPool->getPool(), 1, &commandBuffer);
 
 		vmaDestroyBuffer(context->getBufferAllocator(), mStagingBuffer, mStagingAllocation);
-		vmaFreeMemory(context->getBufferAllocator(), mStagingAllocation);
 	}
 	else
 	{
@@ -138,7 +136,7 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 
 		vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
 
-		void* data;
+		void* data = malloc(mSize);
 		vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
 		memcpy(data, mData, mSize);
 		vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
@@ -148,7 +146,11 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 void VulkanVertexBuffer::setData(void* aData, const size_t aSize)
 {
 	mSize = aSize;
-	memcpy(mData, aData, aSize);
+	mData = malloc(aSize);
+	if (mData)
+	{
+		memcpy(mData, aData, aSize);
+	}
 }
 
 void VulkanVertexBuffer::setLayout(const BufferLayout& aLayout)
@@ -179,5 +181,38 @@ void VulkanVertexBuffer::bind()
 void VulkanVertexBuffer::unbind()
 {
 	// TODO: Implement
+}
+
+VkBuffer VulkanVertexBuffer::getHandle() const
+{
+	return mBuffer;
+}
+
+VertexInputBindingDescription VulkanVertexBuffer::getBinding() const
+{
+	VertexInputBindingDescription desc = {};
+	desc.binding = mBindingDescription.binding;
+	desc.rate = static_cast<EVertexInputRate>(mBindingDescription.inputRate);
+	desc.stride = mBindingDescription.stride;
+
+	return desc;
+}
+
+std::vector<VertexInputAttributeDescription> VulkanVertexBuffer::getAttributes() const
+{
+	std::vector<VertexInputAttributeDescription> attrs;
+
+	for(const auto& attribute : mAttributeDescriptions)
+	{
+		VertexInputAttributeDescription desc = {};
+		desc.binding = attribute.binding;
+		desc.format = static_cast<EDataFormat>(attribute.format);
+		desc.location = attribute.location;
+		desc.offset = attribute.offset;
+
+		attrs.push_back(desc);
+	}
+
+	return attrs;
 }
 

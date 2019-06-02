@@ -24,6 +24,8 @@ class VulkanIndexBuffer final : public IIndexBuffer
 		void bind() override;
 		void unbind() override;
 
+		VkBuffer getHandle() const;
+
 	private:
 		VkBuffer mBuffer{};
 		VkBuffer mStagingBuffer{};

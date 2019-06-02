@@ -7,6 +7,8 @@
 #include "graphics/vk/VulkanShaderStage.h"
 #include "graphics/vk/VulkanGraphicsPipeline.h"
 #include "graphics/vk/VulkanPipelineLayout.h"
+#include "graphics/vk/VulkanVertexBuffer.h"
+#include "graphics/vk/VulkanIndexBuffer.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mWindow(aWindow)
@@ -52,6 +54,9 @@ RenderSystem::~RenderSystem()
 
 	delete[] mFramebuffers;
 	delete[] mPrimaryBuffer;
+
+	delete mVertexBuffer;
+	delete mIndexBuffer;
 
 	delete mGraphicsPipeline;
 	delete mRenderPass;
@@ -137,6 +142,36 @@ void RenderSystem::initialize()
 		mPrimaryBuffer[i]->construct(commandBufferInfo);
 	}
 
+	mVertexBuffer = new VulkanVertexBuffer(mContext);
+
+	float vertices[] = {
+		-0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+		-0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+	};
+
+	mVertexBuffer->setData(vertices, sizeof(vertices));
+
+	BufferLayout bufferLayout;
+	bufferLayout.push<Vector2f>("inPosition");
+	bufferLayout.push<Vector3f>("inColor");
+
+	mVertexBuffer->setLayout(bufferLayout);
+
+	mVertexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_VERTEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
+		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()}, mPool });
+
+	uint32_t indices[] = {
+		0, 1, 2, 2, 3, 0
+	};
+
+	mIndexBuffer = new VulkanIndexBuffer(mContext);
+	mIndexBuffer->setData(indices, sizeof(indices));
+
+	mIndexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_INDEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
+		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()}, mPool });
+
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
 
@@ -154,7 +189,12 @@ void RenderSystem::initialize()
 
 	mGraphicsPipeline = new VulkanGraphicsPipeline(mContext);
 
+	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
+
 	PipelineVertexStateCreateInfo vertexState = {};
+	vertexState.flags = 0;
+	vertexState.bindingDescriptions = { vBuffer->getBinding() };
+	vertexState.attributeDescriptions = vBuffer->getAttributes();
 
 	PipelineInputAssemblyStateCreateInfo assemblyState = {};
 	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -278,8 +318,17 @@ void RenderSystem::render()
 
 	handle->bindGraphicsPipeline(mGraphicsPipeline);
 
-	// vkCmdDraw(handle->getHandle(), 3, 1, 0, 0);
-	handle->draw(3, 1, 0, 0);
+	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
+	VulkanIndexBuffer* iBuffer = static_cast<VulkanIndexBuffer*>(mIndexBuffer);
+
+	VkBuffer vertexBuffers[] = { vBuffer->getHandle() };
+	VkDeviceSize offsets[] = { 0 };
+
+	vkCmdBindVertexBuffers(handle->getHandle(), 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(handle->getHandle(), iBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT32);
+
+	//vkCmdDraw(handle->getHandle(), 3, 1, 0, 0);
+	vkCmdDrawIndexed(handle->getHandle(), 6, 1, 0, 0, 0);
 
 	handle->endRenderPass();
 

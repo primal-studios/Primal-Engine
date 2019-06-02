@@ -5,6 +5,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
+#include "graphics/api/IGraphicsPipeline.h"
 
 class VulkanVertexBuffer final : public IVertexBuffer
 {
@@ -25,6 +26,11 @@ class VulkanVertexBuffer final : public IVertexBuffer
 		void bind() override;
 		void unbind() override;
 
+		VkBuffer getHandle() const;
+
+		VertexInputBindingDescription getBinding() const;
+		std::vector<VertexInputAttributeDescription> getAttributes() const;
+
 	private:
 		VkBuffer mBuffer;
 		VkBuffer mStagingBuffer;
@@ -33,8 +39,6 @@ class VulkanVertexBuffer final : public IVertexBuffer
 
 		VkVertexInputBindingDescription mBindingDescription;
 		std::vector<VkVertexInputAttributeDescription> mAttributeDescriptions;
-
-		
 };
 
 #endif // vulkanvertexbuffer_h__

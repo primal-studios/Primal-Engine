@@ -110,11 +110,13 @@ VulkanGraphicsContext::VulkanGraphicsContext(const GraphicsContextCreateInfo& aC
 	imageAllocatorCreateInfo.device = mDevice;
 	imageAllocatorCreateInfo.physicalDevice = mPhysicalDevice;
 	vmaCreateAllocator(&imageAllocatorCreateInfo, &mImageAllocator);
+	vmaCreateAllocator(&imageAllocatorCreateInfo, &mBufferAllocator);
 }
 
 VulkanGraphicsContext::~VulkanGraphicsContext()
 {
 	vmaDestroyAllocator(mImageAllocator);
+	vmaDestroyAllocator(mBufferAllocator);
 	
 	if (mCreateInfo.window)
 	{

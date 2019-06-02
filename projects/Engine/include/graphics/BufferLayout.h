@@ -133,19 +133,19 @@ inline void BufferLayout::push<double>(const std::string& aName, const uint32_t 
 template<>
 inline void BufferLayout::push<Vector2f>(const std::string& aName, const uint32_t aCount, const bool aNormalized)
 {
-	_push(aName, EBufferLayoutElementTypes::FLOAT, sizeof(float) * 2, aCount, aNormalized);
+	_push(aName, EBufferLayoutElementTypes::VEC2, sizeof(float) * 2, aCount, aNormalized);
 }
 
 template<>
 inline void BufferLayout::push<Vector3f>(const std::string& aName, const uint32_t aCount, const bool aNormalized)
 {
-	_push(aName, EBufferLayoutElementTypes::FLOAT, sizeof(float) * 3, aCount, aNormalized);
+	_push(aName, EBufferLayoutElementTypes::VEC3, sizeof(float) * 3, aCount, aNormalized);
 }
 
 template<>
 inline void BufferLayout::push<Vector4f>(const std::string& aName, const uint32_t aCount, const bool aNormalized)
 {
-	_push(aName, EBufferLayoutElementTypes::FLOAT, sizeof(float) * 4, aCount, aNormalized);
+	_push(aName, EBufferLayoutElementTypes::VEC4, sizeof(float) * 4, aCount, aNormalized);
 }
 
 template<>

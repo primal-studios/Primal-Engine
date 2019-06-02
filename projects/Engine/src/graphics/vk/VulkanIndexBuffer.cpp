@@ -16,7 +16,6 @@ VulkanIndexBuffer::~VulkanIndexBuffer()
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vmaDestroyBuffer(context->getBufferAllocator(), mBuffer, mAllocation);
-	vmaFreeMemory(context->getBufferAllocator(), mAllocation);
 
 	mBuffer = nullptr;
 
@@ -28,7 +27,7 @@ void VulkanIndexBuffer::construct(const IndexBufferCreateInfo& aInfo)
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
 	const bool usesStaging = (aInfo.usage & BUFFER_USAGE_TRANSFER_DST) != 0;
-	const bool isExclusive = (aInfo.sharingMode & ESharingMode::SHARING_MODE_EXCLUSIVE) != 0;
+	const bool isExclusive = (aInfo.sharingMode == ESharingMode::SHARING_MODE_EXCLUSIVE);
 
 	if (usesStaging)
 	{
@@ -44,10 +43,10 @@ void VulkanIndexBuffer::construct(const IndexBufferCreateInfo& aInfo)
 
 		vmaCreateBuffer(context->getBufferAllocator(), &stagingBufferInfo, &stagingAllocInfo, &mStagingBuffer, &mStagingAllocation, nullptr);
 
-		void* data;
-		vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
+		void* data = malloc(mSize);
+		vmaMapMemory(context->getBufferAllocator(), mStagingAllocation, &data);
 		memcpy(data, mData, mSize);
-		vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
+		vmaUnmapMemory(context->getBufferAllocator(), mStagingAllocation);
 
 		VkBufferCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -96,7 +95,6 @@ void VulkanIndexBuffer::construct(const IndexBufferCreateInfo& aInfo)
 		vkFreeCommandBuffers(context->getDevice(), vulkanCommandPool->getPool(), 1, &commandBuffer);
 
 		vmaDestroyBuffer(context->getBufferAllocator(), mStagingBuffer, mStagingAllocation);
-		vmaFreeMemory(context->getBufferAllocator(), mStagingAllocation);
 	}
 	else
 	{
@@ -112,7 +110,7 @@ void VulkanIndexBuffer::construct(const IndexBufferCreateInfo& aInfo)
 
 		vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
 
-		void* data;
+		void* data = malloc(mSize);
 		vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
 		memcpy(data, mData, mSize);
 		vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
@@ -122,7 +120,11 @@ void VulkanIndexBuffer::construct(const IndexBufferCreateInfo& aInfo)
 void VulkanIndexBuffer::setData(void* aData, const size_t aSize)
 {
 	mSize = aSize;
-	memcpy(mData, aData, aSize);
+	mData = malloc(mSize);
+	if (mData)
+	{
+		memcpy(mData, aData, aSize);
+	}
 }
 
 void VulkanIndexBuffer::bind()
@@ -133,5 +135,10 @@ void VulkanIndexBuffer::bind()
 void VulkanIndexBuffer::unbind()
 {
 	// TODO: Implement
+}
+
+VkBuffer VulkanIndexBuffer::getHandle() const
+{
+	return mBuffer;
 }
 
