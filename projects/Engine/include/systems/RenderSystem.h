@@ -34,6 +34,8 @@ class RenderSystem final : public System
 		const uint32_t mFlightSize = 2;
 		uint32_t mCurrentFrame = 0;
 
+		IGraphicsPipeline* graphicsPipeline;
+
 		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
 		VulkanFramebuffer** mFramebuffers = nullptr;
 

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include "core/Log.h"
+#include "core/PrimalAssert.h"
 
 FileSystem::FileSystem()
 {
@@ -73,6 +74,31 @@ std::string FileSystem::loadToString(const Path& aPath) const
 	PRIMAL_INTERNAL_ERROR("File does not exist at path: {0}", loadPath.string());
 
 	return "";
+}
+
+std::vector<char> FileSystem::getBytes(const Path& aPath) const
+{
+	Path loadPath = mMountedPath;
+	loadPath += aPath;
+
+	if (exists(loadPath))
+	{
+		std::ifstream file(loadPath.c_str(), std::ios::ate | std::ios::binary);
+
+		PRIMAL_ASSERT(file.is_open(), "Failed to open file");
+
+		const size_t fileSize = static_cast<size_t>(file.tellg());
+		std::vector<char> buffer(fileSize);
+
+		file.seekg(0);
+		file.read(buffer.data(), fileSize);
+
+		file.close();
+
+		return buffer;
+	}
+
+	return std::vector<char>();
 }
 
 bool FileSystem::exists(const Path& aPath) const

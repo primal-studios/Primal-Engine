@@ -29,6 +29,7 @@ class FileSystem
 
 		File* load(const Path& aPath) const;
 		std::string loadToString(const Path& aPath) const;
+		std::vector<char> getBytes(const Path& aPath) const;
 
 		bool exists(const Path& aPath) const;
 

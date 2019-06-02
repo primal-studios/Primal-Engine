@@ -2,6 +2,11 @@
 
 #include "core/PrimalCast.h"
 #include "ecs/EntityManager.h"
+#include "filesystem/FileSystem.h"
+#include "graphics/vk/VulkanShaderModule.h"
+#include "graphics/vk/VulkanShaderStage.h"
+#include "graphics/vk/VulkanGraphicsPipeline.h"
+#include "graphics/vk/VulkanPipelineLayout.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mWindow(aWindow)
@@ -130,6 +135,97 @@ void RenderSystem::initialize()
 	{
 		mPrimaryBuffer[i]->construct(commandBufferInfo);
 	}
+
+	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
+	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
+
+	IShaderModule* vertModule = new VulkanShaderModule(mContext);
+	vertModule->construct({ 0, vertSource });
+
+	IShaderModule* fragModule = new VulkanShaderModule(mContext);
+	fragModule->construct({ 0, fragSource });
+
+	IShaderStage* vertStage = new VulkanShaderStage(mContext);
+	vertStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_VERTEX, vertModule, "main" });
+
+	IShaderStage* fragStage = new VulkanShaderStage(mContext);
+	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
+
+	graphicsPipeline = new VulkanGraphicsPipeline(mContext);
+
+	PipelineVertexStateCreateInfo vertexState = {};
+
+	PipelineInputAssemblyStateCreateInfo assemblyState = {};
+	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	assemblyState.primitiveRestartEnable = false;
+
+	Viewport viewport = {};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = mWindow->width();
+	viewport.height = mWindow->height();
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	Vector4i rect = {};
+	rect.x = 0.0f;
+	rect.y = 0.0f;
+	rect.z = mWindow->width();
+	rect.w = mWindow->height();
+
+	PipelineViewportStateCreateInfo viewportState = {};
+	viewportState.flags = 0;
+	viewportState.viewports = { viewport };
+	viewportState.rectangles = { rect };
+
+	PipelineRasterizationStateCreateInfo rasterizationState = {};
+	rasterizationState.flags = 0;
+	rasterizationState.depthClampEnable = false;
+	rasterizationState.rasterizerDiscardEnable = false;
+	rasterizationState.polygonMode = EPolygonMode::FILL;
+	rasterizationState.lineWidth = 1.0f;
+	rasterizationState.cullMode = ECullMode::BACK;
+	rasterizationState.frontFace = EFrontFace::CLOCKWISE;
+	rasterizationState.depthBiasEnable = false;
+
+	PipelineMultisampleStateCreateInfo multisampleState = {};
+	multisampleState.sampleShadingEnable = false;
+	multisampleState.rasterizationSamples = SAMPLE_COUNT_1;
+
+	PipelineColorBlendAttachmentState colorBlendStateAttachement = {};
+	colorBlendStateAttachement.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendStateAttachement.blendEnable = false;
+
+	PipelineColorBlendStateCreateInfo colorBlendState = {};
+	colorBlendState.flags = 0;
+	colorBlendState.attachments = { colorBlendStateAttachement };
+	colorBlendState.logicOpEnable = false;
+	colorBlendState.logicOp = ELogicOp::LOGIC_OP_COPY;
+	colorBlendState.blendConstants[0] = 0.0f;
+	colorBlendState.blendConstants[1] = 0.0f;
+	colorBlendState.blendConstants[2] = 0.0f;
+	colorBlendState.blendConstants[3] = 0.0f;
+
+	IPipelineLayout* layout = new VulkanPipelineLayout(mContext);
+	layout->construct({ 0, {}, {} });
+
+	GraphicsPipelineCreateInfo createInfo = {};
+	createInfo.flags = 0;
+	createInfo.stages = { vertStage, fragStage };
+
+	createInfo.vertexState = &vertexState;
+	createInfo.assemblyState = &assemblyState;
+	createInfo.viewportState = &viewportState;
+	createInfo.rasterizationState = &rasterizationState;
+	createInfo.multisampleState = &multisampleState;
+	createInfo.colorBlendState = &colorBlendState;
+	createInfo.layout = layout;
+	createInfo.basePipelineHandle = nullptr;
+	createInfo.basePipelineIndex = -1;
+	createInfo.renderPass = mRenderPass;
+	createInfo.subPass = 0;
+
+	graphicsPipeline->construct(createInfo);
 }
 
 void RenderSystem::preRender()
@@ -170,6 +266,11 @@ void RenderSystem::render()
 	recordInfo.clearValues.push_back(clear);
 
 	handle->recordRenderPass(recordInfo);
+
+	handle->bindGraphicsPipeline(graphicsPipeline);
+
+	vkCmdDraw(handle->getHandle(), 3, 1, 0, 0);
+
 	handle->endRenderPass();
 
 	handle->end();

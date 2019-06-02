@@ -22,6 +22,7 @@ class VulkanShaderStage final : public IShaderStage
 
 	private:
 		VkPipelineShaderStageCreateInfo mStage;
+		void* mData;
 };
 
 #endif // vulkanshaderstage_h__

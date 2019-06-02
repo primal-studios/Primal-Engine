@@ -5,6 +5,7 @@
 VulkanShaderStage::VulkanShaderStage(IGraphicsContext* aContext) : IShaderStage(aContext)
 {
 	mStage = {};
+	mData = nullptr;
 }
 
 void VulkanShaderStage::construct(const ShaderStageCreateInfo& aInfo)
@@ -15,7 +16,16 @@ void VulkanShaderStage::construct(const ShaderStageCreateInfo& aInfo)
 
 	VulkanShaderModule* module = primal_cast<VulkanShaderModule*>(aInfo.module);
 	mStage.module = module->getModule();
-	mStage.pName = aInfo.name.c_str();
+	mData = malloc((aInfo.name.size() + 1) * sizeof(char));
+	char* charData = static_cast<char*>(mData);
+
+	for(size_t i = 0; i < aInfo.name.size(); i++)
+	{
+		charData[i] = aInfo.name[i];
+	}
+	charData[aInfo.name.size()] = '\0';
+
+	mStage.pName = charData;
 }
 
 VkPipelineShaderStageCreateInfo VulkanShaderStage::getStage() const

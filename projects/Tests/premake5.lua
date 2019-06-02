@@ -28,6 +28,7 @@ project "Tests"
         "%{IncludeDir.catch}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
+        "%{IncludeDir.json}",
         "%{IncludeDir.phonon}",
         "%{IncludeDir.physx}",
         "%{IncludeDir.physxinternal}",

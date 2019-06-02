@@ -8,7 +8,7 @@
 struct ShaderModuleCreateInfo
 {
 	uint32_t flags;
-	std::vector<uint32_t> code;
+	std::vector<char> code;
 };
 
 class IShaderModule

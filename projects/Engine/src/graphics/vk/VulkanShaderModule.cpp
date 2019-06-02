@@ -22,7 +22,7 @@ void VulkanShaderModule::construct(const ShaderModuleCreateInfo& aInfo)
 	VkShaderModuleCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = aInfo.code.size();
-	createInfo.pCode = aInfo.code.data();
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(aInfo.code.data());
 	createInfo.flags = aInfo.flags;
 
 	const VkResult result = vkCreateShaderModule(context->getDevice(), &createInfo, nullptr, &mModule);

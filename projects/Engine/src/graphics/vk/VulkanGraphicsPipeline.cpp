@@ -4,6 +4,7 @@
 #include "graphics/vk/VulkanGraphicsPipeline.h"
 #include "graphics/vk/VulkanPipelineLayout.h"
 #include "graphics/vk/VulkanShaderStage.h"
+#include "graphics/vk/VulkanRenderPass.h"
 
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(IGraphicsContext* aContext) 
 	: IGraphicsPipeline(aContext)
@@ -32,6 +33,8 @@ void VulkanGraphicsPipeline::construct(const GraphicsPipelineCreateInfo& aInfo)
 	}
 
 	createInfo.pStages = shaderStageCreateInfos.data();
+
+	int jonathan = 0;
 
 	VkPipelineVertexInputStateCreateInfo vertexState = {};
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
@@ -283,12 +286,31 @@ void VulkanGraphicsPipeline::construct(const GraphicsPipelineCreateInfo& aInfo)
 		createInfo.pDynamicState = nullptr;
 	}
 
-	VulkanPipelineLayout* layout = primal_cast<VulkanPipelineLayout*>(aInfo.layout);
-	createInfo.layout = layout->getHandle();
+	if (aInfo.layout != nullptr)
+	{
+		VulkanPipelineLayout* layout = primal_cast<VulkanPipelineLayout*>(aInfo.layout);
+		createInfo.layout = layout->getHandle();
+	}
 
-	VulkanGraphicsPipeline* basePipeline = primal_cast<VulkanGraphicsPipeline*>(aInfo.basePipelineHandle);
-	createInfo.basePipelineHandle = basePipeline->getHandle();
+	if (aInfo.basePipelineHandle != nullptr)
+	{
+		VulkanGraphicsPipeline* basePipeline = primal_cast<VulkanGraphicsPipeline*>(aInfo.basePipelineHandle);
+		createInfo.basePipelineHandle = basePipeline->getHandle();
+	}
+
 	createInfo.basePipelineIndex = aInfo.basePipelineIndex;
+
+	if(aInfo.renderPass != nullptr)
+	{
+		VulkanRenderPass* renderPass = primal_cast<VulkanRenderPass*>(aInfo.renderPass);
+		createInfo.renderPass = renderPass->getHandle();
+		createInfo.subpass = aInfo.subPass;
+	}
+	else
+	{
+		createInfo.renderPass = nullptr;
+		createInfo.subpass = 0;
+	}
 
 	const VkResult result = vkCreateGraphicsPipelines(context->getDevice(), nullptr, 1, &createInfo, nullptr, &mPipeline);
 	if (result != VK_SUCCESS)
