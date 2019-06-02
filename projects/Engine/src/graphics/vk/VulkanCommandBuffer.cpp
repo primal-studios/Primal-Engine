@@ -8,6 +8,8 @@
 #include "graphics/vk/VulkanRenderPass.h"
 
 #include <algorithm>
+#include "graphics/vk/VulkanVertexBuffer.h"
+#include "graphics/vk/VulkanIndexBuffer.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(IGraphicsContext* aContext)
 	: ICommandBuffer(aContext), mContext(aContext)
@@ -168,10 +170,34 @@ void VulkanCommandBuffer::bindGraphicsPipeline(IGraphicsPipeline* aPipeline)
 	vkCmdBindPipeline(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getHandle());
 }
 
+void VulkanCommandBuffer::bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount,
+	std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets)
+{
+	std::vector<VkBuffer> buffers;
+	for(const auto& b : aBuffers)
+	{
+		VulkanVertexBuffer* vkBuffer = static_cast<VulkanVertexBuffer*>(b);
+		buffers.push_back(vkBuffer->getHandle());
+	}
+	vkCmdBindVertexBuffers(mBuffer, aFirstBinding, aBindingCount, buffers.data(), aOffsets.data());
+}
+
+void VulkanCommandBuffer::bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType)
+{
+	VulkanIndexBuffer* iBuffer = static_cast<VulkanIndexBuffer*>(aBuffer);
+	vkCmdBindIndexBuffer(mBuffer, iBuffer->getHandle(), aOffset, static_cast<VkIndexType>(aType));
+}
+
 void VulkanCommandBuffer::draw(const uint32_t aVertexCount, const uint32_t aInstanceCount, const uint32_t aFirstVertex,
                                const uint32_t aFirstInstance)
 {
 	vkCmdDraw(mBuffer, aVertexCount, aInstanceCount, aFirstVertex, aFirstInstance);
+}
+
+void VulkanCommandBuffer::drawIndexed(const uint32_t aIndexCount, const uint32_t aInstanceCount, const uint32_t aFirstIndex,
+	const int32_t aVertexOffset, const uint32_t aFirstInstance)
+{
+	vkCmdDrawIndexed(mBuffer, aIndexCount, aInstanceCount, aFirstIndex, aVertexOffset, aFirstInstance);
 }
 
 VkCommandBuffer VulkanCommandBuffer::getHandle() const

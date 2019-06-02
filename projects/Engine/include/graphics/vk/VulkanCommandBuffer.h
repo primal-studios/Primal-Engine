@@ -30,7 +30,12 @@ public:
 	void endRenderPass() override;
 
 	void bindGraphicsPipeline(IGraphicsPipeline* aPipeline) override;
+
+	void bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount, std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets) override;
+	void bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType) override;
+
 	void draw(uint32_t aVertexCount, uint32_t aInstanceCount, uint32_t aFirstVertex, uint32_t aFirstInstance) override;
+	void drawIndexed(uint32_t aIndexCount, uint32_t aInstanceCount, uint32_t aFirstIndex, int32_t aVertexOffset, uint32_t aFirstInstance) override;
 
 	VkCommandBuffer getHandle() const;
 	VkSemaphore getSemaphore() const;

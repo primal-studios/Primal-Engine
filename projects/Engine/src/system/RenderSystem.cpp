@@ -11,7 +11,7 @@
 #include "graphics/vk/VulkanIndexBuffer.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
-	: mRenderPass(nullptr), mWindow(aWindow)
+	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -203,16 +203,16 @@ void RenderSystem::initialize()
 	Viewport viewport = {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = mWindow->width();
-	viewport.height = mWindow->height();
+	viewport.width = static_cast<float>(mWindow->width());
+	viewport.height = static_cast<float>(mWindow->height());
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	Vector4i rect = {};
-	rect.x = 0.0f;
-	rect.y = 0.0f;
-	rect.z = mWindow->width();
-	rect.w = mWindow->height();
+	rect.x = 0;
+	rect.y = 0;
+	rect.z = static_cast<int32_t>(mWindow->width());
+	rect.w = static_cast<int32_t>(mWindow->height());
 
 	PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.flags = 0;
@@ -318,17 +318,10 @@ void RenderSystem::render()
 
 	handle->bindGraphicsPipeline(mGraphicsPipeline);
 
-	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
-	VulkanIndexBuffer* iBuffer = static_cast<VulkanIndexBuffer*>(mIndexBuffer);
-
-	VkBuffer vertexBuffers[] = { vBuffer->getHandle() };
-	VkDeviceSize offsets[] = { 0 };
-
-	vkCmdBindVertexBuffers(handle->getHandle(), 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(handle->getHandle(), iBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT32);
-
-	//vkCmdDraw(handle->getHandle(), 3, 1, 0, 0);
-	vkCmdDrawIndexed(handle->getHandle(), 6, 1, 0, 0, 0);
+	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
+	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT32);
+	
+	handle->drawIndexed(6, 1, 0, 0, 0);
 
 	handle->endRenderPass();
 

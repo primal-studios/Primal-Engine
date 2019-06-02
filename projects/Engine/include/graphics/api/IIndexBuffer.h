@@ -9,6 +9,12 @@
 #include <cstdint>
 #include <vector>
 
+enum EIndexType : uint32_t
+{
+	INDEX_TYPE_UINT16 = 0,
+	INDEX_TYPE_UINT32 = 1,
+};
+
 struct IndexBufferCreateInfo
 {
 	BufferCreateFlags flags;

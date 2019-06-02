@@ -42,6 +42,7 @@ class RenderSystem final : public System
 		VulkanFramebuffer** mFramebuffers = nullptr;
 
 		IVertexBuffer* mVertexBuffer;
+		IVertexBuffer* mColorBuffer;
 		IIndexBuffer* mIndexBuffer;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
