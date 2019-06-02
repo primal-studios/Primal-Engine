@@ -16,12 +16,12 @@ class VulkanPipelineLayout final : public IPipelineLayout
 		VulkanPipelineLayout& operator=(const VulkanPipelineLayout&) = delete;
 		VulkanPipelineLayout& operator=(VulkanPipelineLayout&&) noexcept = delete;
 
-		void construct(const PipelineLayoutCreateInfo& aInfo);
+		void construct(const PipelineLayoutCreateInfo& aInfo) override;
 
 		VkPipelineLayout getHandle() const;
 
 	private:
-		VkPipelineLayout mLayout;
+		VkPipelineLayout mLayout{};
 };
 
 #endif // vulkanpipelinelayout_h__

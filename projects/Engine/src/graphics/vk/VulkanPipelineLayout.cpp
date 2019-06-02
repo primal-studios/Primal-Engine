@@ -3,14 +3,15 @@
 #include "core/PrimalCast.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 
-VulkanPipelineLayout::VulkanPipelineLayout(IGraphicsContext* aContext) : IPipelineLayout(aContext)
+VulkanPipelineLayout::VulkanPipelineLayout(IGraphicsContext* aContext) 
+	: IPipelineLayout(aContext)
 {
-	mLayout = nullptr;
 }
 
 VulkanPipelineLayout::~VulkanPipelineLayout()
 {
-	
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkDestroyPipelineLayout(context->getDevice(), mLayout, nullptr);
 }
 
 void VulkanPipelineLayout::construct(const PipelineLayoutCreateInfo& aInfo)

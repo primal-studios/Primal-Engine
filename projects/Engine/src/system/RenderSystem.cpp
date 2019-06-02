@@ -53,6 +53,7 @@ RenderSystem::~RenderSystem()
 	delete[] mFramebuffers;
 	delete[] mPrimaryBuffer;
 
+	delete mGraphicsPipeline;
 	delete mRenderPass;
 	delete mPool;
 	delete mContext;
@@ -151,7 +152,7 @@ void RenderSystem::initialize()
 	IShaderStage* fragStage = new VulkanShaderStage(mContext);
 	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
 
-	graphicsPipeline = new VulkanGraphicsPipeline(mContext);
+	mGraphicsPipeline = new VulkanGraphicsPipeline(mContext);
 
 	PipelineVertexStateCreateInfo vertexState = {};
 
@@ -225,7 +226,15 @@ void RenderSystem::initialize()
 	createInfo.renderPass = mRenderPass;
 	createInfo.subPass = 0;
 
-	graphicsPipeline->construct(createInfo);
+	mGraphicsPipeline->construct(createInfo);
+
+	delete vertStage;
+	delete fragStage;
+
+	delete vertModule;
+	delete fragModule;
+
+	delete layout;
 }
 
 void RenderSystem::preRender()
@@ -267,7 +276,7 @@ void RenderSystem::render()
 
 	handle->recordRenderPass(recordInfo);
 
-	handle->bindGraphicsPipeline(graphicsPipeline);
+	handle->bindGraphicsPipeline(mGraphicsPipeline);
 
 	vkCmdDraw(handle->getHandle(), 3, 1, 0, 0);
 
