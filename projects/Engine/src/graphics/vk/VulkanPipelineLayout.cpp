@@ -10,8 +10,7 @@ VulkanPipelineLayout::VulkanPipelineLayout(IGraphicsContext* aContext)
 
 VulkanPipelineLayout::~VulkanPipelineLayout()
 {
-	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
-	vkDestroyPipelineLayout(context->getDevice(), mLayout, nullptr);
+	_destroy();
 }
 
 void VulkanPipelineLayout::construct(const PipelineLayoutCreateInfo& aInfo)
@@ -49,7 +48,19 @@ void VulkanPipelineLayout::construct(const PipelineLayoutCreateInfo& aInfo)
 	vkCreatePipelineLayout(context->getDevice(), &createInfo, nullptr, &mLayout);
 }
 
+void VulkanPipelineLayout::reconstruct(const PipelineLayoutCreateInfo& aInfo)
+{
+	_destroy();
+	construct(aInfo);
+}
+
 VkPipelineLayout VulkanPipelineLayout::getHandle() const
 {
 	return mLayout;
+}
+
+void VulkanPipelineLayout::_destroy() const
+{
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkDestroyPipelineLayout(context->getDevice(), mLayout, nullptr);
 }

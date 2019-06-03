@@ -17,10 +17,13 @@ class VulkanPipelineLayout final : public IPipelineLayout
 		VulkanPipelineLayout& operator=(VulkanPipelineLayout&&) noexcept = delete;
 
 		void construct(const PipelineLayoutCreateInfo& aInfo) override;
+		void reconstruct(const PipelineLayoutCreateInfo& aInfo) override;
 
 		VkPipelineLayout getHandle() const;
 
 	private:
+		void _destroy() const;
+
 		VkPipelineLayout mLayout{};
 };
 

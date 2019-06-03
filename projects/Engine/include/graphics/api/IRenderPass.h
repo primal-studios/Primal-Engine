@@ -69,6 +69,7 @@ class IRenderPass
 		IRenderPass& operator=(IRenderPass&&) noexcept = delete;
 
 		virtual void construct(const RenderPassCreateInfo&) = 0;
+		virtual void reconstruct(const RenderPassCreateInfo& aInfo) = 0;
 };
 
 #endif // irenderpass_h__

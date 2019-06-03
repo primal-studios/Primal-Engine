@@ -37,6 +37,7 @@ class IPipelineLayout
 		IPipelineLayout& operator=(IPipelineLayout&&) noexcept = delete;
 
 		virtual void construct(const PipelineLayoutCreateInfo& aInfo) = 0;
+		virtual void reconstruct(const PipelineLayoutCreateInfo& aInfo) = 0;
 
 	protected:
 		IGraphicsContext* mContext;

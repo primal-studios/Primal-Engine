@@ -41,6 +41,7 @@ class RenderSystem final : public System
 		uint32_t mCurrentFrame = 0;
 
 		IGraphicsPipeline* mGraphicsPipeline;
+		IPipelineLayout* mLayout;
 
 		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
 		VulkanFramebuffer** mFramebuffers = nullptr;
@@ -54,7 +55,7 @@ class RenderSystem final : public System
 
 		Window* mWindow;
 
-		bool _onResize(WindowResizeEvent& aEvent) const;
+		bool _onResize(WindowResizeEvent& aEvent);
 };
 
 #endif // rendersystem_h__

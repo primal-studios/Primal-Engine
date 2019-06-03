@@ -13,8 +13,7 @@ VulkanRenderPass::VulkanRenderPass(IGraphicsContext* aContext)
 
 VulkanRenderPass::~VulkanRenderPass()
 {
-	const auto context = primal_cast<VulkanGraphicsContext*>(mContext);
-	vkDestroyRenderPass(context->getDevice(), mPass, nullptr);
+	_destroy();
 }
 
 void VulkanRenderPass::construct(const RenderPassCreateInfo& aInfo)
@@ -192,7 +191,19 @@ void VulkanRenderPass::construct(const RenderPassCreateInfo& aInfo)
 	}
 }
 
+void VulkanRenderPass::reconstruct(const RenderPassCreateInfo& aInfo)
+{
+	_destroy();
+	construct(aInfo);
+}
+
 VkRenderPass VulkanRenderPass::getHandle() const
 {
 	return mPass;
+}
+
+void VulkanRenderPass::_destroy() const
+{
+	const auto context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkDestroyRenderPass(context->getDevice(), mPass, nullptr);
 }

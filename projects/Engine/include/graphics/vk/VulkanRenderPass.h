@@ -17,10 +17,14 @@ class VulkanRenderPass final : public IRenderPass
 		VulkanRenderPass& operator=(VulkanRenderPass&&) noexcept = delete;
 
 		void construct(const RenderPassCreateInfo& aInfo) override;
+		void reconstruct(const RenderPassCreateInfo& aInfo) override;
 		VkRenderPass getHandle() const;
 	private:
+		void _destroy() const;
+
 		IGraphicsContext* mContext;
 		VkRenderPass mPass{};
+
 };
 
 #endif // vulkanrenderpass_h__

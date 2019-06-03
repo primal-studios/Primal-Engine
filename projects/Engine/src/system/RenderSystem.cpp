@@ -58,6 +58,7 @@ RenderSystem::~RenderSystem()
 	delete mVertexBuffer;
 	delete mIndexBuffer;
 
+	delete mLayout;
 	delete mGraphicsPipeline;
 	delete mRenderPass;
 	delete mPool;
@@ -247,8 +248,8 @@ void RenderSystem::initialize()
 	colorBlendState.blendConstants[2] = 0.0f;
 	colorBlendState.blendConstants[3] = 0.0f;
 
-	IPipelineLayout* layout = new VulkanPipelineLayout(mContext);
-	layout->construct({ 0, {}, {} });
+	mLayout = new VulkanPipelineLayout(mContext);
+	mLayout->construct({ 0, {}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;
@@ -260,7 +261,7 @@ void RenderSystem::initialize()
 	createInfo.rasterizationState = &rasterizationState;
 	createInfo.multisampleState = &multisampleState;
 	createInfo.colorBlendState = &colorBlendState;
-	createInfo.layout = layout;
+	createInfo.layout = mLayout;
 	createInfo.basePipelineHandle = nullptr;
 	createInfo.basePipelineIndex = -1;
 	createInfo.renderPass = mRenderPass;
@@ -273,8 +274,6 @@ void RenderSystem::initialize()
 
 	delete vertModule;
 	delete fragModule;
-
-	delete layout;
 }
 
 void RenderSystem::preRender()
@@ -344,15 +343,190 @@ void RenderSystem::onEvent(Event& aEvent)
 	dispatcher.dispatch<WindowResizeEvent>(BIND_EVENT_FUNCTION(RenderSystem::_onResize));
 }
 
-bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
+bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 {
+	VulkanGraphicsContext* vkContext = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkDeviceWaitIdle(vkContext->getDevice());
+
 	const uint32_t newWidth = aEvent.width();
 	const uint32_t newHeight = aEvent.height();
 
-	// reconstruct framebuffers
-	// reconstruct graphics pipeline
+	// reconstruct swapchain
+	SwapChainCreateInfo swapChainInfo = {};
+	swapChainInfo.surfaceHandle = reinterpret_cast<uint64_t>(mContext->getSurfaceHandle());
+	swapChainInfo.width = newWidth;
+	swapChainInfo.height = newHeight;
+	swapChainInfo.maxImageCount = mFlightSize;
 
-	PRIMAL_TRACE("{0}, {1}", newWidth, newHeight);
+	mSwapChain->reconstruct(swapChainInfo);
+
+	// reconstruct renderpass
+	const AttachmentDescription colorAttachment{
+		mSwapChain->getSwapchainFormat(),
+		IMAGE_SAMPLE_1,
+		EAttachmentLoadOperation::CLEAR,
+		EAttachmentStoreOperation::STORE,
+		EAttachmentLoadOperation::DONT_CARE,
+		EAttachmentStoreOperation::DONT_CARE,
+		IMAGE_LAYOUT_UNDEFINED,
+		IMAGE_LAYOUT_PRESENT_SRC_KHR,
+	};
+
+	const AttachmentReference colorRef = {
+		0,
+		EImageLayout::IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	};
+
+
+	SubPassDescription desc = {};
+	desc.colors.push_back(colorRef);
+
+	SubPassDependency dep = {};
+	dep.dependencyFlags = 0;
+	dep.srcSubPass = VK_SUBPASS_EXTERNAL;
+	dep.dstSubPass = 0;
+	dep.srcStages = PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT;
+	dep.srcAccess = 0;
+	dep.dstStages = PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT;
+	dep.dstAccess = ACCESS_COLOR_ATTACHMENT_READ | ACCESS_COLOR_ATTACHMENT_WRITE;
+
+	RenderPassCreateInfo renderPassInfo;
+	renderPassInfo.attachments.push_back(colorAttachment);
+	renderPassInfo.dependencies.push_back(dep);
+	renderPassInfo.descriptions.push_back(desc);
+
+	mRenderPass->reconstruct(renderPassInfo);
+
+	// reconstruct graphics pipeline
+	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
+	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
+
+	IShaderModule* vertModule = new VulkanShaderModule(mContext);
+	vertModule->construct({ 0, vertSource });
+
+	IShaderModule* fragModule = new VulkanShaderModule(mContext);
+	fragModule->construct({ 0, fragSource });
+
+	IShaderStage* vertStage = new VulkanShaderStage(mContext);
+	vertStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_VERTEX, vertModule, "main" });
+
+	IShaderStage* fragStage = new VulkanShaderStage(mContext);
+	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
+
+	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
+	PipelineVertexStateCreateInfo vertexState = {};
+	vertexState.flags = 0;
+	vertexState.bindingDescriptions = { vBuffer->getBinding() };
+	vertexState.attributeDescriptions = vBuffer->getAttributes();
+
+	PipelineInputAssemblyStateCreateInfo assemblyState = {};
+	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	assemblyState.primitiveRestartEnable = false;
+
+	Viewport viewport = {};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(newWidth);
+	viewport.height = static_cast<float>(newHeight);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	Vector4i rect = {};
+	rect.x = 0;
+	rect.y = 0;
+	rect.z = static_cast<int32_t>(newWidth);
+	rect.w = static_cast<int32_t>(newHeight);
+
+	PipelineViewportStateCreateInfo viewportState = {};
+	viewportState.flags = 0;
+	viewportState.viewports = { viewport };
+	viewportState.rectangles = { rect };
+
+	PipelineRasterizationStateCreateInfo rasterizationState = {};
+	rasterizationState.flags = 0;
+	rasterizationState.depthClampEnable = false;
+	rasterizationState.rasterizerDiscardEnable = false;
+	rasterizationState.polygonMode = EPolygonMode::FILL;
+	rasterizationState.lineWidth = 1.0f;
+	rasterizationState.cullMode = ECullMode::BACK;
+	rasterizationState.frontFace = EFrontFace::CLOCKWISE;
+	rasterizationState.depthBiasEnable = false;
+
+	PipelineMultisampleStateCreateInfo multisampleState = {};
+	multisampleState.sampleShadingEnable = false;
+	multisampleState.rasterizationSamples = SAMPLE_COUNT_1;
+
+	PipelineColorBlendAttachmentState colorBlendStateAttachement = {};
+	colorBlendStateAttachement.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendStateAttachement.blendEnable = false;
+
+	PipelineColorBlendStateCreateInfo colorBlendState = {};
+	colorBlendState.flags = 0;
+	colorBlendState.attachments = { colorBlendStateAttachement };
+	colorBlendState.logicOpEnable = false;
+	colorBlendState.logicOp = ELogicOp::LOGIC_OP_COPY;
+	colorBlendState.blendConstants[0] = 0.0f;
+	colorBlendState.blendConstants[1] = 0.0f;
+	colorBlendState.blendConstants[2] = 0.0f;
+	colorBlendState.blendConstants[3] = 0.0f;
+
+	mLayout->reconstruct({ 0, {}, {} });
+
+	GraphicsPipelineCreateInfo createInfo = {};
+	createInfo.flags = 0;
+	createInfo.stages = { vertStage, fragStage };
+
+	createInfo.vertexState = &vertexState;
+	createInfo.assemblyState = &assemblyState;
+	createInfo.viewportState = &viewportState;
+	createInfo.rasterizationState = &rasterizationState;
+	createInfo.multisampleState = &multisampleState;
+	createInfo.colorBlendState = &colorBlendState;
+	createInfo.layout = mLayout;
+	createInfo.basePipelineHandle = nullptr;
+	createInfo.basePipelineIndex = -1;
+	createInfo.renderPass = mRenderPass;
+	createInfo.subPass = 0;
+
+	mGraphicsPipeline->reconstruct(createInfo);
+
+	// reconstruct framebuffers
+	auto views = mSwapChain->getImageViews();
+
+	uint32_t fbc = 0;
+	for (const auto view : views)
+	{
+		FramebufferCreateInfo frameBufferInfo = {};
+		frameBufferInfo.attachments.push_back(view);
+		frameBufferInfo.renderPass = mRenderPass;
+		frameBufferInfo.height = mWindow->height();
+		frameBufferInfo.width = mWindow->width();
+		frameBufferInfo.layers = 1;
+
+		VulkanFramebuffer* fb = mFramebuffers[fbc];
+		fb->reconstruct(frameBufferInfo);
+		*(mFramebuffers + fbc) = fb;
+
+		fbc++;
+	}
+
+	// reconstruct commandbuffers
+	const CommandBufferCreateInfo commandBufferInfo =
+	{
+		mPool,
+		true
+	};
+
+	for (uint32_t i = 0; i < mFlightSize; i++)
+	{
+		mPrimaryBuffer[i]->reconstruct(commandBufferInfo);
+	}
+
+	delete vertStage;
+	delete fragStage;
+
+	delete vertModule;
+	delete fragModule;
 
 	return false;
 }
