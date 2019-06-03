@@ -312,7 +312,8 @@ void VulkanSwapChain::swap()
 
 	presentInfo.pImageIndices = &mCurrentImageInChain;
 
-	vkQueuePresentKHR(mPresentQueue, &presentInfo);
+	const VkResult res = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+	PRIMAL_ASSERT(res == VK_SUCCESS, "You done fucked up a-aron.");
 
 	mCurrentImage = (mCurrentImage + 1) % mFlightSize;
 
@@ -367,6 +368,7 @@ void VulkanSwapChain::_destroy()
 	mImageViews.clear();
 
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkDeviceWaitIdle(context->getDevice());
 	vkDestroySwapchainKHR(context->getDevice(), mSwapchain, nullptr);
 
 	for (auto sem : mImageAvailable)
