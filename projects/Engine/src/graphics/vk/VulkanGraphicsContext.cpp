@@ -138,6 +138,15 @@ VulkanGraphicsContext::~VulkanGraphicsContext()
 void VulkanGraphicsContext::idle() const
 {
 	vkDeviceWaitIdle(mDevice);
+
+	VkQueue graphicsQueue;
+	VkQueue presentQueue;
+
+	vkGetDeviceQueue(mDevice, mGraphicsQueueFamily, 0, &graphicsQueue);
+	vkGetDeviceQueue(mDevice, mPresentQueueFamily, 0, &presentQueue);
+
+	vkQueueWaitIdle(graphicsQueue);
+	vkQueueWaitIdle(presentQueue);
 }
 
 VkSurfaceKHR VulkanGraphicsContext::getSurfaceHandle() const

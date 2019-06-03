@@ -81,7 +81,7 @@ namespace detail
 }
 
 VulkanSwapChain::VulkanSwapChain(IGraphicsContext* aContext, const uint8_t aFlightSize)
-	: ISwapChain(aContext), mFlightSize(aFlightSize), mContext(aContext)
+	: ISwapChain(aContext), mFlightSize(aFlightSize), mOldSwapchain(VK_NULL_HANDLE), mContext(aContext)
 {
 }
 
@@ -99,6 +99,7 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	info.oldSwapchain = mOldSwapchain;
 
 	VkExtent2D extent;
 
@@ -223,6 +224,7 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 
 void VulkanSwapChain::reconstruct(const SwapChainCreateInfo& aInfo)
 {
+	mOldSwapchain = mSwapchain;
 	_destroy();
 	construct(aInfo);
 }
@@ -382,6 +384,7 @@ void VulkanSwapChain::_destroy()
 		vkDestroyFence(context->getDevice(), fence, nullptr);
 	}
 
+	mFences.clear();
 	mImageAvailable.clear();
 	mRenderFinished.clear();
 }

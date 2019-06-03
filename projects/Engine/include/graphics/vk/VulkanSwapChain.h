@@ -49,6 +49,7 @@ class VulkanSwapChain final : public ISwapChain
 		std::vector<IImageView*> mImageViews;
 
 		VkSwapchainKHR mSwapchain{};
+		VkSwapchainKHR mOldSwapchain{};
 		IGraphicsContext* mContext;
 
 		SwapChainCreateInfo mInfo{};

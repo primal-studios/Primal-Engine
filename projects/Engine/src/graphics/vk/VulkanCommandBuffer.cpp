@@ -52,6 +52,11 @@ VulkanCommandBuffer::VulkanCommandBuffer(IGraphicsContext* aContext)
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
 	_destroy();
+	
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+
+	vkDestroySemaphore(context->getDevice(), mSemaphore, nullptr);
+	vkDestroyFence(context->getDevice(), mFence, nullptr);
 }
 
 void VulkanCommandBuffer::addDependency(ICommandBuffer* aDependsOn)
@@ -234,7 +239,4 @@ void VulkanCommandBuffer::_destroy()
 
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkFreeCommandBuffers(context->getDevice(), mPool, 1, &mBuffer);
-
-	vkDestroySemaphore(context->getDevice(), mSemaphore, nullptr);
-	vkDestroyFence(context->getDevice(), mFence, nullptr);
 }

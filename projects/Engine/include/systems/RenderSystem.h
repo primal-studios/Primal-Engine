@@ -55,7 +55,7 @@ class RenderSystem final : public System
 
 		Window* mWindow;
 
-		bool _onResize(WindowResizeEvent& aEvent);
+		bool _onResize(WindowResizeEvent& aEvent) const;
 };
 
 #endif // rendersystem_h__

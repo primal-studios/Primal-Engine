@@ -9,6 +9,7 @@
 #include "graphics/vk/VulkanPipelineLayout.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
+#include "input/Input.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr), mWindow(aWindow)
@@ -278,7 +279,7 @@ void RenderSystem::initialize()
 
 void RenderSystem::preRender()
 {
-	
+
 }
 
 void RenderSystem::render()
@@ -343,15 +344,14 @@ void RenderSystem::onEvent(Event& aEvent)
 	dispatcher.dispatch<WindowResizeEvent>(BIND_EVENT_FUNCTION(RenderSystem::_onResize));
 }
 
-bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
+bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 {
 	VulkanGraphicsContext* vkContext = primal_cast<VulkanGraphicsContext*>(mContext);
-	vkDeviceWaitIdle(vkContext->getDevice());
+	vkContext->idle();
 
 	const uint32_t newWidth = aEvent.width();
 	const uint32_t newHeight = aEvent.height();
 
-	// reconstruct swapchain
 	SwapChainCreateInfo swapChainInfo = {};
 	swapChainInfo.surfaceHandle = reinterpret_cast<uint64_t>(mContext->getSurfaceHandle());
 	swapChainInfo.width = newWidth;
@@ -360,7 +360,12 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 
 	mSwapChain->reconstruct(swapChainInfo);
 
-	// reconstruct renderpass
+	const CommandBufferCreateInfo commandBufferInfo =
+	{
+		mPool,
+		true
+	};
+
 	const AttachmentDescription colorAttachment{
 		mSwapChain->getSwapchainFormat(),
 		IMAGE_SAMPLE_1,
@@ -397,7 +402,31 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 
 	mRenderPass->reconstruct(renderPassInfo);
 
-	// reconstruct graphics pipeline
+	auto views = mSwapChain->getImageViews();
+
+	uint32_t fbc = 0;
+
+	for (const auto view : views)
+	{
+		FramebufferCreateInfo frameBufferInfo = {};
+		frameBufferInfo.attachments.push_back(view);
+		frameBufferInfo.renderPass = mRenderPass;
+		frameBufferInfo.height = mWindow->height();
+		frameBufferInfo.width = mWindow->width();
+		frameBufferInfo.layers = 1;
+
+		VulkanFramebuffer* fb = mFramebuffers[fbc];
+		fb->reconstruct(frameBufferInfo);
+		*(mFramebuffers + fbc) = fb;
+
+		fbc++;
+	}
+
+	for (uint32_t i = 0; i < mFlightSize; i++)
+	{
+		mPrimaryBuffer[i]->reconstruct(commandBufferInfo);
+	}
+
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
 
@@ -414,6 +443,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
 
 	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
+
 	PipelineVertexStateCreateInfo vertexState = {};
 	vertexState.flags = 0;
 	vertexState.bindingDescriptions = { vBuffer->getBinding() };
@@ -426,16 +456,16 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	Viewport viewport = {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(newWidth);
-	viewport.height = static_cast<float>(newHeight);
+	viewport.width = static_cast<float>(mWindow->width());
+	viewport.height = static_cast<float>(mWindow->height());
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	Vector4i rect = {};
 	rect.x = 0;
 	rect.y = 0;
-	rect.z = static_cast<int32_t>(newWidth);
-	rect.w = static_cast<int32_t>(newHeight);
+	rect.z = static_cast<int32_t>(mWindow->width());
+	rect.w = static_cast<int32_t>(mWindow->height());
 
 	PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.flags = 0;
@@ -489,38 +519,6 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	createInfo.subPass = 0;
 
 	mGraphicsPipeline->reconstruct(createInfo);
-
-	// reconstruct framebuffers
-	auto views = mSwapChain->getImageViews();
-
-	uint32_t fbc = 0;
-	for (const auto view : views)
-	{
-		FramebufferCreateInfo frameBufferInfo = {};
-		frameBufferInfo.attachments.push_back(view);
-		frameBufferInfo.renderPass = mRenderPass;
-		frameBufferInfo.height = mWindow->height();
-		frameBufferInfo.width = mWindow->width();
-		frameBufferInfo.layers = 1;
-
-		VulkanFramebuffer* fb = mFramebuffers[fbc];
-		fb->reconstruct(frameBufferInfo);
-		*(mFramebuffers + fbc) = fb;
-
-		fbc++;
-	}
-
-	// reconstruct commandbuffers
-	const CommandBufferCreateInfo commandBufferInfo =
-	{
-		mPool,
-		true
-	};
-
-	for (uint32_t i = 0; i < mFlightSize; i++)
-	{
-		mPrimaryBuffer[i]->reconstruct(commandBufferInfo);
-	}
 
 	delete vertStage;
 	delete fragStage;
