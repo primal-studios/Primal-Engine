@@ -572,5 +572,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	delete vertModule;
 	delete fragModule;
 
+	vkContext->idle();
+
 	return false;
 }
