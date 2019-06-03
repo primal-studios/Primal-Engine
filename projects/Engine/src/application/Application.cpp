@@ -69,6 +69,8 @@ void Application::onEvent(Event& aEvent)
 	dispatcher.dispatch<MouseButtonReleasedEvent>(BIND_EVENT_FUNCTION(Application::_onMouseReleased));
 	dispatcher.dispatch<MouseScrolledEvent>(BIND_EVENT_FUNCTION(Application::_onMouseScrolled));
 
+	SystemManager::instance().dispatchEvent(aEvent);
+
 	for (auto it = mLayerStack.end(); it != mLayerStack.begin(); )
 	{
 		(*--it)->onEvent(aEvent);

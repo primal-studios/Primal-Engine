@@ -52,3 +52,11 @@ void SystemManager::render()
 		system->postRender();
 	}
 }
+
+void SystemManager::dispatchEvent(Event& aEvent)
+{
+	for (const auto& system : mSystems)
+	{
+		system->onEvent(aEvent);
+	}
+}

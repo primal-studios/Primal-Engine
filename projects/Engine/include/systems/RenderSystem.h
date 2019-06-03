@@ -12,6 +12,8 @@
 #include "graphics/api/IVertexBuffer.h"
 #include "graphics/api/IIndexBuffer.h"
 
+#include "events/ApplicationEvent.h"
+
 class RenderSystem final : public System
 {
 	public:
@@ -28,6 +30,8 @@ class RenderSystem final : public System
 		void preRender() override;
 		void render() override;
 		void postRender() override;
+
+		void onEvent(Event& aEvent) override;
 	private:
 		VulkanGraphicsContext* mContext;
 		VulkanSwapChain* mSwapChain;
@@ -49,6 +53,8 @@ class RenderSystem final : public System
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};
 
 		Window* mWindow;
+
+		bool _onResize(WindowResizeEvent& aEvent) const;
 };
 
 #endif // rendersystem_h__

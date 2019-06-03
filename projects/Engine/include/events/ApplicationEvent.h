@@ -45,6 +45,16 @@ class WindowResizeEvent final : public Event
 			return ss.str();
 		}
 
+		uint32_t width() const
+		{
+			return mWidth;
+		}
+
+		uint32_t height() const
+		{
+			return mHeight;
+		}
+
 		EVENT_CLASS_TYPE(WindowResizeEvent)
 
 	private:

@@ -337,3 +337,22 @@ void RenderSystem::postRender()
 {
 
 }
+
+void RenderSystem::onEvent(Event& aEvent)
+{
+	EventDispatcher dispatcher(aEvent);
+	dispatcher.dispatch<WindowResizeEvent>(BIND_EVENT_FUNCTION(RenderSystem::_onResize));
+}
+
+bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
+{
+	const uint32_t newWidth = aEvent.width();
+	const uint32_t newHeight = aEvent.height();
+
+	// reconstruct framebuffers
+	// reconstruct graphics pipeline
+
+	PRIMAL_TRACE("{0}, {1}", newWidth, newHeight);
+
+	return false;
+}

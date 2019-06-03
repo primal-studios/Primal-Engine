@@ -29,6 +29,8 @@ class SystemManager
 
 		void render();
 
+		void dispatchEvent(Event& aEvent);
+
 	private:
 		SystemManager() = default;
 
