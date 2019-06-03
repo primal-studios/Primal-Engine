@@ -13,6 +13,7 @@
 #include "graphics/api/IIndexBuffer.h"
 
 #include "events/ApplicationEvent.h"
+#include "graphics/api/IUniformBuffer.h"
 
 class RenderSystem final : public System
 {
@@ -49,13 +50,17 @@ class RenderSystem final : public System
 		IVertexBuffer* mVertexBuffer;
 		IVertexBuffer* mColorBuffer;
 		IIndexBuffer* mIndexBuffer;
+		IUniformBuffer* mUniformBuffer;
+		IDescriptorPool* mDescriptorPool;
+		IDescriptorSets* mSets;
+		IDescriptorSetLayout* mDescLayout;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};
 
 		Window* mWindow;
 
-		bool _onResize(WindowResizeEvent& aEvent) const;
+		bool _onResize(WindowResizeEvent& aEvent);
 };
 
 #endif // rendersystem_h__

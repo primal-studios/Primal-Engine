@@ -8,29 +8,22 @@
 #include "graphics/ShaderStageFlags.h"
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/api/ICommandPool.h"
+#include "graphics/api/ISampler.h"
+#include "graphics/api/IDescriptorSets.h"
 
 #include <cstdint>
 #include <vector>
 
-enum EDescriptorType : uint32_t
-{
-	DESCRIPTOR_TYPE_SAMPLER = 0,
-	DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER = 1,
-	DESCRIPTOR_TYPE_SAMPLED_IMAGE = 2,
-	DESCRIPTOR_TYPE_STORAGE_IMAGE = 3,
-	DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER = 4,
-	DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER = 5,
-	DESCRIPTOR_TYPE_UNIFORM_BUFFER = 6,
-	DESCRIPTOR_TYPE_STORAGE_BUFFER = 7,
-	DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC = 8,
-	DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC = 9,
-	DESCRIPTOR_TYPE_INPUT_ATTACHMENT = 10,
-};
-
 struct UniformBufferCreateInfo
 {
-	EDescriptorType descriptorType;
 	size_t size;
+
+	uint32_t binding;
+
+	uint32_t descriptorCount;
+	uint32_t framesInFlight;
+
+	std::vector<ISampler*> immutableSamplers;
 
 	ShaderStageFlags shaderStageFlags;
 
@@ -38,6 +31,8 @@ struct UniformBufferCreateInfo
 	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
+
+	IDescriptorSets* descriptorSets;
 
 	ICommandPool* commandPool;
 };
@@ -54,11 +49,10 @@ class IUniformBuffer
 		IUniformBuffer& operator = (IUniformBuffer&& aOther) noexcept = delete;
 
 		virtual void construct(const UniformBufferCreateInfo& aInfo) = 0;
-		virtual void setData(void* aData, const size_t aSize) = 0;
+		virtual void reconstruct(const UniformBufferCreateInfo& aInfo) = 0;
+		virtual void setData(void* aData, const size_t aSize, const size_t aCurrentImage) = 0;
 
-		virtual void setLayout(const BufferLayout& aLayout) = 0;
-
-	private:
+	protected:
 		IGraphicsContext* mContext;
 };
 

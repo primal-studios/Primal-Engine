@@ -41,8 +41,9 @@ void VulkanDescriptorSetLayout::construct(const DescriptorSetLayoutCreateInfo& a
 	{
 		VkDescriptorSetLayoutBinding binding = {};
 		binding.binding = b.binding;
-		binding.descriptorCount = static_cast<uint32_t>(b.immutableSamplers.size());
+		binding.descriptorCount = 1; // TODO See what this is about
 		binding.descriptorType = static_cast<VkDescriptorType>(b.type);
+		binding.stageFlags = b.shaderStageFlags;
 
 		binding.pImmutableSamplers = samplers[i].data();
 		bindings.push_back(binding);

@@ -27,6 +27,7 @@ class VulkanGraphicsContext final : public IGraphicsContext
 		VulkanGraphicsContext& operator=(VulkanGraphicsContext&&) noexcept = delete;
 
 		void idle() const override;
+
 		VkSurfaceKHR getSurfaceHandle() const;
 		VkDevice getDevice() const;
 		VkPhysicalDevice getPhysicalDevice() const;

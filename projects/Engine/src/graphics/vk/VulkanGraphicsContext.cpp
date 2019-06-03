@@ -461,7 +461,7 @@ void VulkanGraphicsContext::_createLogicalDevice()
 	PRIMAL_INTERNAL_INFO("Successfully created Vulkan device.");
 }
 
-	std::vector<const char*> VulkanGraphicsContext::_getRequiredExtensions() const
+std::vector<const char*> VulkanGraphicsContext::_getRequiredExtensions() const
 {
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);

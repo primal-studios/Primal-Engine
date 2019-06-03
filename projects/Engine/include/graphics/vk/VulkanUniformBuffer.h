@@ -1,10 +1,11 @@
 #ifndef vulkanuniformbuffer_h__
 #define vulkanuniformbuffer_h__
 
-#include "graphics/api/IUniformBuffer.h"
-
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
+
+#include "graphics/api/IUniformBuffer.h"
+#include "graphics/api/IDescriptorSetLayout.h"
 
 class VulkanUniformBuffer final : public IUniformBuffer
 {
@@ -18,9 +19,16 @@ class VulkanUniformBuffer final : public IUniformBuffer
 		VulkanUniformBuffer& operator = (VulkanUniformBuffer&& aOther) noexcept = delete;
 
 		void construct(const UniformBufferCreateInfo& aInfo) override;
-		void setData(void* aData, const size_t aSize) override;
+		void reconstruct(const UniformBufferCreateInfo& aInfo) override;
+		void setData(void* aData, const size_t aSize, const size_t aCurrentImage) override;
 
-		void setLayout(const BufferLayout& aLayout) override;
+	private:
+		void _destroy();
+
+		IDescriptorSetLayout* mLayout;
+
+		std::vector<VkBuffer> mBuffer;
+		std::vector<VmaAllocation> mAllocation;
 };
 
 #endif // vulkanuniformbuffer_h__

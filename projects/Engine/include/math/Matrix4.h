@@ -188,11 +188,13 @@ class Matrix4
 			detail::VectorType<T, 4> rows[4];
 			detail::MatrixType<T, 4, 4> _internal_value;
 		};
-	private:
-		Matrix4(const detail::MatrixType<T, 4, 4>& aValue)
+
+		Matrix4(const detail::MatrixType<T, 4, 4> & aValue)
 		{
 			_internal_value = aValue;
 		}
+	private:
+		
 };
 
 template<typename T>
