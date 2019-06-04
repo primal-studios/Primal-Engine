@@ -43,6 +43,7 @@ RenderSystem::RenderSystem(Window* aWindow)
 	swapChainInfo.width = aWindow->width();
 	swapChainInfo.height = aWindow->height();
 	swapChainInfo.maxImageCount = mFlightSize;
+	swapChainInfo.mPool = mPool;
 
 	mSwapChain->construct(swapChainInfo);
 }
@@ -103,14 +104,31 @@ void RenderSystem::initialize()
 		IMAGE_LAYOUT_PRESENT_SRC_KHR,
 	};
 
+	const AttachmentDescription depthAttachment{
+		static_cast<EDataFormat>(mSwapChain->getDepthFormat()),
+		IMAGE_SAMPLE_1,
+		EAttachmentLoadOperation::CLEAR,
+		EAttachmentStoreOperation::DONT_CARE,
+		EAttachmentLoadOperation::DONT_CARE,
+		EAttachmentStoreOperation::DONT_CARE,
+		IMAGE_LAYOUT_UNDEFINED,
+		IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+	};
+
 	const AttachmentReference colorRef = {
 		0,
 		EImageLayout::IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	};
 
+	const AttachmentReference depthRef = {
+		1,
+		EImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+	};
+
 
 	SubPassDescription desc = {};
 	desc.colors.push_back(colorRef);
+	desc.depthStencil = depthRef;
 
 	SubPassDependency dep = {};
 	dep.dependencyFlags = 0;
@@ -123,6 +141,7 @@ void RenderSystem::initialize()
 
 	RenderPassCreateInfo renderPassInfo;
 	renderPassInfo.attachments.push_back(colorAttachment);
+	renderPassInfo.attachments.push_back(depthAttachment);
 	renderPassInfo.dependencies.push_back(dep);
 	renderPassInfo.descriptions.push_back(desc);
 
@@ -138,6 +157,7 @@ void RenderSystem::initialize()
 	{
 		FramebufferCreateInfo frameBufferInfo = {};
 		frameBufferInfo.attachments.push_back(view);
+		frameBufferInfo.attachments.push_back(mSwapChain->getDepthView());
 		frameBufferInfo.renderPass = mRenderPass;
 		frameBufferInfo.height = mWindow->height();
 		frameBufferInfo.width = mWindow->width();
@@ -163,16 +183,21 @@ void RenderSystem::initialize()
 	mVertexBuffer = new VulkanVertexBuffer(mContext);
 
 	float vertices[] = {
-		-0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-		-0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+		-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f,
+
+		-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+		-0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
 	};
 
 	mVertexBuffer->setData(vertices, sizeof(vertices));
 
 	BufferLayout bufferLayout;
-	bufferLayout.push<Vector2f>("inPosition");
+	bufferLayout.push<Vector3f>("inPosition");
 	bufferLayout.push<Vector3f>("inColor");
 
 	mVertexBuffer->setLayout(bufferLayout);
@@ -181,7 +206,8 @@ void RenderSystem::initialize()
 		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()}, mPool });
 
 	uint32_t indices[] = {
-		0, 1, 2, 2, 3, 0
+		0, 1, 2, 2, 3, 0,
+		4, 5, 6, 6, 7, 4
 	};
 
 	mIndexBuffer = new VulkanIndexBuffer(mContext);
@@ -278,6 +304,19 @@ void RenderSystem::initialize()
 	colorBlendState.blendConstants[2] = 0.0f;
 	colorBlendState.blendConstants[3] = 0.0f;
 
+	PipelineDepthStencilStateCreateInfo depthState = {};
+	depthState.flags = 0;
+	depthState.depthTestEnable = true;
+	depthState.depthWriteEnable = true;
+	depthState.depthCompareOp = ECompareOp::COMPARE_OP_LESS;
+	depthState.depthBoundsTestEnable = false;
+	depthState.minDepthBounds = 0.0f;
+	depthState.maxDepthBounds = 1.0f;
+	depthState.stencilTestEnable = false;
+	depthState.front = {};
+	depthState.back = {};
+
+
 	mLayout = new VulkanPipelineLayout(mContext);
 	mLayout->construct({ 0, {mDescLayout}, {} });
 
@@ -295,6 +334,7 @@ void RenderSystem::initialize()
 	createInfo.basePipelineHandle = nullptr;
 	createInfo.basePipelineIndex = -1;
 	createInfo.renderPass = mRenderPass;
+	createInfo.depthStencilState = &depthState;
 	createInfo.subPass = 0;
 
 	mGraphicsPipeline->construct(createInfo);
@@ -347,7 +387,11 @@ void RenderSystem::render()
 	clear.color.float32[1] = 0.0f;
 	clear.color.float32[2] = 0.0f;
 	clear.color.float32[3] = 0.0f;
+
+	ClearValue depth = {};
+	depth.depthStencil = { 1.0f, 0 };
 	recordInfo.clearValues.push_back(clear);
+	recordInfo.clearValues.push_back(depth);
 
 	handle->recordRenderPass(recordInfo);
 
@@ -362,7 +406,7 @@ void RenderSystem::render()
 	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, l->getHandle(),
 		0, 1, &descSet, 0, nullptr);
 	
-	handle->drawIndexed(6, 1, 0, 0, 0);
+	handle->drawIndexed(12, 1, 0, 0, 0);
 
 	handle->endRenderPass();
 
@@ -398,6 +442,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	swapChainInfo.width = newWidth;
 	swapChainInfo.height = newHeight;
 	swapChainInfo.maxImageCount = mFlightSize;
+	swapChainInfo.mPool = mPool;
 
 	mSwapChain->reconstruct(swapChainInfo);
 
@@ -418,14 +463,31 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 		IMAGE_LAYOUT_PRESENT_SRC_KHR,
 	};
 
+	const AttachmentDescription depthAttachment{
+		static_cast<EDataFormat>(mSwapChain->getDepthFormat()),
+		IMAGE_SAMPLE_1,
+		EAttachmentLoadOperation::CLEAR,
+		EAttachmentStoreOperation::DONT_CARE,
+		EAttachmentLoadOperation::DONT_CARE,
+		EAttachmentStoreOperation::DONT_CARE,
+		IMAGE_LAYOUT_UNDEFINED,
+		IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+	};
+
 	const AttachmentReference colorRef = {
 		0,
 		EImageLayout::IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	};
 
+	const AttachmentReference depthRef = {
+		1,
+		EImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+	};
+
 
 	SubPassDescription desc = {};
 	desc.colors.push_back(colorRef);
+	desc.depthStencil = depthRef;
 
 	SubPassDependency dep = {};
 	dep.dependencyFlags = 0;
@@ -438,6 +500,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 
 	RenderPassCreateInfo renderPassInfo;
 	renderPassInfo.attachments.push_back(colorAttachment);
+	renderPassInfo.attachments.push_back(depthAttachment);
 	renderPassInfo.dependencies.push_back(dep);
 	renderPassInfo.descriptions.push_back(desc);
 
@@ -451,6 +514,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	{
 		FramebufferCreateInfo frameBufferInfo = {};
 		frameBufferInfo.attachments.push_back(view);
+		frameBufferInfo.attachments.push_back(mSwapChain->getDepthView());
 		frameBufferInfo.renderPass = mRenderPass;
 		frameBufferInfo.height = mWindow->height();
 		frameBufferInfo.width = mWindow->width();
@@ -482,8 +546,6 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 
 	IShaderStage* fragStage = new VulkanShaderStage(mContext);
 	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
-
-	//mDescLayout->reconstruct({ 0, {{0, EDescriptorType::UNIFORM_BUFFER, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}}} });
 
 	mUniformBuffer->reconstruct({ sizeof(ubo), 0, 1, 2, {}, SHADER_STAGE_VERTEX, 0,
 	0, ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mSets, mPool });
@@ -546,6 +608,18 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	colorBlendState.blendConstants[2] = 0.0f;
 	colorBlendState.blendConstants[3] = 0.0f;
 
+	PipelineDepthStencilStateCreateInfo depthState = {};
+	depthState.flags = 0;
+	depthState.depthTestEnable = true;
+	depthState.depthWriteEnable = true;
+	depthState.depthCompareOp = ECompareOp::COMPARE_OP_LESS;
+	depthState.depthBoundsTestEnable = false;
+	depthState.minDepthBounds = 0.0f;
+	depthState.maxDepthBounds = 1.0f;
+	depthState.stencilTestEnable = false;
+	depthState.front = {};
+	depthState.back = {};
+
 	mLayout->reconstruct({ 0, {mDescLayout}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
@@ -563,6 +637,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	createInfo.basePipelineIndex = -1;
 	createInfo.renderPass = mRenderPass;
 	createInfo.subPass = 0;
+	createInfo.depthStencilState = &depthState;
 
 	mGraphicsPipeline->reconstruct(createInfo);
 
@@ -575,4 +650,9 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	vkContext->idle();
 
 	return false;
+}
+
+void RenderSystem::_construct()
+{
+
 }

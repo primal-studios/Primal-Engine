@@ -3,6 +3,7 @@
 
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/api/IImage.h"
+#include "graphics/api/ICommandPool.h"
 
 #include <cstdint>
 
@@ -16,6 +17,7 @@ struct SwapChainCreateInfo
 	uint32_t height;
 	uint32_t layers;
 	ImageUsageFlags usage;
+	ICommandPool* mPool;
 };
 
 class ISwapChain

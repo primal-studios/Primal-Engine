@@ -34,6 +34,9 @@ class VulkanSwapChain final : public ISwapChain
 		VkSwapchainKHR getHandle() const;
 		const std::vector<IImageView*>& getImageViews() const;
 
+		IImageView* getDepthView() const;
+		VkFormat getDepthFormat() const;
+
 		void beginFrame();
 		void submit(ICommandBuffer* aBuffer) const;
 		void swap();
@@ -41,6 +44,7 @@ class VulkanSwapChain final : public ISwapChain
 		EDataFormat getSwapchainFormat() const;
 	private:
 		void _createImageViews();
+		void _createDepthResources();
 		void _destroy();
 
 		uint8_t mFlightSize = 2;
@@ -48,9 +52,16 @@ class VulkanSwapChain final : public ISwapChain
 		uint32_t mImageCount = 0;
 		std::vector<IImageView*> mImageViews;
 
+		IImageView* mDepthView;
+		IImage* mDepthImage;
+		VmaAllocation mDepthMemory;
+		VkFormat mDepthFormat;
+
 		VkSwapchainKHR mSwapchain{};
 		VkSwapchainKHR mOldSwapchain{};
 		IGraphicsContext* mContext;
+
+		ICommandPool* mPool;
 
 		SwapChainCreateInfo mInfo{};
 		EDataFormat mSwapchainImageFormat = EDataFormat::UNDEFINED;

@@ -75,7 +75,8 @@ project "Tests"
     }
 
     defines {
-    	"GLFW_INCLUDE_NONE"
+    	"GLFW_INCLUDE_NONE",
+        "GLM_FORCE_DEPTH_ZERO_TO_ONE"
 	}
 
 	disablewarnings {

@@ -5,6 +5,7 @@
 #include "graphics/vk/VulkanImage.h"
 #include "graphics/vk/VulkanImageView.h"
 #include "graphics/vk/VulkanSwapChain.h"
+#include "graphics/vk/VulkanCommandPool.h"
 
 namespace detail
 {
@@ -43,7 +44,7 @@ namespace detail
 		return best;
 	}
 
-	static DeviceQueueFamilyIndices sFindQueueFamilies(VkPhysicalDevice aDevice, const VkSurfaceKHR aSurface)
+	static DeviceQueueFamilyIndices sFindQueueFamilies(const VkPhysicalDevice aDevice, const VkSurfaceKHR aSurface)
 	{
 		DeviceQueueFamilyIndices indices;
 		uint32_t queueFamilyCount = 0;
@@ -78,6 +79,148 @@ namespace detail
 
 		return indices;
 	}
+
+	static VkFormat sFindSupportedFormat(const VkPhysicalDevice aDevice, const std::vector<VkFormat>& aCandidates, VkImageTiling aTiling, VkFormatFeatureFlags aFeatures)
+	{
+		for(VkFormat format : aCandidates)
+		{
+			VkFormatProperties props;
+			vkGetPhysicalDeviceFormatProperties(aDevice, format, &props);
+
+			if(aTiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & aFeatures) == aFeatures)
+			{
+				return format;
+			}
+			else if(aTiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & aFeatures) == aFeatures)
+			{
+				return format;
+			}
+		}
+
+		PRIMAL_INTERNAL_CRITICAL("Failed to find supported Vulkan format.");
+
+		return VK_FORMAT_UNDEFINED;
+	}
+
+	static VkFormat sFindSupportedDepthFormat(const VkPhysicalDevice aDevice)
+	{
+		return sFindSupportedFormat(aDevice, { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	}
+
+	static bool sHasStencilComponent(VkFormat aFormat)
+	{
+		return aFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || aFormat == VK_FORMAT_D24_UNORM_S8_UINT;
+	}
+
+	static VkCommandBuffer beginSingleTimeCommands(VulkanGraphicsContext* aContext, VulkanCommandPool* aPool) 
+	{
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = aPool->getPool();
+		allocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer;
+		vkAllocateCommandBuffers(aContext->getDevice(), &allocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		return commandBuffer;
+	}
+
+	static void endSingleTimeCommands(VulkanGraphicsContext* aContext, VkCommandBuffer commandBuffer, VulkanCommandPool* aPool)
+	{
+		vkEndCommandBuffer(commandBuffer);
+
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		VkQueue graphicsQueue;
+		vkGetDeviceQueue(aContext->getDevice(), aContext->getGraphicsQueueIndex(), 0, &graphicsQueue);
+
+		vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphicsQueue);
+
+		vkFreeCommandBuffers(aContext->getDevice(), aPool->getPool(), 1, &commandBuffer);
+	}
+
+
+	static void transitionImageLayout(VulkanGraphicsContext* aContext, VulkanCommandPool* aPool, 
+		VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+		VkCommandBuffer commandBuffer = beginSingleTimeCommands(aContext, aPool);
+
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = oldLayout;
+		barrier.newLayout = newLayout;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = image;
+
+		if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+			if (sHasStencilComponent(format)) {
+				barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+			}
+		}
+		else {
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		}
+
+		barrier.subresourceRange.baseMipLevel = 0;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
+
+		VkPipelineStageFlags sourceStage;
+		VkPipelineStageFlags destinationStage;
+
+		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
+		else {
+			throw std::invalid_argument("unsupported layout transition!");
+		}
+
+		vkCmdPipelineBarrier(
+			commandBuffer,
+			sourceStage, destinationStage,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier
+		);
+
+		endSingleTimeCommands(aContext, commandBuffer, aPool);
+	}
 }
 
 VulkanSwapChain::VulkanSwapChain(IGraphicsContext* aContext, const uint8_t aFlightSize)
@@ -96,6 +239,8 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 	const VkDevice device = context->getDevice();
 	const VkPhysicalDevice physicalDevice = context->getPhysicalDevice();
 	const VkSurfaceKHR surface = context->getSurfaceHandle();
+
+	mPool = aInfo.mPool;
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -193,6 +338,7 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 
 	mImageCount = imageCount;
 	_createImageViews();
+	_createDepthResources();
 
 	mImageAvailable.resize(mFlightSize);
 	mRenderFinished.resize(mFlightSize);
@@ -242,6 +388,16 @@ VkSwapchainKHR VulkanSwapChain::getHandle() const
 const std::vector<IImageView*>& VulkanSwapChain::getImageViews() const
 {
 	return mImageViews;
+}
+
+IImageView* VulkanSwapChain::getDepthView() const
+{
+	return mDepthView;
+}
+
+VkFormat VulkanSwapChain::getDepthFormat() const
+{
+	return mDepthFormat;
 }
 
 void VulkanSwapChain::beginFrame()
@@ -358,8 +514,30 @@ void VulkanSwapChain::_createImageViews()
 	}
 }
 
+void VulkanSwapChain::_createDepthResources()
+{
+	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+	const VkDevice device = context->getDevice();
+
+	mDepthFormat = detail::sFindSupportedDepthFormat(context->getPhysicalDevice());
+
+	mDepthImage = new VulkanImage(mContext);
+	mDepthImage->construct({ 0, EImageDimension::IMAGE_2D, static_cast<EDataFormat>(mDepthFormat), mInfo.width, mInfo.height,
+	1, 1, 1, EImageSampleFlagBits::IMAGE_SAMPLE_1, EImageTiling::IMAGE_TILING_OPTIMAL, EImageUsageFlagBits::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+	EImageLayout::IMAGE_LAYOUT_UNDEFINED, {mContext}, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 0});
+
+	mDepthView = new VulkanImageView(mContext);
+	mDepthView->construct({ mDepthImage, static_cast<EDataFormat>(mDepthFormat), EImageViewType::IMAGE_VIEW_TYPE_2D, {EImageAspectFlagBits::IMAGE_ASPECT_DEPTH, 0, 1, 0, 1} });
+
+	VulkanImage* vImage = static_cast<VulkanImage*>(mDepthImage);
+	VulkanCommandPool* pool = static_cast<VulkanCommandPool*>(mPool);
+	detail::transitionImageLayout(context, pool, vImage->getHandle(), mDepthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
 void VulkanSwapChain::_destroy()
 {
+	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+
 	for (IImageView* view : mImageViews)
 	{
 		delete view;
@@ -367,7 +545,9 @@ void VulkanSwapChain::_destroy()
 
 	mImageViews.clear();
 
-	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	delete mDepthView;
+	delete mDepthImage;
+
 	vkDeviceWaitIdle(context->getDevice());
 	vkDestroySwapchainKHR(context->getDevice(), mSwapchain, nullptr);
 

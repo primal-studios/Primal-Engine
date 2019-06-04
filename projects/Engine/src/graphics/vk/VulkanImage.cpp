@@ -57,9 +57,9 @@ void VulkanImage::construct(const ImageCreateInfo& aInfo)
 	createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilies.size());
 
 	VmaAllocationCreateInfo allocInfo = {};
-	allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-	allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-	allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	allocInfo.requiredFlags = aInfo.memoryRequiredFlags;
+	allocInfo.preferredFlags = aInfo.memoryPreferredFlags;
+	allocInfo.flags = aInfo.memoryAllocationFlags;
 
 	const VkResult res = vmaCreateImage(mAllocator, &createInfo, &allocInfo, &mImage, &mAllocation, nullptr);
 
