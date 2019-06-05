@@ -113,114 +113,6 @@ namespace detail
 	{
 		return aFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || aFormat == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
-
-	static VkCommandBuffer beginSingleTimeCommands(VulkanGraphicsContext* aContext, VulkanCommandPool* aPool) 
-	{
-		VkCommandBufferAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = aPool->getPool();
-		allocInfo.commandBufferCount = 1;
-
-		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(aContext->getDevice(), &allocInfo, &commandBuffer);
-
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-		vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-		return commandBuffer;
-	}
-
-	static void endSingleTimeCommands(VulkanGraphicsContext* aContext, VkCommandBuffer commandBuffer, VulkanCommandPool* aPool)
-	{
-		vkEndCommandBuffer(commandBuffer);
-
-		VkSubmitInfo submitInfo = {};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-
-		VkQueue graphicsQueue;
-		vkGetDeviceQueue(aContext->getDevice(), aContext->getGraphicsQueueIndex(), 0, &graphicsQueue);
-
-		vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(graphicsQueue);
-
-		vkFreeCommandBuffers(aContext->getDevice(), aPool->getPool(), 1, &commandBuffer);
-	}
-
-
-	static void transitionImageLayout(VulkanGraphicsContext* aContext, VulkanCommandPool* aPool, 
-		VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
-{
-		VkCommandBuffer commandBuffer = beginSingleTimeCommands(aContext, aPool);
-
-		VkImageMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = oldLayout;
-		barrier.newLayout = newLayout;
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = image;
-
-		if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-			if (sHasStencilComponent(format)) {
-				barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-			}
-		}
-		else {
-			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		}
-
-		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.levelCount = 1;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.layerCount = 1;
-
-		VkPipelineStageFlags sourceStage;
-		VkPipelineStageFlags destinationStage;
-
-		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-			barrier.srcAccessMask = 0;
-			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-			barrier.srcAccessMask = 0;
-			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		}
-		else {
-			throw std::invalid_argument("unsupported layout transition!");
-		}
-
-		vkCmdPipelineBarrier(
-			commandBuffer,
-			sourceStage, destinationStage,
-			0,
-			0, nullptr,
-			0, nullptr,
-			1, &barrier
-		);
-
-		endSingleTimeCommands(aContext, commandBuffer, aPool);
-	}
 }
 
 VulkanSwapChain::VulkanSwapChain(IGraphicsContext* aContext, const uint8_t aFlightSize)
@@ -522,16 +414,30 @@ void VulkanSwapChain::_createDepthResources()
 	mDepthFormat = detail::sFindSupportedDepthFormat(context->getPhysicalDevice());
 
 	mDepthImage = new VulkanImage(mContext);
-	mDepthImage->construct({ 0, EImageDimension::IMAGE_2D, static_cast<EDataFormat>(mDepthFormat), mInfo.width, mInfo.height,
-	1, 1, 1, EImageSampleFlagBits::IMAGE_SAMPLE_1, EImageTiling::IMAGE_TILING_OPTIMAL, EImageUsageFlagBits::IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-	EImageLayout::IMAGE_LAYOUT_UNDEFINED, {mContext}, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 0});
+	ImageCreateInfo createInfo = {};
+	createInfo.flags = 0;
+	createInfo.dimension = EImageDimension::IMAGE_2D;
+	createInfo.format = static_cast<EDataFormat>(mDepthFormat);
+	createInfo.width = mInfo.width;
+	createInfo.height = mInfo.height;
+	createInfo.depth = 1;
+	createInfo.mipLayerCount = 1;
+	createInfo.layerCount = 1;
+	createInfo.samples = IMAGE_SAMPLE_1;
+	createInfo.tiling = EImageTiling::IMAGE_TILING_OPTIMAL;
+	createInfo.usage = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	createInfo.layout = IMAGE_LAYOUT_UNDEFINED;
+	createInfo.contexts = { mContext };
+	createInfo.memoryRequiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	mDepthImage->construct(createInfo);
 
 	mDepthView = new VulkanImageView(mContext);
 	mDepthView->construct({ mDepthImage, static_cast<EDataFormat>(mDepthFormat), EImageViewType::IMAGE_VIEW_TYPE_2D, {EImageAspectFlagBits::IMAGE_ASPECT_DEPTH, 0, 1, 0, 1} });
 
 	VulkanImage* vImage = static_cast<VulkanImage*>(mDepthImage);
-	VulkanCommandPool* pool = static_cast<VulkanCommandPool*>(mPool);
-	detail::transitionImageLayout(context, pool, vImage->getHandle(), mDepthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+	vImage->transitionToLayout(createInfo, static_cast<EDataFormat>(mDepthFormat), IMAGE_LAYOUT_UNDEFINED, IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void VulkanSwapChain::_destroy()

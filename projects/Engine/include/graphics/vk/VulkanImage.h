@@ -23,8 +23,9 @@ public:
 
 	void setHandle(VkImage aImage);
 	void setData(void* aData, const size_t aSize) override;
+	
+	void transitionToLayout(const ImageCreateInfo& aInfo, EDataFormat aFormat, EImageLayout aOldLayout, EImageLayout aNewLayout) const;
 private:
-	void _transitionToLayout(const ImageCreateInfo& aInfo, VkFormat aFormat, VkImageLayout aOldLayout, VkImageLayout aNewLayout) const;
 	void _copyBufferToImage(const ImageCreateInfo& aInfo) const;
 
 	void _destroy() const;

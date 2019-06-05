@@ -94,9 +94,9 @@ void VulkanImage::construct(const ImageCreateInfo& aInfo)
 
 	if (mStagingMemory != nullptr)
 	{
-		_transitionToLayout(aInfo, static_cast<VkFormat>(aInfo.format), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		transitionToLayout(aInfo, aInfo.format, IMAGE_LAYOUT_UNDEFINED, IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		_copyBufferToImage(aInfo);
-		_transitionToLayout(aInfo, static_cast<VkFormat>(aInfo.format), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionToLayout(aInfo, aInfo.format, IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		
 		VulkanGraphicsContext* ctx = reinterpret_cast<VulkanGraphicsContext*>(mContext);
 		vmaDestroyBuffer(ctx->getBufferAllocator(), mStagingBuffer, mStagingAllocation);
@@ -134,12 +134,12 @@ void VulkanImage::setData(void* aData, const size_t aSize)
 	PRIMAL_ASSERT(mStagingMemory != nullptr, "Failed to allocate staging memory.");
 }
 
-void VulkanImage::_transitionToLayout(const ImageCreateInfo& aInfo, VkFormat aFormat, VkImageLayout aOldLayout, VkImageLayout aNewLayout) const
+void VulkanImage::transitionToLayout(const ImageCreateInfo& aInfo, EDataFormat aFormat, EImageLayout aOldLayout, EImageLayout aNewLayout) const
 {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = aOldLayout;
-	barrier.newLayout = aNewLayout;
+	barrier.oldLayout = static_cast<VkImageLayout>(aOldLayout);
+	barrier.newLayout = static_cast<VkImageLayout>(aNewLayout);
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = mImage;
@@ -151,7 +151,10 @@ void VulkanImage::_transitionToLayout(const ImageCreateInfo& aInfo, VkFormat aFo
 	VkPipelineStageFlags sourceStage = 0;
 	VkPipelineStageFlags destinationStage = 0;
 
-	if (aOldLayout == VK_IMAGE_LAYOUT_UNDEFINED && aNewLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	const VkImageLayout oldLayout = static_cast<VkImageLayout>(aOldLayout);
+	const VkImageLayout newLayout = static_cast<VkImageLayout>(aNewLayout);
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 	{
 		barrier.srcAccessMask = 0;
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -159,13 +162,20 @@ void VulkanImage::_transitionToLayout(const ImageCreateInfo& aInfo, VkFormat aFo
 		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
-	else if (aOldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && aNewLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	}
 	else
 	{
