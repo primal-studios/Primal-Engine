@@ -224,7 +224,7 @@ namespace detail
 }
 
 VulkanSwapChain::VulkanSwapChain(IGraphicsContext* aContext, const uint8_t aFlightSize)
-	: ISwapChain(aContext), mFlightSize(aFlightSize), mOldSwapchain(VK_NULL_HANDLE), mContext(aContext)
+	: ISwapChain(aContext), mFlightSize(aFlightSize), mDepthFormat(), mOldSwapchain(VK_NULL_HANDLE), mContext(aContext)
 {
 }
 

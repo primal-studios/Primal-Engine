@@ -32,12 +32,12 @@ class VulkanVertexBuffer final : public IVertexBuffer
 		std::vector<VertexInputAttributeDescription> getAttributes() const;
 
 	private:
-		VkBuffer mBuffer;
-		VkBuffer mStagingBuffer;
+		VkBuffer mBuffer{};
+		VkBuffer mStagingBuffer{};
 		VmaAllocation mStagingAllocation{};
 		VmaAllocation mAllocation{};
 
-		VkVertexInputBindingDescription mBindingDescription;
+		VkVertexInputBindingDescription mBindingDescription{};
 		std::vector<VkVertexInputAttributeDescription> mAttributeDescriptions;
 };
 

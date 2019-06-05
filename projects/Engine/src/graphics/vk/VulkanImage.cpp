@@ -1,6 +1,9 @@
 #include "core/Log.h"
 #include "graphics/vk/VulkanImage.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
+#include "core/PrimalAssert.h"
+#include "graphics/api/ICommandBuffer.h"
+#include "graphics/vk/VulkanCommandBuffer.h"
 
 VulkanImage::VulkanImage(IGraphicsContext* aContext)
 	: IImage(aContext), mContext(aContext)
@@ -11,15 +14,32 @@ VulkanImage::VulkanImage(IGraphicsContext* aContext)
 
 VulkanImage::~VulkanImage()
 {
-	if (mOwning)
-	{
-		vmaDestroyImage(mAllocator, mImage, mAllocation);
-	}
+	_destroy();
 }
 
 void VulkanImage::construct(const ImageCreateInfo& aInfo)
 {
 	using namespace std;
+
+	if (mStagingMemory)
+	{
+		VkBufferCreateInfo stagingBufferInfo = {};
+		stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		stagingBufferInfo.size = mStagingSize;
+		stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		stagingBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		VulkanGraphicsContext* ctx = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+
+		VmaAllocationCreateInfo stagingAllocInfo = {};
+		stagingAllocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+		vmaCreateBuffer(ctx->getBufferAllocator(), &stagingBufferInfo, &stagingAllocInfo, &mStagingBuffer, &mStagingAllocation, nullptr);
+		void* data;
+		vmaMapMemory(ctx->getBufferAllocator(), mStagingAllocation, &data);
+		memcpy(data, mStagingMemory, mStagingSize);
+		vmaUnmapMemory(ctx->getBufferAllocator(), mStagingAllocation);
+	}
 
 	VkImageCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -29,7 +49,7 @@ void VulkanImage::construct(const ImageCreateInfo& aInfo)
 	createInfo.format = static_cast<VkFormat>(aInfo.format);
 	createInfo.extent = { aInfo.width, aInfo.height, aInfo.depth };
 	createInfo.mipLevels = aInfo.mipLayerCount;
-	createInfo.arrayLayers = aInfo.arrayLayerCount;
+	createInfo.arrayLayers = aInfo.layerCount;
 	createInfo.samples = static_cast<VkSampleCountFlagBits>(aInfo.samples);
 	createInfo.tiling = static_cast<VkImageTiling>(aInfo.tiling);
 	createInfo.usage = aInfo.usage;
@@ -71,6 +91,23 @@ void VulkanImage::construct(const ImageCreateInfo& aInfo)
 	{
 		PRIMAL_INTERNAL_INFO("Successfully created Vulkan image.");
 	}
+
+	if (mStagingMemory != nullptr)
+	{
+		_transitionToLayout(aInfo, static_cast<VkFormat>(aInfo.format), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		_copyBufferToImage(aInfo);
+		_transitionToLayout(aInfo, static_cast<VkFormat>(aInfo.format), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		
+		VulkanGraphicsContext* ctx = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+		vmaDestroyBuffer(ctx->getBufferAllocator(), mStagingBuffer, mStagingAllocation);
+		free(mStagingMemory);
+	}
+}
+
+void VulkanImage::reconstruct(const ImageCreateInfo& aInfo)
+{
+	_destroy();
+	construct(aInfo);
 }
 
 VkImage VulkanImage::getHandle() const
@@ -82,4 +119,145 @@ void VulkanImage::setHandle(const VkImage aImage)
 {
 	mOwning = false;
 	mImage = aImage;
+}
+
+void VulkanImage::setData(void* aData, const size_t aSize)
+{
+	if (mStagingMemory)
+	{
+		free(mStagingMemory);
+		mStagingMemory = nullptr;
+	}
+
+	mStagingSize = aSize;
+	mStagingMemory = malloc(aSize);
+	PRIMAL_ASSERT(mStagingMemory != nullptr, "Failed to allocate staging memory.");
+}
+
+void VulkanImage::_transitionToLayout(const ImageCreateInfo& aInfo, VkFormat aFormat, VkImageLayout aOldLayout, VkImageLayout aNewLayout) const
+{
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = aOldLayout;
+	barrier.newLayout = aNewLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = mImage;
+	barrier.subresourceRange.aspectMask = aInfo.imageAspect;
+	barrier.subresourceRange.baseMipLevel = aInfo.baseMipLevel;
+	barrier.subresourceRange.levelCount = aInfo.layerCount;
+	barrier.subresourceRange.baseArrayLayer = aInfo.baseArrayLayer;
+
+	VkPipelineStageFlags sourceStage = 0;
+	VkPipelineStageFlags destinationStage = 0;
+
+	if (aOldLayout == VK_IMAGE_LAYOUT_UNDEFINED && aNewLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (aOldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && aNewLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else
+	{
+		PRIMAL_ASSERT(false, "Unsupported transition.");
+	}
+
+	VulkanGraphicsContext* ctx = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+	VulkanCommandPool* pool = ctx->getCommandPool();
+
+	const CommandBufferCreateInfo commandBufferInfo = {
+		pool,
+		true
+	};
+
+	VulkanCommandBuffer buf(ctx);
+	buf.construct(commandBufferInfo);
+	const VkCommandBuffer bufHandle = buf.getHandle();
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(bufHandle, &beginInfo);
+	vkCmdPipelineBarrier(bufHandle, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+	vkEndCommandBuffer(bufHandle);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &bufHandle;
+
+	const uint32_t queueIdx = ctx->getGraphicsQueueIndex();
+	VkQueue queue;
+
+	vkGetDeviceQueue(ctx->getDevice(), queueIdx, 0, &queue);
+
+	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(queue);
+}
+
+void VulkanImage::_copyBufferToImage(const ImageCreateInfo& aInfo) const
+{
+	VulkanGraphicsContext* ctx = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+	VulkanCommandPool* pool = ctx->getCommandPool();
+
+	const CommandBufferCreateInfo commandBufferInfo = {
+		pool,
+		true
+	};
+
+	VulkanCommandBuffer buf(ctx);
+	buf.construct(commandBufferInfo);
+	const VkCommandBuffer bufHandle = buf.getHandle();
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	VkBufferImageCopy region;
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = aInfo.imageAspect;
+	region.imageSubresource.mipLevel = aInfo.baseMipLevel;
+	region.imageSubresource.baseArrayLayer = aInfo.baseArrayLayer;
+	region.imageSubresource.layerCount = aInfo.layerCount;
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = { aInfo.width, aInfo.height, 0 };
+
+	vkBeginCommandBuffer(bufHandle, &beginInfo);
+	vkCmdCopyBufferToImage(bufHandle, mStagingBuffer, mImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+	vkEndCommandBuffer(bufHandle);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &bufHandle;
+
+	const uint32_t queueIdx = ctx->getGraphicsQueueIndex();
+	VkQueue queue;
+
+	vkGetDeviceQueue(ctx->getDevice(), queueIdx, 0, &queue);
+
+	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(queue);
+
+}
+
+void VulkanImage::_destroy() const
+{
+	if (mOwning)
+	{
+		vmaDestroyImage(mAllocator, mImage, mAllocation);
+	}
 }

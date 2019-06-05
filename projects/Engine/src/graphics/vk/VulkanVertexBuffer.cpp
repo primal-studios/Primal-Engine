@@ -27,15 +27,9 @@ static constexpr VkFormat sVertexAttributeFormat(const EBufferLayoutElementTypes
 	}
 }
 
-VulkanVertexBuffer::VulkanVertexBuffer(IGraphicsContext* aContext) : IVertexBuffer(aContext)
+VulkanVertexBuffer::VulkanVertexBuffer(IGraphicsContext* aContext) 
+	: IVertexBuffer(aContext)
 {
-	mBuffer = nullptr;
-	mStagingBuffer = nullptr;
-
-	mBindingDescription = {};
-
-	mSize = 0;
-	mData = nullptr;
 }
 
 VulkanVertexBuffer::~VulkanVertexBuffer()

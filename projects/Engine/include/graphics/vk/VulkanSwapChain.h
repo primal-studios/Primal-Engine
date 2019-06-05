@@ -52,16 +52,16 @@ class VulkanSwapChain final : public ISwapChain
 		uint32_t mImageCount = 0;
 		std::vector<IImageView*> mImageViews;
 
-		IImageView* mDepthView;
-		IImage* mDepthImage;
-		VmaAllocation mDepthMemory;
+		IImageView* mDepthView{};
+		IImage* mDepthImage{};
+		VmaAllocation mDepthMemory{};
 		VkFormat mDepthFormat;
 
 		VkSwapchainKHR mSwapchain{};
 		VkSwapchainKHR mOldSwapchain{};
 		IGraphicsContext* mContext;
 
-		ICommandPool* mPool;
+		ICommandPool* mPool{};
 
 		SwapChainCreateInfo mInfo{};
 		EDataFormat mSwapchainImageFormat = EDataFormat::UNDEFINED;

@@ -3,6 +3,7 @@
 
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/DataFormat.h"
+#include "graphics/ImageAspect.h"
 
 #include <cstdint>
 #include <vector>
@@ -125,8 +126,11 @@ struct ImageCreateInfo
 	uint32_t width;
 	uint32_t height;
 	uint32_t depth;
+	uint32_t baseMipLevel;
 	uint32_t mipLayerCount;
-	uint32_t arrayLayerCount;
+	uint32_t baseArrayLayer;
+	uint32_t layerCount;
+	ImageAspectFlags imageAspect;
 	EImageSampleFlagBits samples;
 	EImageTiling tiling;
 	ImageUsageFlags usage;
@@ -150,6 +154,8 @@ class IImage
 		IImage& operator=(IImage&&) noexcept = delete;
 
 		virtual void construct(const ImageCreateInfo&) = 0;
+		virtual void reconstruct(const ImageCreateInfo&) = 0;
+		virtual void setData(void* aData, const size_t aSize) = 0;
 };
 
 #endif // iimage_h__
