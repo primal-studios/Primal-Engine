@@ -36,7 +36,6 @@ class RenderSystem final : public System
 	private:
 		VulkanGraphicsContext* mContext;
 		VulkanSwapChain* mSwapChain;
-		VulkanCommandPool* mPool;
 		VulkanRenderPass* mRenderPass;
 		const uint32_t mFlightSize = 2;
 		uint32_t mCurrentFrame = 0;

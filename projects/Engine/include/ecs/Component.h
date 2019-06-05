@@ -23,7 +23,7 @@ class Component
 
 		static void destroy(Component* aComponent, const bool aRemoveFromEntity = true);
 
-		Entity* entity;
+		Entity* entity = nullptr;
 };
 
 #endif // component_h__

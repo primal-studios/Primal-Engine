@@ -33,8 +33,6 @@ struct UniformBufferCreateInfo
 	std::vector<uint32_t> queueFamilyIndices;
 
 	IDescriptorSets* descriptorSets;
-
-	ICommandPool* commandPool;
 };
 
 class IUniformBuffer

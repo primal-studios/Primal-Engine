@@ -8,6 +8,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
+#include "VulkanCommandPool.h"
 
 struct DeviceQueueFamilyIndices
 {
@@ -37,6 +38,8 @@ class VulkanGraphicsContext final : public IGraphicsContext
 
 		VmaAllocator getImageAllocator() const;
 		VmaAllocator getBufferAllocator() const;
+
+		VulkanCommandPool* getCommandPool() const;
 	private:
 		void _initializeVulkan();
 		void _initializeDebugMessenger();
@@ -60,6 +63,8 @@ class VulkanGraphicsContext final : public IGraphicsContext
 		GraphicsContextCreateInfo mCreateInfo;
 		VmaAllocator mImageAllocator{};
 		VmaAllocator mBufferAllocator{};
+
+		VulkanCommandPool* mPool;
 };
 
 #endif // vulkangraphicscontext_h__

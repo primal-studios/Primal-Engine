@@ -33,7 +33,7 @@ void VulkanDescriptorPool::construct(const DescriptorPoolCreateInfo& aInfo)
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.flags = aInfo.flags;
-	poolInfo.poolSizeCount = vulkanPoolSizes.size();
+	poolInfo.poolSizeCount = static_cast<uint32_t>(vulkanPoolSizes.size());
 	poolInfo.pPoolSizes = vulkanPoolSizes.data();
 	poolInfo.maxSets = aInfo.maxSets;
 

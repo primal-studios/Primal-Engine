@@ -111,6 +111,14 @@ VulkanGraphicsContext::VulkanGraphicsContext(const GraphicsContextCreateInfo& aC
 	imageAllocatorCreateInfo.physicalDevice = mPhysicalDevice;
 	vmaCreateAllocator(&imageAllocatorCreateInfo, &mImageAllocator);
 	vmaCreateAllocator(&imageAllocatorCreateInfo, &mBufferAllocator);
+
+	const CommandPoolCreateInfo commandPoolInfo = {
+		COMMAND_POOL_RESET_COMMAND_BUFFER,
+		getGraphicsQueueIndex()
+	};
+
+	mPool = new VulkanCommandPool(this);
+	mPool->construct(commandPoolInfo);
 }
 
 VulkanGraphicsContext::~VulkanGraphicsContext()
@@ -182,6 +190,11 @@ VmaAllocator VulkanGraphicsContext::getImageAllocator() const
 VmaAllocator VulkanGraphicsContext::getBufferAllocator() const
 {
 	return mBufferAllocator;
+}
+
+VulkanCommandPool* VulkanGraphicsContext::getCommandPool() const
+{
+	return mPool;
 }
 
 void VulkanGraphicsContext::_initializeVulkan()

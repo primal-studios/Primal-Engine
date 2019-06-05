@@ -21,8 +21,6 @@ struct IndexBufferCreateInfo
 	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
-
-	ICommandPool* commandPool;
 };
 
 class IIndexBuffer

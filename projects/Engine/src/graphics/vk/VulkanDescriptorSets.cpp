@@ -24,7 +24,7 @@ void VulkanDescriptorSets::construct(const DescriptorSetCreateInfo& aInfo)
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	VulkanDescriptorPool* pool = primal_cast<VulkanDescriptorPool*>(aInfo.pool);
 	allocInfo.descriptorPool = pool->getHandle();
-	allocInfo.descriptorSetCount = aInfo.setLayouts.size();
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(aInfo.setLayouts.size());
 
 	std::vector<VkDescriptorSetLayout> layouts;
 	for(const auto& l : aInfo.setLayouts)

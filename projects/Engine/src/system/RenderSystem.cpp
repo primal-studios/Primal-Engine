@@ -28,14 +28,6 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 	mContext = new VulkanGraphicsContext(info);
 
-	const CommandPoolCreateInfo commandPoolInfo = {
-		COMMAND_POOL_RESET_COMMAND_BUFFER,
-		mContext->getGraphicsQueueIndex()
-	};
-
-	mPool = new VulkanCommandPool(mContext);
-	mPool->construct(commandPoolInfo);
-
 	mSwapChain = new VulkanSwapChain(mContext);
 
 	SwapChainCreateInfo swapChainInfo = {};
@@ -43,7 +35,7 @@ RenderSystem::RenderSystem(Window* aWindow)
 	swapChainInfo.width = aWindow->width();
 	swapChainInfo.height = aWindow->height();
 	swapChainInfo.maxImageCount = mFlightSize;
-	swapChainInfo.mPool = mPool;
+	swapChainInfo.mPool = mContext->getCommandPool();
 
 	mSwapChain->construct(swapChainInfo);
 }
@@ -72,7 +64,6 @@ RenderSystem::~RenderSystem()
 	delete mLayout;
 	delete mGraphicsPipeline;
 	delete mRenderPass;
-	delete mPool;
 	delete mContext;
 }
 
@@ -89,7 +80,7 @@ void RenderSystem::initialize()
 
 	const CommandBufferCreateInfo commandBufferInfo =
 	{
-		mPool,
+		mContext->getCommandPool(),
 		true
 	};
 
@@ -203,7 +194,7 @@ void RenderSystem::initialize()
 	mVertexBuffer->setLayout(bufferLayout);
 
 	mVertexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_VERTEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
-		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()}, mPool });
+		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
 
 	uint32_t indices[] = {
 		0, 1, 2, 2, 3, 0,
@@ -214,7 +205,7 @@ void RenderSystem::initialize()
 	mIndexBuffer->setData(indices, sizeof(indices));
 
 	mIndexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_INDEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
-		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()}, mPool });
+		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
 
 	mDescriptorPool = new VulkanDescriptorPool(mContext);
 	mDescriptorPool->construct({ 0, 2, {{EDescriptorType::UNIFORM_BUFFER, 2}} });
@@ -227,7 +218,7 @@ void RenderSystem::initialize()
 
 	mUniformBuffer = new VulkanUniformBuffer(mContext);
 	mUniformBuffer->construct({ sizeof(ubo), 0, 1, 2, {}, SHADER_STAGE_VERTEX, 0,
-	0, ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mSets, mPool });
+	0, ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mSets });
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
@@ -442,13 +433,13 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	swapChainInfo.width = newWidth;
 	swapChainInfo.height = newHeight;
 	swapChainInfo.maxImageCount = mFlightSize;
-	swapChainInfo.mPool = mPool;
+	swapChainInfo.mPool = vkContext->getCommandPool();
 
 	mSwapChain->reconstruct(swapChainInfo);
 
 	const CommandBufferCreateInfo commandBufferInfo =
 	{
-		mPool,
+		vkContext->getCommandPool(),
 		true
 	};
 
@@ -548,7 +539,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
 
 	mUniformBuffer->reconstruct({ sizeof(ubo), 0, 1, 2, {}, SHADER_STAGE_VERTEX, 0,
-	0, ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mSets, mPool });
+	0, ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mSets });
 
 	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
 

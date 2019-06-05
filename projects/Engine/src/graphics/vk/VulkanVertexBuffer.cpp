@@ -86,7 +86,7 @@ void VulkanVertexBuffer::construct(const VertexBufferCreateInfo& aInfo)
 		vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
 
 		// Copy buffers
-		const auto vulkanCommandPool = static_cast<VulkanCommandPool*>(aInfo.commandPool);
+		const auto vulkanCommandPool = context->getCommandPool();
 
 		VkCommandBufferAllocateInfo copyAllocInfo = {};
 		copyAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
