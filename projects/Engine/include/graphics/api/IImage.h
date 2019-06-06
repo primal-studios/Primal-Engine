@@ -129,6 +129,7 @@ struct ImageCreateInfo
 	uint32_t baseMipLevel;
 	uint32_t mipLayerCount;
 	uint32_t baseArrayLayer;
+	uint32_t levelCount;
 	uint32_t layerCount;
 	ImageAspectFlags imageAspect;
 	EImageSampleFlagBits samples;

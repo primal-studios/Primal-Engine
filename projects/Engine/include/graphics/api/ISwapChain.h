@@ -17,7 +17,6 @@ struct SwapChainCreateInfo
 	uint32_t height;
 	uint32_t layers;
 	ImageUsageFlags usage;
-	ICommandPool* mPool;
 };
 
 class ISwapChain

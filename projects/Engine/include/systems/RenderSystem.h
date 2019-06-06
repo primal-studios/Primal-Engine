@@ -15,6 +15,11 @@
 #include "graphics/api/IDescriptorPool.h"
 
 #include "events/ApplicationEvent.h"
+#include "graphics/vk/VulkanGraphicsPipeline.h"
+#include "graphics/vk/VulkanPipelineLayout.h"
+#include "graphics/vk/VulkanVertexBuffer.h"
+#include "graphics/vk/VulkanIndexBuffer.h"
+#include "graphics/vk/VulkanDescriptorPool.h"
 
 class RenderSystem final : public System
 {
@@ -35,22 +40,22 @@ class RenderSystem final : public System
 
 		void onEvent(Event& aEvent) override;
 	private:
-		VulkanGraphicsContext* mContext;
-		VulkanSwapChain* mSwapChain;
-		VulkanRenderPass* mRenderPass;
 		const uint32_t mFlightSize = 2;
 		uint32_t mCurrentFrame = 0;
 
-		IGraphicsPipeline* mGraphicsPipeline;
-		IPipelineLayout* mLayout;
+		VulkanGraphicsContext* mContext;
+		VulkanSwapChain* mSwapChain;
+		VulkanRenderPass* mRenderPass;
+
+		VulkanGraphicsPipeline* mGraphicsPipeline;
+		VulkanPipelineLayout* mLayout;
 
 		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
 		VulkanFramebuffer** mFramebuffers = nullptr;
 
-		IVertexBuffer* mVertexBuffer;
-		IIndexBuffer* mIndexBuffer;
-		IUniformBuffer* mUniformBuffer;
-		IDescriptorPool* mDescriptorPool;
+		VulkanVertexBuffer* mVertexBuffer;
+		VulkanIndexBuffer* mIndexBuffer;
+		VulkanDescriptorPool* mDescriptorPool;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};

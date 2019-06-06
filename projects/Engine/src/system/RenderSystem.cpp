@@ -15,7 +15,7 @@
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
-	mUniformBuffer(nullptr), mDescriptorPool(nullptr), mWindow(aWindow)
+	 mDescriptorPool(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -32,10 +32,8 @@ RenderSystem::RenderSystem(Window* aWindow)
 	swapChainInfo.width = aWindow->width();
 	swapChainInfo.height = aWindow->height();
 	swapChainInfo.maxImageCount = mFlightSize;
-	swapChainInfo.mPool = mContext->getCommandPool();
 
 	mSwapChain->construct(swapChainInfo);
-
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	DescriptorPoolSize uniformBufferSize = {};
@@ -71,7 +69,6 @@ RenderSystem::~RenderSystem()
 	delete mVertexBuffer;
 	delete mIndexBuffer;
 
-	//delete mUniformBuffer;
 	delete mDescriptorPool;
 
 	delete mLayout;
@@ -237,12 +234,10 @@ void RenderSystem::initialize()
 
 	mGraphicsPipeline = new VulkanGraphicsPipeline(mContext);
 
-	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
-
 	PipelineVertexStateCreateInfo vertexState = {};
 	vertexState.flags = 0;
-	vertexState.bindingDescriptions = { vBuffer->getBinding() };
-	vertexState.attributeDescriptions = vBuffer->getAttributes();
+	vertexState.bindingDescriptions = { mVertexBuffer->getBinding() };
+	vertexState.attributeDescriptions = mVertexBuffer->getAttributes();
 
 	PipelineInputAssemblyStateCreateInfo assemblyState = {};
 	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -418,7 +413,6 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	swapChainInfo.width = newWidth;
 	swapChainInfo.height = newHeight;
 	swapChainInfo.maxImageCount = mFlightSize;
-	swapChainInfo.mPool = vkContext->getCommandPool();
 
 	mSwapChain->reconstruct(swapChainInfo);
 
@@ -523,12 +517,10 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	IShaderStage* fragStage = new VulkanShaderStage(mContext);
 	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
 
-	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
-
 	PipelineVertexStateCreateInfo vertexState = {};
 	vertexState.flags = 0;
-	vertexState.bindingDescriptions = { vBuffer->getBinding() };
-	vertexState.attributeDescriptions = vBuffer->getAttributes();
+	vertexState.bindingDescriptions = { mVertexBuffer->getBinding() };
+	vertexState.attributeDescriptions = mVertexBuffer->getAttributes();
 
 	PipelineInputAssemblyStateCreateInfo assemblyState = {};
 	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

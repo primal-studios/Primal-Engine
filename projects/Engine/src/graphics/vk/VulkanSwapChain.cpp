@@ -5,11 +5,10 @@
 #include "graphics/vk/VulkanImage.h"
 #include "graphics/vk/VulkanImageView.h"
 #include "graphics/vk/VulkanSwapChain.h"
-#include "graphics/vk/VulkanCommandPool.h"
 
 namespace detail
 {
-	VkSurfaceFormatKHR SelectSwapSurfaceFormat(const VulkanSwapChainSupportDetails& aDetails)
+	static VkSurfaceFormatKHR sSelectSwapSurfaceFormat(const VulkanSwapChainSupportDetails& aDetails)
 	{
 		if (aDetails.formats.size() == 1 && aDetails.formats[0].format == VK_FORMAT_UNDEFINED)
 		{
@@ -25,7 +24,7 @@ namespace detail
 		return aDetails.formats[0];
 	}
 
-	VkPresentModeKHR SelectSwapPresentMode(const VulkanSwapChainSupportDetails& aDetails)
+	static VkPresentModeKHR sSelectSwapPresentMode(const VulkanSwapChainSupportDetails& aDetails)
 	{
 		const VkPresentModeKHR best = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -108,15 +107,10 @@ namespace detail
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
-
-	static bool sHasStencilComponent(VkFormat aFormat)
-	{
-		return aFormat == VK_FORMAT_D32_SFLOAT_S8_UINT || aFormat == VK_FORMAT_D24_UNORM_S8_UINT;
-	}
 }
 
 VulkanSwapChain::VulkanSwapChain(IGraphicsContext* aContext, const uint8_t aFlightSize)
-	: ISwapChain(aContext), mFlightSize(aFlightSize), mDepthFormat(), mOldSwapchain(VK_NULL_HANDLE), mContext(aContext)
+	: ISwapChain(aContext), mFlightSize(aFlightSize), mDepthFormat(), mContext(aContext)
 {
 }
 
@@ -132,7 +126,7 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 	const VkPhysicalDevice physicalDevice = context->getPhysicalDevice();
 	const VkSurfaceKHR surface = context->getSurfaceHandle();
 
-	mPool = aInfo.mPool;
+	mPool = context->getCommandPool();
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -159,8 +153,8 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 		vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
 	}
 
-	const VkSurfaceFormatKHR surfaceFormat = detail::SelectSwapSurfaceFormat(details);
-	const VkPresentModeKHR presentMode = detail::SelectSwapPresentMode(details);
+	const VkSurfaceFormatKHR surfaceFormat = detail::sSelectSwapSurfaceFormat(details);
+	const VkPresentModeKHR presentMode = detail::sSelectSwapPresentMode(details);
 
 	if (details.capabilities.currentExtent.width != static_cast<uint32_t>(0xFFFFFFFF))
 	{
@@ -170,11 +164,9 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 	{
 		VkExtent2D actual = { aInfo.width, aInfo.height };
 
-		const auto minW = details.capabilities.maxImageExtent.width > actual.width ? actual.width : details.capabilities.maxImageExtent.width;
 		actual.width = details.capabilities.minImageExtent.width > actual.width ? details.capabilities.minImageExtent.width : actual.width;
-
-		const auto minH = details.capabilities.maxImageExtent.height > actual.height ? actual.height : details.capabilities.maxImageExtent.height;
 		actual.height = details.capabilities.minImageExtent.height > actual.height ? details.capabilities.minImageExtent.height : actual.height;
+		
 		extent = actual;
 	}
 
@@ -213,7 +205,7 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 	info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	info.presentMode = presentMode;
 	info.clipped = VK_TRUE;
-	info.oldSwapchain = VK_NULL_HANDLE;
+	info.oldSwapchain = nullptr;
 
 	const VkResult res = vkCreateSwapchainKHR(device, &info, nullptr, &mSwapchain);
 	if (res != VK_SUCCESS)
@@ -297,13 +289,11 @@ void VulkanSwapChain::beginFrame()
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	const VkDevice device = context->getDevice();
 
-	vkAcquireNextImageKHR(device, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailable[mCurrentImage], VK_NULL_HANDLE, &mCurrentImageInChain);
+	vkAcquireNextImageKHR(device, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailable[mCurrentImage], nullptr, &mCurrentImageInChain);
 }
 
 void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
 {
-	// TODO: Submit Buffers
-	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	VulkanCommandBuffer* buffer = primal_cast<VulkanCommandBuffer*>(aBuffer);
 
 	VkSubmitInfo submitInfo = {};
@@ -361,7 +351,7 @@ void VulkanSwapChain::swap()
 	presentInfo.pImageIndices = &mCurrentImageInChain;
 
 	const VkResult res = vkQueuePresentKHR(mPresentQueue, &presentInfo);
-	PRIMAL_ASSERT(res == VK_SUCCESS, "You done fucked up a-aron.");
+	PRIMAL_ASSERT(res == VK_SUCCESS, "Failed to swap Vulkan swap chain");
 
 	mCurrentImage = (mCurrentImage + 1) % mFlightSize;
 
@@ -409,7 +399,6 @@ void VulkanSwapChain::_createImageViews()
 void VulkanSwapChain::_createDepthResources()
 {
 	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
-	const VkDevice device = context->getDevice();
 
 	mDepthFormat = detail::sFindSupportedDepthFormat(context->getPhysicalDevice());
 
@@ -421,7 +410,10 @@ void VulkanSwapChain::_createDepthResources()
 	createInfo.width = mInfo.width;
 	createInfo.height = mInfo.height;
 	createInfo.depth = 1;
+	createInfo.baseMipLevel = 0;
 	createInfo.mipLayerCount = 1;
+	createInfo.baseArrayLayer = 0;
+	createInfo.levelCount = 1;
 	createInfo.layerCount = 1;
 	createInfo.samples = IMAGE_SAMPLE_1;
 	createInfo.tiling = EImageTiling::IMAGE_TILING_OPTIMAL;
@@ -429,6 +421,7 @@ void VulkanSwapChain::_createDepthResources()
 	createInfo.layout = IMAGE_LAYOUT_UNDEFINED;
 	createInfo.contexts = { mContext };
 	createInfo.memoryRequiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	createInfo.imageAspect = IMAGE_ASPECT_DEPTH;
 
 	mDepthImage->construct(createInfo);
 

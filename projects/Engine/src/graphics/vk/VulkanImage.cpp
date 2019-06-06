@@ -146,7 +146,8 @@ void VulkanImage::transitionToLayout(const ImageCreateInfo& aInfo, EDataFormat a
 	barrier.image = mImage;
 	barrier.subresourceRange.aspectMask = aInfo.imageAspect;
 	barrier.subresourceRange.baseMipLevel = aInfo.baseMipLevel;
-	barrier.subresourceRange.levelCount = aInfo.layerCount;
+	barrier.subresourceRange.levelCount = aInfo.levelCount;
+	barrier.subresourceRange.layerCount = aInfo.layerCount;
 	barrier.subresourceRange.baseArrayLayer = aInfo.baseArrayLayer;
 
 	VkPipelineStageFlags sourceStage = 0;
