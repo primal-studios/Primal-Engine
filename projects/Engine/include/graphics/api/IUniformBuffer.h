@@ -5,11 +5,7 @@
 #include "graphics/BufferLayout.h"
 #include "graphics/BufferFlags.h"
 #include "graphics/SharingMode.h"
-#include "graphics/ShaderStageFlags.h"
 #include "graphics/api/IGraphicsContext.h"
-#include "graphics/api/ICommandPool.h"
-#include "graphics/api/ISampler.h"
-#include "graphics/api/IDescriptorSets.h"
 
 #include <cstdint>
 #include <vector>
@@ -17,22 +13,12 @@
 struct UniformBufferCreateInfo
 {
 	size_t size;
-
-	uint32_t binding;
-
-	uint32_t descriptorCount;
 	uint32_t framesInFlight;
-
-	std::vector<ISampler*> immutableSamplers;
-
-	ShaderStageFlags shaderStageFlags;
 
 	BufferCreateFlags flags;
 	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
-
-	IDescriptorSets* descriptorSets;
 };
 
 class IUniformBuffer

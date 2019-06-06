@@ -1,14 +1,12 @@
 #include "graphics/vk/VulkanUniformBuffer.h"
-#include "graphics/vk/VulkanSampler.h"
 #include "core/PrimalCast.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
-#include "graphics/vk/VulkanDescriptorSetLayout.h"
-#include "graphics/vk/VulkanDescriptorSets.h"
 
 VulkanUniformBuffer::VulkanUniformBuffer(IGraphicsContext* aContext) 
 	: IUniformBuffer(aContext)
 {
-	mLayout = nullptr;
+	mSize = 0;
+	mInfo = {};
 }
 
 VulkanUniformBuffer::~VulkanUniformBuffer()
@@ -21,9 +19,6 @@ void VulkanUniformBuffer::construct(const UniformBufferCreateInfo& aInfo)
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
 	mInfo = aInfo;
-
-	mLayout = new VulkanDescriptorSetLayout(mContext);
-	mLayout->construct({ 0, {{aInfo.binding, EDescriptorType::UNIFORM_BUFFER, aInfo.shaderStageFlags, aInfo.immutableSamplers}} });
 
 	mSize = static_cast<VkDeviceSize>(aInfo.size);
 	const bool isExclusive = (aInfo.sharingMode == ESharingMode::SHARING_MODE_EXCLUSIVE);
@@ -69,26 +64,6 @@ void VulkanUniformBuffer::setData(void* aData, const size_t aSize, const size_t 
 	vmaMapMemory(context->getBufferAllocator(), mAllocation[aCurrentImage], &data);
 	memcpy(data, aData, aSize);
 	vmaUnmapMemory(context->getBufferAllocator(), mAllocation[aCurrentImage]);
-}
-
-VkWriteDescriptorSet VulkanUniformBuffer::getWriteDescriptorSet(const uint32_t aCurrentFrame)
-{
-	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = mBuffer[aCurrentFrame];
-	bufferInfo.offset = 0;
-	bufferInfo.range = mSize;
-
-	VkWriteDescriptorSet descriptorWrite = {};
-	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	VulkanDescriptorSets* set = primal_cast<VulkanDescriptorSets*>(mInfo.descriptorSets);
-	descriptorWrite.dstSet = set->getSet(aCurrentFrame);
-	descriptorWrite.dstBinding = mInfo.binding;
-	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrite.descriptorCount = mInfo.descriptorCount;
-	descriptorWrite.pBufferInfo = &bufferInfo;
-
-	return descriptorWrite;
 }
 
 void VulkanUniformBuffer::_destroy()

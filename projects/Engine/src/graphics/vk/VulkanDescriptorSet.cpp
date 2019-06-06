@@ -1,28 +1,28 @@
-#include "graphics/vk/VulkanDescriptorSets.h"
+#include "graphics/vk/VulkanDescriptorSet.h"
 #include "graphics/vk/VulkanDescriptorPool.h"
 #include "core/PrimalCast.h"
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "core/Log.h"
 
-VulkanDescriptorSets::VulkanDescriptorSets(IGraphicsContext* aContext)
-	: IDescriptorSets(aContext)
+VulkanDescriptorSet::VulkanDescriptorSet(IGraphicsContext* aContext)
+	: IDescriptorSet(aContext), mSet(VK_NULL_HANDLE)
 {
 	
 }
 
-VulkanDescriptorSets::~VulkanDescriptorSets()
+VulkanDescriptorSet::~VulkanDescriptorSet()
 {
-	// Data is cleared on pool clear
+
 }
 
-void VulkanDescriptorSets::construct(const DescriptorSetCreateInfo& aInfo)
+void VulkanDescriptorSet::construct(const DescriptorSetCreateInfo& aInfo)
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	VulkanDescriptorPool* pool = primal_cast<VulkanDescriptorPool*>(aInfo.pool);
 
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	VulkanDescriptorPool* pool = primal_cast<VulkanDescriptorPool*>(aInfo.pool);
 	allocInfo.descriptorPool = pool->getHandle();
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(aInfo.setLayouts.size());
 
@@ -37,8 +37,7 @@ void VulkanDescriptorSets::construct(const DescriptorSetCreateInfo& aInfo)
 
 	allocInfo.pSetLayouts = layouts.data();
 
-	mSets.resize(aInfo.setLayouts.size());
-	const VkResult result = vkAllocateDescriptorSets(context->getDevice(), &allocInfo, mSets.data());
+	const VkResult result = vkAllocateDescriptorSets(context->getDevice(), &allocInfo, &mSet);
 
 	if (result != VK_SUCCESS)
 	{
@@ -50,7 +49,7 @@ void VulkanDescriptorSets::construct(const DescriptorSetCreateInfo& aInfo)
 	}
 }
 
-VkDescriptorSet VulkanDescriptorSets::getSet(const size_t aIndex) const
+VkDescriptorSet VulkanDescriptorSet::getHandle() const
 {
-	return mSets[aIndex];
+	return mSet;
 }

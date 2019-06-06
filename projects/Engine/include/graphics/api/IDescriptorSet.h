@@ -14,16 +14,16 @@ struct DescriptorSetCreateInfo
 	std::vector<IDescriptorSetLayout*> setLayouts;
 };
 
-class IDescriptorSets
+class IDescriptorSet
 {
 	public:
-		explicit IDescriptorSets(IGraphicsContext* aContext);
-		IDescriptorSets(const IDescriptorSets&) = delete;
-		IDescriptorSets(IDescriptorSets&&) noexcept = delete;
-		virtual ~IDescriptorSets() = default;
+		explicit IDescriptorSet(IGraphicsContext* aContext);
+		IDescriptorSet(const IDescriptorSet&) = delete;
+		IDescriptorSet(IDescriptorSet&&) noexcept = delete;
+		virtual ~IDescriptorSet() = default;
 
-		IDescriptorSets& operator=(const IDescriptorSets&) = delete;
-		IDescriptorSets& operator=(IDescriptorSets&&) noexcept = delete;
+		IDescriptorSet& operator=(const IDescriptorSet&) = delete;
+		IDescriptorSet& operator=(IDescriptorSet&&) noexcept = delete;
 
 		virtual void construct(const DescriptorSetCreateInfo& aInfo) = 0;
 

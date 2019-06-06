@@ -33,7 +33,8 @@ enum class EDescriptorType : uint32_t
 struct DescriptorSetLayoutBinding
 {
 	uint32_t binding;
-	EDescriptorType type;
+	EDescriptorType descriptorType;
+	uint32_t descriptorCount;
 	ShaderStageFlags shaderStageFlags;
 	std::vector<ISampler*> immutableSamplers;
 };

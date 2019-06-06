@@ -3,17 +3,18 @@
 
 #include "core/Window.h"
 #include "ecs/System.h"
+
 #include "graphics/vk/VulkanCommandBuffer.h"
-#include "graphics/vk/VulkanCommandPool.h"
 #include "graphics/vk/VulkanFramebuffer.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanRenderPass.h"
 #include "graphics/vk/VulkanSwapChain.h"
 #include "graphics/api/IVertexBuffer.h"
 #include "graphics/api/IIndexBuffer.h"
+#include "graphics/api/IUniformBuffer.h"
+#include "graphics/api/IDescriptorPool.h"
 
 #include "events/ApplicationEvent.h"
-#include "graphics/api/IUniformBuffer.h"
 
 class RenderSystem final : public System
 {
@@ -47,19 +48,16 @@ class RenderSystem final : public System
 		VulkanFramebuffer** mFramebuffers = nullptr;
 
 		IVertexBuffer* mVertexBuffer;
-		IVertexBuffer* mColorBuffer;
 		IIndexBuffer* mIndexBuffer;
 		IUniformBuffer* mUniformBuffer;
 		IDescriptorPool* mDescriptorPool;
-		IDescriptorSets* mSets;
-		IDescriptorSetLayout* mDescLayout;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};
 
 		Window* mWindow;
 
-		bool _onResize(WindowResizeEvent& aEvent);
+		bool _onResize(WindowResizeEvent& aEvent) const;
 
 		void _construct();
 };

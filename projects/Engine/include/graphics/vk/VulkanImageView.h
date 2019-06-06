@@ -2,8 +2,6 @@
 #define vulkanimageview_h__
 
 #include "graphics/api/IImageView.h"
-#include "graphics/api/ISampler.h"
-#include "graphics/api/IDescriptorSets.h"
 
 #include <vulkan/vulkan.h>
 
@@ -20,7 +18,6 @@ class VulkanImageView final : public IImageView
 		void construct(const ImageViewCreateInfo&) override;
 		VkImageView getHandle() const;
 
-		VkWriteDescriptorSet getWriteDescriptorSet(const uint32_t aCurrentFrame, ISampler* aSampler, IDescriptorSets* aSets) const;
 	private:
 		VkImageView mImageView{};
 		IGraphicsContext* mContext;

@@ -1,6 +1,6 @@
-#include "graphics/api/IDescriptorSets.h"
+#include "graphics/api/IDescriptorSet.h"
 
-IDescriptorSets::IDescriptorSets(IGraphicsContext* aContext)
+IDescriptorSet::IDescriptorSet(IGraphicsContext* aContext)
 	: mContext(aContext)
 {
 	

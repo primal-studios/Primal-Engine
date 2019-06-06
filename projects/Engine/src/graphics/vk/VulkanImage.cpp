@@ -5,7 +5,6 @@
 #include "graphics/api/ICommandBuffer.h"
 #include "graphics/vk/VulkanCommandBuffer.h"
 #include "core/PrimalCast.h"
-#include <graphics\vk\VulkanDescriptorSets.h>
 
 VulkanImage::VulkanImage(IGraphicsContext* aContext)
 	: IImage(aContext), mContext(aContext)

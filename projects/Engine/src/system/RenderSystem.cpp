@@ -9,16 +9,13 @@
 #include "graphics/vk/VulkanPipelineLayout.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
-#include "input/Input.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
-#include "graphics/vk/VulkanDescriptorSets.h"
 #include "graphics/vk/VulkanDescriptorPool.h"
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 
-#include <glm/glm.hpp>
-
 RenderSystem::RenderSystem(Window* aWindow)
-	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr), mWindow(aWindow)
+	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
+	mUniformBuffer(nullptr), mDescriptorPool(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -38,6 +35,22 @@ RenderSystem::RenderSystem(Window* aWindow)
 	swapChainInfo.mPool = mContext->getCommandPool();
 
 	mSwapChain->construct(swapChainInfo);
+
+
+	std::vector<DescriptorPoolSize> poolSizes;
+	DescriptorPoolSize uniformBufferSize = {};
+	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER;
+	uniformBufferSize.count = 2;
+
+	poolSizes.push_back(uniformBufferSize);
+
+	DescriptorPoolCreateInfo createInfo = {};
+	createInfo.flags = 0;
+	createInfo.maxSets = 2;
+	createInfo.poolSizes = poolSizes;
+	
+	mDescriptorPool = new VulkanDescriptorPool(mContext);
+	mDescriptorPool->construct(createInfo);
 }
 
 RenderSystem::~RenderSystem()
@@ -58,7 +71,7 @@ RenderSystem::~RenderSystem()
 	delete mVertexBuffer;
 	delete mIndexBuffer;
 
-	delete mUniformBuffer;
+	//delete mUniformBuffer;
 	delete mDescriptorPool;
 
 	delete mLayout;
@@ -207,26 +220,6 @@ void RenderSystem::initialize()
 	mIndexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_INDEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
 		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
 
-	mDescriptorPool = new VulkanDescriptorPool(mContext);
-	mDescriptorPool->construct({ 0, 2, {{EDescriptorType::UNIFORM_BUFFER, 2}, {EDescriptorType::COMBINED_IMAGE_SAMPLER, 2}} });
-
-	mDescLayout = new VulkanDescriptorSetLayout(mContext);
-	mDescLayout->construct({ 0, {{0, EDescriptorType::UNIFORM_BUFFER, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}}} });
-
-	VulkanDescriptorSetLayout* textureLayout = new VulkanDescriptorSetLayout(mContext);
-	DescriptorSetLayoutBinding binding = {};
-	binding.binding = 1;
-	binding.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
-	binding.shaderStageFlags = EShaderStageFlagBits::SHADER_STAGE_FRAGMENT;
-	textureLayout->construct({ 0, {binding} });
-
-	mSets = new VulkanDescriptorSets(mContext);
-	mSets->construct({ mDescriptorPool, {mDescLayout, textureLayout} });
-
-	mUniformBuffer = new VulkanUniformBuffer(mContext);
-	mUniformBuffer->construct({ sizeof(ubo), 0, 1, 2, {}, SHADER_STAGE_VERTEX, 0,
-	0, ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mSets });
-
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
 
@@ -314,9 +307,8 @@ void RenderSystem::initialize()
 	depthState.front = {};
 	depthState.back = {};
 
-
 	mLayout = new VulkanPipelineLayout(mContext);
-	mLayout->construct({ 0, {mDescLayout}, {} });
+	mLayout->construct({ 0, {}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;
@@ -364,16 +356,8 @@ void RenderSystem::render()
 	mPrimaryRecordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
 
 	mSwapChain->beginFrame();
-
-	ubo u = { Matrix4f::identity(), Matrix4f::identity(), Matrix4f::identity() };
-	u.proj = Matrix4f(glm::perspective(glm::radians(60.0f), 16.0f / 9.0f, 0.01f, 1000.0f));
-	u.view = Matrix4f::lookAt(Vector3f(2, 2, 2), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
-
-	mUniformBuffer->setData(&u, sizeof(ubo), mCurrentFrame);
-
+	
 	handle->record(mPrimaryRecordInfo);
-
-	// TODO: RENDER STUFF HERE
 
 	RenderPassRecordInfo recordInfo = {};
 	recordInfo.renderPass = mRenderPass;
@@ -386,7 +370,7 @@ void RenderSystem::render()
 	clear.color.float32[2] = 0.0f;
 	clear.color.float32[3] = 0.0f;
 
-	ClearValue depth = {};
+	ClearValue depth;
 	depth.depthStencil = { 1.0f, 0 };
 	recordInfo.clearValues.push_back(clear);
 	recordInfo.clearValues.push_back(depth);
@@ -398,12 +382,6 @@ void RenderSystem::render()
 	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
 	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT32);
 
-	VulkanDescriptorSets* s = static_cast<VulkanDescriptorSets*>(mSets);
-	VulkanPipelineLayout* l = static_cast<VulkanPipelineLayout*>(mLayout);
-	VkDescriptorSet descSet = s->getSet(mCurrentFrame);
-	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, l->getHandle(),
-		0, 1, &descSet, 0, nullptr);
-	
 	handle->drawIndexed(12, 1, 0, 0, 0);
 
 	handle->endRenderPass();
@@ -427,7 +405,7 @@ void RenderSystem::onEvent(Event& aEvent)
 	dispatcher.dispatch<WindowResizeEvent>(BIND_EVENT_FUNCTION(RenderSystem::_onResize));
 }
 
-bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
+bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 {
 	VulkanGraphicsContext* vkContext = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkContext->idle();
@@ -545,9 +523,6 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	IShaderStage* fragStage = new VulkanShaderStage(mContext);
 	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
 
-	mUniformBuffer->reconstruct({ sizeof(ubo), 0, 1, 2, {}, SHADER_STAGE_VERTEX, 0,
-	0, ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mSets });
-
 	VulkanVertexBuffer* vBuffer = static_cast<VulkanVertexBuffer*>(mVertexBuffer);
 
 	PipelineVertexStateCreateInfo vertexState = {};
@@ -618,7 +593,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	depthState.front = {};
 	depthState.back = {};
 
-	mLayout->reconstruct({ 0, {mDescLayout}, {} });
+	mLayout->reconstruct({ 0, {}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;

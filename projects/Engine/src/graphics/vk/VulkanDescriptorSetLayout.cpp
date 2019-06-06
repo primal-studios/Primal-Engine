@@ -18,40 +18,44 @@ void VulkanDescriptorSetLayout::construct(const DescriptorSetLayoutCreateInfo& a
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
-	VkDescriptorSetLayoutCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	createInfo.flags = aInfo.flags;
-
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
 	std::vector<std::vector<VkSampler>> samplers;
 
-	for (const auto& b : aInfo.layoutBindings)
+	for(const auto& binding : aInfo.layoutBindings)
 	{
-		std::vector<VkSampler> vkSamplers;
-		for(const auto& s : b.immutableSamplers)
+		VkDescriptorSetLayoutBinding vkBinding = {};
+		vkBinding.binding = binding.binding;
+		vkBinding.descriptorType = static_cast<VkDescriptorType>(binding.descriptorType);
+		vkBinding.descriptorCount = binding.descriptorCount;
+
+		std::vector<VkSampler> bindingSamplers;
+		for(const auto& sampler : binding.immutableSamplers)
 		{
-			VulkanSampler* vkSampler = primal_cast<VulkanSampler*>(s);
-			vkSamplers.push_back(vkSampler->getHandle());
+			VulkanSampler* vSampler = primal_cast<VulkanSampler*>(sampler);
+			bindingSamplers.push_back(vSampler->getHandle());
 		}
-		samplers.push_back(vkSamplers);
+		samplers.push_back(bindingSamplers);
+
+		bindings.push_back(vkBinding);
 	}
 
-	uint32_t i = 0;
-	for(const auto& b : aInfo.layoutBindings)
+	for(size_t i = 0; i < samplers.size(); i++)
 	{
-		VkDescriptorSetLayoutBinding binding = {};
-		binding.binding = b.binding;
-		binding.descriptorCount = 1; // TODO See what this is about
-		binding.descriptorType = static_cast<VkDescriptorType>(b.type);
-		binding.stageFlags = b.shaderStageFlags;
+		if(samplers[i].empty())
+		{
+			bindings[i].pImmutableSamplers = nullptr;
+			continue;
+		}
 
-		binding.pImmutableSamplers = samplers[i].data();
-		bindings.push_back(binding);
-		i++;
+		bindings[i].pImmutableSamplers = samplers[i].data();
 	}
-	createInfo.pBindings = bindings.data();
-	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 
+	VkDescriptorSetLayoutCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	createInfo.flags = aInfo.flags;
+	createInfo.bindingCount = static_cast<uint32_t>(aInfo.layoutBindings.size());
+	createInfo.pBindings = bindings.data();
+	
 	const VkResult res = vkCreateDescriptorSetLayout(context->getDevice(), &createInfo, nullptr, &mLayout);
 	if (res != VK_SUCCESS)
 	{

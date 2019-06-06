@@ -2,9 +2,6 @@
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanImage.h"
 #include "graphics/vk/VulkanImageView.h"
-#include "graphics/vk/VulkanSampler.h"
-#include "graphics/vk/VulkanDescriptorSets.h"
-#include "core/PrimalCast.h"
 
 VulkanImageView::VulkanImageView(IGraphicsContext* aContext)
 	: IImageView(aContext), mContext(aContext)
@@ -47,26 +44,4 @@ void VulkanImageView::construct(const ImageViewCreateInfo& aInfo)
 VkImageView VulkanImageView::getHandle() const
 {
 	return mImageView;
-}
-
-VkWriteDescriptorSet VulkanImageView::getWriteDescriptorSet(const uint32_t aCurrentFrame, ISampler* aSampler, IDescriptorSets* aSets) const
-{
-	VkDescriptorImageInfo imageInfo = {};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = getHandle();
-	VulkanSampler* vSampler = static_cast<VulkanSampler*>(aSampler);
-
-	imageInfo.sampler = vSampler->getHandle();
-
-	VkWriteDescriptorSet descriptorWrite = {};
-	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	VulkanDescriptorSets* set = primal_cast<VulkanDescriptorSets*>(aSets);
-	descriptorWrite.dstSet = set->getSet(aCurrentFrame);
-	descriptorWrite.dstBinding = mInfo.binding;
-	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrite.descriptorCount = mInfo.descriptorCount;
-	descriptorWrite.pBufferInfo = &bufferInfo;
-
-	return descriptorWrite;
 }
