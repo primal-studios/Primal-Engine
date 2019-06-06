@@ -20,10 +20,12 @@ void VulkanUniformBuffer::construct(const UniformBufferCreateInfo& aInfo)
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
+	mInfo = aInfo;
+
 	mLayout = new VulkanDescriptorSetLayout(mContext);
 	mLayout->construct({ 0, {{aInfo.binding, EDescriptorType::UNIFORM_BUFFER, aInfo.shaderStageFlags, aInfo.immutableSamplers}} });
 
-	const VkDeviceSize bufferSize = static_cast<VkDeviceSize>(aInfo.size);
+	mSize = static_cast<VkDeviceSize>(aInfo.size);
 	const bool isExclusive = (aInfo.sharingMode == ESharingMode::SHARING_MODE_EXCLUSIVE);
 
 	mBuffer.resize(aInfo.framesInFlight);
@@ -33,7 +35,7 @@ void VulkanUniformBuffer::construct(const UniformBufferCreateInfo& aInfo)
 	{
 		VkBufferCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		createInfo.size = bufferSize;
+		createInfo.size = mSize;
 		createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		createInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
@@ -51,26 +53,6 @@ void VulkanUniformBuffer::construct(const UniformBufferCreateInfo& aInfo)
 			PRIMAL_INTERNAL_INFO("Successfully created uniform buffer.");
 		}
 	}
-
-	for (size_t i = 0; i < aInfo.framesInFlight; i++)
-	{
-		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = mBuffer[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = bufferSize;
-
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		VulkanDescriptorSets* set = primal_cast<VulkanDescriptorSets*>(aInfo.descriptorSets);
-		descriptorWrite.dstSet = set->getSet(i);
-		descriptorWrite.dstBinding = aInfo.binding;
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount = aInfo.descriptorCount;
-		descriptorWrite.pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(context->getDevice(), 1, &descriptorWrite, 0, nullptr);
-	}
 }
 
 void VulkanUniformBuffer::reconstruct(const UniformBufferCreateInfo& aInfo)
@@ -87,6 +69,26 @@ void VulkanUniformBuffer::setData(void* aData, const size_t aSize, const size_t 
 	vmaMapMemory(context->getBufferAllocator(), mAllocation[aCurrentImage], &data);
 	memcpy(data, aData, aSize);
 	vmaUnmapMemory(context->getBufferAllocator(), mAllocation[aCurrentImage]);
+}
+
+VkWriteDescriptorSet VulkanUniformBuffer::getWriteDescriptorSet(const uint32_t aCurrentFrame)
+{
+	VkDescriptorBufferInfo bufferInfo = {};
+	bufferInfo.buffer = mBuffer[aCurrentFrame];
+	bufferInfo.offset = 0;
+	bufferInfo.range = mSize;
+
+	VkWriteDescriptorSet descriptorWrite = {};
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	VulkanDescriptorSets* set = primal_cast<VulkanDescriptorSets*>(mInfo.descriptorSets);
+	descriptorWrite.dstSet = set->getSet(aCurrentFrame);
+	descriptorWrite.dstBinding = mInfo.binding;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorWrite.descriptorCount = mInfo.descriptorCount;
+	descriptorWrite.pBufferInfo = &bufferInfo;
+
+	return descriptorWrite;
 }
 
 void VulkanUniformBuffer::_destroy()

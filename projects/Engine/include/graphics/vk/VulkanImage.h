@@ -25,6 +25,7 @@ public:
 	void setData(void* aData, const size_t aSize) override;
 	
 	void transitionToLayout(const ImageCreateInfo& aInfo, EDataFormat aFormat, EImageLayout aOldLayout, EImageLayout aNewLayout) const;
+
 private:
 	void _copyBufferToImage(const ImageCreateInfo& aInfo) const;
 

@@ -22,6 +22,8 @@ class VulkanUniformBuffer final : public IUniformBuffer
 		void reconstruct(const UniformBufferCreateInfo& aInfo) override;
 		void setData(void* aData, const size_t aSize, const size_t aCurrentImage) override;
 
+		VkWriteDescriptorSet getWriteDescriptorSet(const uint32_t aCurrentFrame);
+
 	private:
 		void _destroy();
 
@@ -29,6 +31,9 @@ class VulkanUniformBuffer final : public IUniformBuffer
 
 		std::vector<VkBuffer> mBuffer;
 		std::vector<VmaAllocation> mAllocation;
+
+		VkDeviceSize mSize;
+		UniformBufferCreateInfo mInfo;
 };
 
 #endif // vulkanuniformbuffer_h__

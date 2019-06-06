@@ -208,13 +208,20 @@ void RenderSystem::initialize()
 		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
 
 	mDescriptorPool = new VulkanDescriptorPool(mContext);
-	mDescriptorPool->construct({ 0, 2, {{EDescriptorType::UNIFORM_BUFFER, 2}} });
+	mDescriptorPool->construct({ 0, 2, {{EDescriptorType::UNIFORM_BUFFER, 2}, {EDescriptorType::COMBINED_IMAGE_SAMPLER, 2}} });
 
 	mDescLayout = new VulkanDescriptorSetLayout(mContext);
 	mDescLayout->construct({ 0, {{0, EDescriptorType::UNIFORM_BUFFER, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}}} });
 
+	VulkanDescriptorSetLayout* textureLayout = new VulkanDescriptorSetLayout(mContext);
+	DescriptorSetLayoutBinding binding = {};
+	binding.binding = 1;
+	binding.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
+	binding.shaderStageFlags = EShaderStageFlagBits::SHADER_STAGE_FRAGMENT;
+	textureLayout->construct({ 0, {binding} });
+
 	mSets = new VulkanDescriptorSets(mContext);
-	mSets->construct({ mDescriptorPool, {mDescLayout, mDescLayout} });
+	mSets->construct({ mDescriptorPool, {mDescLayout, textureLayout} });
 
 	mUniformBuffer = new VulkanUniformBuffer(mContext);
 	mUniformBuffer->construct({ sizeof(ubo), 0, 1, 2, {}, SHADER_STAGE_VERTEX, 0,
