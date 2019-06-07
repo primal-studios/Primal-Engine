@@ -428,7 +428,7 @@ void VulkanSwapChain::_createDepthResources()
 	mDepthView = new VulkanImageView(mContext);
 	mDepthView->construct({ mDepthImage, static_cast<EDataFormat>(mDepthFormat), EImageViewType::IMAGE_VIEW_TYPE_2D, {EImageAspectFlagBits::IMAGE_ASPECT_DEPTH, 0, 1, 0, 1} });
 
-	VulkanImage* vImage = static_cast<VulkanImage*>(mDepthImage);
+	VulkanImage* vImage = primal_cast<VulkanImage*>(mDepthImage);
 
 	vImage->transitionToLayout(createInfo, static_cast<EDataFormat>(mDepthFormat), IMAGE_LAYOUT_UNDEFINED, IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }

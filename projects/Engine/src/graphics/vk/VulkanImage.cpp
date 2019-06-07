@@ -263,7 +263,6 @@ void VulkanImage::_copyBufferToImage(const ImageCreateInfo& aInfo) const
 
 	vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(queue);
-
 }
 
 void VulkanImage::_destroy() const

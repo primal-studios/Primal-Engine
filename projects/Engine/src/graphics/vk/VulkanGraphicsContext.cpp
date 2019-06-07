@@ -139,6 +139,8 @@ VulkanGraphicsContext::~VulkanGraphicsContext()
 		}
 	})
 
+	delete mPool;
+
 	vkDestroyDevice(mDevice, nullptr);
 	vkDestroyInstance(mInstance, nullptr);
 }
