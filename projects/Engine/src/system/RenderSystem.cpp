@@ -38,13 +38,13 @@ RenderSystem::RenderSystem(Window* aWindow)
 	mSwapChain->construct(swapChainInfo);
 
 	std::vector<DescriptorPoolSize> poolSizes;
-	DescriptorPoolSize uniformBufferSize = {};
+	DescriptorPoolSize uniformBufferSize;
 	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER;
 	uniformBufferSize.count = 2;
 
 	poolSizes.push_back(uniformBufferSize);
 
-	DescriptorPoolCreateInfo createInfo = {};
+	DescriptorPoolCreateInfo createInfo;
 	createInfo.flags = 0;
 	createInfo.maxSets = 2;
 	createInfo.poolSizes = poolSizes;
@@ -80,7 +80,7 @@ RenderSystem::~RenderSystem()
 	delete mContext;
 }
 
-struct ubo
+struct UBO
 {
 	Matrix4f model;
 	Matrix4f view;
@@ -221,7 +221,7 @@ void RenderSystem::initialize()
 		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
 
 	mUniformBuffer = new VulkanUniformBuffer(mContext);
-	mUniformBuffer->construct({ sizeof(ubo), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
+	mUniformBuffer->construct({ sizeof(UBO), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
 		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
@@ -347,12 +347,12 @@ void RenderSystem::render()
 {
 	const auto handle = *(mPrimaryBuffer + mCurrentFrame);
 
-	ubo u = {};
+	UBO u = {};
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())) , 0.001f, 1000.0f);
 	u.view = Matrix4f::lookAt(Vector3f(2, 2, 2), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
 	u.model = Matrix4f::identity();
 
-	mUniformBuffer->setData(&u, sizeof(ubo), mCurrentFrame);
+	mUniformBuffer->setData(&u, sizeof(UBO), mCurrentFrame);
 
 	mPrimaryInheritance.renderPass = mRenderPass;
 	mPrimaryInheritance.frameBuffer = mFramebuffers[mCurrentFrame];
@@ -520,7 +520,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 		mPrimaryBuffer[i]->reconstruct(commandBufferInfo);
 	}
 
-	mUniformBuffer->reconstruct({ sizeof(ubo), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
+	mUniformBuffer->reconstruct({ sizeof(UBO), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
 		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
@@ -636,9 +636,4 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	vkContext->idle();
 
 	return false;
-}
-
-void RenderSystem::_construct()
-{
-
 }

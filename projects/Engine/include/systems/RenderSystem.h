@@ -4,17 +4,13 @@
 #include "core/Window.h"
 #include "ecs/System.h"
 
+#include "events/ApplicationEvent.h"
+
 #include "graphics/vk/VulkanCommandBuffer.h"
 #include "graphics/vk/VulkanFramebuffer.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanRenderPass.h"
 #include "graphics/vk/VulkanSwapChain.h"
-#include "graphics/api/IVertexBuffer.h"
-#include "graphics/api/IIndexBuffer.h"
-#include "graphics/api/IUniformBuffer.h"
-#include "graphics/api/IDescriptorPool.h"
-
-#include "events/ApplicationEvent.h"
 #include "graphics/vk/VulkanGraphicsPipeline.h"
 #include "graphics/vk/VulkanPipelineLayout.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
@@ -65,8 +61,6 @@ class RenderSystem final : public System
 		Window* mWindow;
 
 		bool _onResize(WindowResizeEvent& aEvent) const;
-
-		void _construct();
 };
 
 #endif // rendersystem_h__
