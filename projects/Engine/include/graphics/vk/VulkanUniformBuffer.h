@@ -5,6 +5,7 @@
 #include <vma/vk_mem_alloc.h>
 
 #include "graphics/api/IUniformBuffer.h"
+#include "graphics/api/IDescriptorSet.h"
 
 class VulkanUniformBuffer final : public IUniformBuffer
 {
@@ -21,11 +22,17 @@ class VulkanUniformBuffer final : public IUniformBuffer
 		void reconstruct(const UniformBufferCreateInfo& aInfo) override;
 		void setData(void* aData, const size_t aSize, const size_t aCurrentImage) override;
 
+		IDescriptorSetLayout* getLayout() const;
+		IDescriptorSet* getSet() const;
+
 	private:
 		void _destroy();
 
 		std::vector<VkBuffer> mBuffer;
 		std::vector<VmaAllocation> mAllocation;
+
+		IDescriptorSetLayout* mLayout;
+		IDescriptorSet* mSets;
 
 		VkDeviceSize mSize;
 		UniformBufferCreateInfo mInfo;

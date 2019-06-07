@@ -12,10 +12,12 @@
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanDescriptorPool.h"
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
+#include "graphics/vk/VulkanDescriptorSet.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
-	 mDescriptorPool(nullptr), mWindow(aWindow)
+	  mUniformBuffer(nullptr),
+	  mDescriptorPool(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -46,7 +48,7 @@ RenderSystem::RenderSystem(Window* aWindow)
 	createInfo.flags = 0;
 	createInfo.maxSets = 2;
 	createInfo.poolSizes = poolSizes;
-	
+
 	mDescriptorPool = new VulkanDescriptorPool(mContext);
 	mDescriptorPool->construct(createInfo);
 }
@@ -68,6 +70,7 @@ RenderSystem::~RenderSystem()
 
 	delete mVertexBuffer;
 	delete mIndexBuffer;
+	delete mUniformBuffer;
 
 	delete mDescriptorPool;
 
@@ -217,6 +220,10 @@ void RenderSystem::initialize()
 	mIndexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_INDEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
 		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
 
+	mUniformBuffer = new VulkanUniformBuffer(mContext);
+	mUniformBuffer->construct({ sizeof(ubo), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
+		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
+
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
 
@@ -303,7 +310,7 @@ void RenderSystem::initialize()
 	depthState.back = {};
 
 	mLayout = new VulkanPipelineLayout(mContext);
-	mLayout->construct({ 0, {}, {} });
+	mLayout->construct({ 0, {mUniformBuffer->getLayout()}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;
@@ -339,6 +346,13 @@ void RenderSystem::preRender()
 void RenderSystem::render()
 {
 	const auto handle = *(mPrimaryBuffer + mCurrentFrame);
+
+	ubo u = {};
+	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())) , 0.001f, 1000.0f);
+	u.view = Matrix4f::lookAt(Vector3f(2, 2, 2), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+	u.model = Matrix4f::identity();
+
+	mUniformBuffer->setData(&u, sizeof(ubo), mCurrentFrame);
 
 	mPrimaryInheritance.renderPass = mRenderPass;
 	mPrimaryInheritance.frameBuffer = mFramebuffers[mCurrentFrame];
@@ -376,6 +390,10 @@ void RenderSystem::render()
 
 	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
 	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT32);
+
+	VulkanDescriptorSet* sets = primal_cast<VulkanDescriptorSet*>(mUniformBuffer->getSet());
+	VkDescriptorSet set = sets->getHandle(mCurrentFrame);
+	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0, 1, &set, 0, nullptr);
 
 	handle->drawIndexed(12, 1, 0, 0, 0);
 
@@ -502,6 +520,9 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 		mPrimaryBuffer[i]->reconstruct(commandBufferInfo);
 	}
 
+	mUniformBuffer->reconstruct({ sizeof(ubo), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
+		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
+
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
 
@@ -585,7 +606,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	depthState.front = {};
 	depthState.back = {};
 
-	mLayout->reconstruct({ 0, {}, {} });
+	mLayout->reconstruct({ 0, {mUniformBuffer->getLayout()}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;

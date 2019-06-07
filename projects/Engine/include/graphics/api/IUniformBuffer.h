@@ -6,6 +6,8 @@
 #include "graphics/BufferFlags.h"
 #include "graphics/SharingMode.h"
 #include "graphics/api/IGraphicsContext.h"
+#include "graphics/api/IDescriptorSetLayout.h"
+#include "graphics/api/IDescriptorPool.h"
 
 #include <cstdint>
 #include <vector>
@@ -19,6 +21,9 @@ struct UniformBufferCreateInfo
 	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
+
+	IDescriptorPool* descriptorPool;
+	DescriptorSetLayoutBinding binding;
 };
 
 class IUniformBuffer

@@ -6,7 +6,7 @@
 #include "core/Log.h"
 
 VulkanDescriptorSet::VulkanDescriptorSet(IGraphicsContext* aContext)
-	: IDescriptorSet(aContext), mSet(VK_NULL_HANDLE)
+	: IDescriptorSet(aContext)
 {
 	
 }
@@ -37,7 +37,9 @@ void VulkanDescriptorSet::construct(const DescriptorSetCreateInfo& aInfo)
 
 	allocInfo.pSetLayouts = layouts.data();
 
-	const VkResult result = vkAllocateDescriptorSets(context->getDevice(), &allocInfo, &mSet);
+	mSets.resize(aInfo.setLayouts.size());
+
+	const VkResult result = vkAllocateDescriptorSets(context->getDevice(), &allocInfo, mSets.data());
 
 	if (result != VK_SUCCESS)
 	{
@@ -49,7 +51,7 @@ void VulkanDescriptorSet::construct(const DescriptorSetCreateInfo& aInfo)
 	}
 }
 
-VkDescriptorSet VulkanDescriptorSet::getHandle() const
+VkDescriptorSet VulkanDescriptorSet::getHandle(const uint32_t aIndex) const
 {
-	return mSet;
+	return mSets[aIndex];
 }

@@ -18,10 +18,10 @@ class VulkanDescriptorSet final : public IDescriptorSet
 
 		void construct(const DescriptorSetCreateInfo& aInfo) override;
 
-		VkDescriptorSet getHandle() const;
+		VkDescriptorSet getHandle(const uint32_t aIndex) const;
 
 	private:
-		VkDescriptorSet mSet;
+		std::vector<VkDescriptorSet> mSets;
 };
 
 #endif // vulkandescriptorset_h__
