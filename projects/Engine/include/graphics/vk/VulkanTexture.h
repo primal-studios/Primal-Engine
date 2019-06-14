@@ -6,6 +6,7 @@
 #include "graphics/vk/VulkanImage.h"
 #include "graphics/api/IDescriptorSetLayout.h"
 #include "graphics/api/IDescriptorSet.h"
+#include "graphics/vk/VulkanSampler.h"
 
 class VulkanTexture final : public ITexture
 {
@@ -28,6 +29,7 @@ class VulkanTexture final : public ITexture
 	private:
 		VulkanImage* mImage;
 		VulkanImageView* mImageView;
+		VulkanSampler* mSampler;
 
 		IDescriptorSetLayout* mLayout;
 		IDescriptorSet* mSets;

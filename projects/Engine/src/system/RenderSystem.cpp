@@ -66,6 +66,10 @@ RenderSystem::~RenderSystem()
 {
 	vkDeviceWaitIdle(primal_cast<VulkanGraphicsContext*>(mContext)->getDevice());
 
+	AssetManager::instance().unloadAll();
+
+	delete mTexture;
+
 	delete mSwapChain;
 
 	for (uint32_t i = 0; i < mFlightSize; i++)

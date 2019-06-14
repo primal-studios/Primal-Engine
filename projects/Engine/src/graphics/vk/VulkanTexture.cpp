@@ -16,18 +16,24 @@ VulkanTexture::VulkanTexture(IGraphicsContext* aContext)
 
 VulkanTexture::~VulkanTexture()
 {
-
+	delete mSets;
+	delete mLayout;
+	delete mImageView;
+	delete mImage;
+	delete mSampler;
 }
 
 void VulkanTexture::construct(const TextureCreateInfo& aInfo)
 {
 	mImage = new VulkanImage(mContext);
-	mImage->setData(&aInfo.textureAsset->getData().payload[0], aInfo.textureAsset->getData().payload.size() * sizeof(unsigned char));
+	const uint32_t size = aInfo.textureAsset->getData().channels * (aInfo.textureAsset->getData().height * aInfo.textureAsset->getData().width);
+	mImage->setData(&aInfo.textureAsset->getData().payload[0], size);
 	mImage->construct({ 0, EImageDimension::IMAGE_2D, EDataFormat::R8G8B8A8_UNORM, aInfo.textureAsset->getData().width,
 	aInfo.textureAsset->getData().height, 1, 0, 1, 0, 1, 1, IMAGE_ASPECT_COLOR,
 	IMAGE_SAMPLE_1, EImageTiling::IMAGE_TILING_OPTIMAL, IMAGE_USAGE_TRANSFER_DST_BIT | IMAGE_USAGE_SAMPLED_BIT,
 	IMAGE_LAYOUT_UNDEFINED, {mContext}, EMemoryPropertyBits::MEMORY_PROPERTY_DEVICE_LOCAL, 0, 0 });
 
+	mSampler = primal_cast<VulkanSampler*>(aInfo.sampler);
 
 	mImageView = new VulkanImageView(mContext);
 	mImageView->construct({ mImage, EDataFormat::R8G8B8A8_UNORM, EImageViewType::IMAGE_VIEW_TYPE_2D, {EImageAspectFlagBits::IMAGE_ASPECT_COLOR,

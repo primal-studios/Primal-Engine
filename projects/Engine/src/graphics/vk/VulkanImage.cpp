@@ -133,6 +133,8 @@ void VulkanImage::setData(void* aData, const size_t aSize)
 	mStagingSize = aSize;
 	mStagingMemory = malloc(aSize);
 	PRIMAL_ASSERT(mStagingMemory != nullptr, "Failed to allocate staging memory.");
+
+	memcpy(mStagingMemory, aData, mStagingSize);
 }
 
 void VulkanImage::transitionToLayout(const ImageCreateInfo& aInfo, EDataFormat aFormat, EImageLayout aOldLayout, EImageLayout aNewLayout) const
