@@ -3,10 +3,16 @@
 
 #include "assets/Asset.h"
 
-class MeshAsset : public Asset
+class MeshAsset final : public Asset
 {
+	friend class AssetManager;
 	public:
-		MeshAsset(const std::string& aPath);
+		explicit MeshAsset(const std::string& aPath);
+
+	private:
+		void _load() override;
+
+		std::string mPath;
 };
 
 #endif // meshasset_h__

@@ -24,8 +24,8 @@ project "Tests"
     includedirs {
         "include",
         "%{sln.location}\\projects\\Engine\\include",
-        "%{IncludeDir.assimp}",
         "%{IncludeDir.catch}",
+        "%{IncludeDir.fxgltf}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.json}",
@@ -41,7 +41,6 @@ project "Tests"
     }
 
     libdirs {
-        "%{LibDir.assimp}",
         "%{LibDir.phonon}",
         "%{LibDir.tbb}",
         "%{LibDir.vulkan}",
@@ -49,7 +48,6 @@ project "Tests"
     }
 
     bindirs {
-        "%{BinDir.assimp}",
         "%{BinDir.phonon}",
         "%{BinDir.tbb}",
         "%{BinDir.vulkan}"
@@ -57,7 +55,6 @@ project "Tests"
 
     links {
         "Engine",
-        "assimp-vc140-mt",
         "GLFW",
         "phonon",
         "PhysXTask_static_64",

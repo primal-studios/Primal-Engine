@@ -22,7 +22,7 @@
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
 	  mUniformBuffer(nullptr),
-	  mDescriptorPool(nullptr), mWindow(aWindow)
+	  mDescriptorPool(nullptr), mTexture(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";

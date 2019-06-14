@@ -21,8 +21,8 @@ project "Engine"
 
     includedirs {
         "include",
-        "%{IncludeDir.assimp}",
         "%{IncludeDir.catch}",
+        "%{IncludeDir.fxgltf}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.json}",
@@ -38,21 +38,18 @@ project "Engine"
     }
 
     libdirs {
-        "%{LibDir.assimp}",
         "%{LibDir.phonon}",
         "%{LibDir.tbb}",
         "%{LibDir.vulkan}"
     }
 
     bindirs {
-        "%{BinDir.assimp}",
         "%{BinDir.phonon}",
         "%{BinDir.tbb}",
         "%{BinDir.vulkan}"
     }
 
     links {
-        "assimp-vc140-mt",
         "GLFW",
         "phonon",
         "PhysXTask_static_64",
@@ -100,7 +97,6 @@ project "Engine"
         }
 
         postbuildcommands {
-            "xcopy \"%{sln.location}dependencies\\assimp\\bin\\assimp-vc140-mt.dll\" \"%{sln.location}bin\" /D /Y"
         }
 
     filter "system:linux"

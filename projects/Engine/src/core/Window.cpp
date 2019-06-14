@@ -15,6 +15,8 @@
 #include "events/ApplicationEvent.h"
 #include "events/MouseEvent.h"
 
+#include <fx/gltf.h>
+
 static bool sGlfwInitialized = false;
 
 static void sGlfwErrorCallback(const int32_t aError, const char* aDescription)
