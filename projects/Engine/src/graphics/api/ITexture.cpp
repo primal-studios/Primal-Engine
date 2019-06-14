@@ -2,4 +2,5 @@
 
 ITexture::ITexture(IGraphicsContext* aContext)
 {
+	mContext = aContext;
 }

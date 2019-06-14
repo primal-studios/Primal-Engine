@@ -14,6 +14,11 @@
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 #include "graphics/vk/VulkanDescriptorSet.h"
 
+#include <stb/stb_image.h>
+
+#include "assets/AssetManager.h"
+#include "graphics/vk/VulkanSampler.h"
+
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
 	  mUniformBuffer(nullptr),
@@ -42,11 +47,15 @@ RenderSystem::RenderSystem(Window* aWindow)
 	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER;
 	uniformBufferSize.count = 2;
 
-	poolSizes.push_back(uniformBufferSize);
+	DescriptorPoolSize combinedSamplerSize;
+	combinedSamplerSize.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
+	combinedSamplerSize.count = 2;
+
+	poolSizes.push_back(combinedSamplerSize);
 
 	DescriptorPoolCreateInfo createInfo;
 	createInfo.flags = 0;
-	createInfo.maxSets = 2;
+	createInfo.maxSets = 4;
 	createInfo.poolSizes = poolSizes;
 
 	mDescriptorPool = new VulkanDescriptorPool(mContext);
@@ -187,15 +196,10 @@ void RenderSystem::initialize()
 	mVertexBuffer = new VulkanVertexBuffer(mContext);
 
 	float vertices[] = {
-		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f,
-
-		-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-		-0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+		0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
 	};
 
 	mVertexBuffer->setData(vertices, sizeof(vertices));
@@ -203,6 +207,7 @@ void RenderSystem::initialize()
 	BufferLayout bufferLayout;
 	bufferLayout.push<Vector3f>("inPosition");
 	bufferLayout.push<Vector3f>("inColor");
+	bufferLayout.push<Vector2f>("inUV");
 
 	mVertexBuffer->setLayout(bufferLayout);
 
@@ -210,10 +215,9 @@ void RenderSystem::initialize()
 		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
 
 	uint32_t indices[] = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
+		0, 1, 2, 2, 3, 0
 	};
-
+	 
 	mIndexBuffer = new VulkanIndexBuffer(mContext);
 	mIndexBuffer->setData(indices, sizeof(indices));
 
@@ -223,6 +227,16 @@ void RenderSystem::initialize()
 	mUniformBuffer = new VulkanUniformBuffer(mContext);
 	mUniformBuffer->construct({ sizeof(UBO), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
 		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
+
+	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/test.jpg", STBI_rgb_alpha);
+
+	VulkanSampler* sampler = new VulkanSampler(mContext);
+	sampler->construct({ 0, EFilter::LINEAR, EFilter::LINEAR, ESamplerMipmapMode::LINEAR, ESamplerAddressMode::REPEAT,
+	ESamplerAddressMode::REPEAT , ESamplerAddressMode::REPEAT , 0.0f, false, 16.0f, false, ECompareOp::COMPARE_OP_ALWAYS,
+	0, 1, EBorderColor::FLOAT_OPAQUE_BLACK, false });
+
+	mTexture = new VulkanTexture(mContext);
+	mTexture->construct({ texAsset.get(), sampler, 2, mDescriptorPool });
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
@@ -310,7 +324,7 @@ void RenderSystem::initialize()
 	depthState.back = {};
 
 	mLayout = new VulkanPipelineLayout(mContext);
-	mLayout->construct({ 0, {mUniformBuffer->getLayout()}, {} });
+	mLayout->construct({ 0, {mUniformBuffer->getLayout(), mTexture->getLayout()}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;
@@ -392,10 +406,18 @@ void RenderSystem::render()
 	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT32);
 
 	VulkanDescriptorSet* sets = primal_cast<VulkanDescriptorSet*>(mUniformBuffer->getSet());
+	VulkanDescriptorSet* imagesets = primal_cast<VulkanDescriptorSet*>(mTexture->getSet());
+	
+	std::vector<VkDescriptorSet> setList;
 	VkDescriptorSet set = sets->getHandle(mCurrentFrame);
-	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0, 1, &set, 0, nullptr);
+	setList.push_back(set);
+	VkDescriptorSet imageset = imagesets->getHandle(mCurrentFrame);
+	setList.push_back(imageset);
 
-	handle->drawIndexed(12, 1, 0, 0, 0);
+	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0, 
+		2, &setList[0], 0, nullptr);
+
+	handle->drawIndexed(6, 1, 0, 0, 0);
 
 	handle->endRenderPass();
 

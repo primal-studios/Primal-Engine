@@ -19,15 +19,6 @@ struct FileInfo
 	std::string rootPath;
 };
 
-struct ImageFile
-{
-	std::vector<unsigned char> payload;
-	uint32_t width;
-	uint32_t height;
-	uint32_t channels;
-	uint32_t bitsPerPixel;
-};
-
 class FileSystem
 {
 	public:
@@ -36,10 +27,11 @@ class FileSystem
 		void mount(const Path& aPath);
 		void unmount();
 
+		Path getMountedDirectory() const;
+
 		File* load(const Path& aPath) const;
 		std::string loadToString(const Path& aPath) const;
 		std::vector<char> getBytes(const Path& aPath) const;
-		ImageFile loadImage(const Path& aPath, uint32_t aDesiredChannels) const;
 
 		bool exists(const Path& aPath) const;
 

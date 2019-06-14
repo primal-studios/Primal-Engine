@@ -38,6 +38,11 @@ void FileSystem::unmount()
 	mMountedPath = "";
 }
 
+Path FileSystem::getMountedDirectory() const
+{
+	return mMountedPath;
+}
+
 File* FileSystem::load(const Path& aPath) const
 {
 	if(exists(aPath))
@@ -102,43 +107,6 @@ std::vector<char> FileSystem::getBytes(const Path& aPath) const
 	}
 
 	return std::vector<char>();
-}
-
-ImageFile FileSystem::loadImage(const Path& aPath, uint32_t aDesiredChannels) const
-{
-	Path loadPath = mMountedPath;
-	loadPath += aPath;
-
-	int x, y, channels;
-	auto widePath = aPath.native();
-
-	std::vector<char> convertedPath;
-	convertedPath.reserve(widePath.size());
-
-	for (const auto& c : widePath)
-	{
-		if (c > 255)
-		{
-			PRIMAL_INTERNAL_ERROR("Invalid character code in path.");
-			return ImageFile{};
-		}
-		convertedPath.push_back(c);
-	}
-
-	unsigned char* payload = stbi_load(convertedPath.data(), &x, &y, &channels, aDesiredChannels);
-	std::vector<unsigned char> results;
-	results.resize(static_cast<size_t>(x) * static_cast<size_t>(y) * aDesiredChannels);
-	memcpy(results.data(), payload, results.size());
-	stbi_image_free(payload);
-	
-	ImageFile file = {};
-	file.payload = results;
-	file.bitsPerPixel = 8;
-	file.channels = aDesiredChannels;
-	file.width = x;
-	file.height = y;
-
-	return file;
 }
 
 bool FileSystem::exists(const Path& aPath) const

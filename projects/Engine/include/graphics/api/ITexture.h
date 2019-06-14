@@ -5,12 +5,16 @@
 #include "graphics/api/IImage.h"
 #include "graphics/api/IImageView.h"
 #include "graphics/api/ISampler.h"
+#include "assets/TextureAsset.h"
+#include "graphics/api/IDescriptorPool.h"
 
 struct TextureCreateInfo
 {
-	IImage* image;
-	IImageView* imageView;
+	TextureAsset* textureAsset;
 	ISampler* sampler;
+
+	uint32_t framesInFlight;
+	IDescriptorPool* descriptorPool;
 };
 
 class ITexture
@@ -25,6 +29,11 @@ class ITexture
 		ITexture& operator=(ITexture&&) noexcept = delete;
 
 		virtual void construct(const TextureCreateInfo&) = 0;
+
+		virtual void bind(const uint32_t aBinding = 0) = 0;
+
+	protected:
+		IGraphicsContext* mContext;
 };
 
 #endif // itexture_h__

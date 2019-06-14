@@ -245,7 +245,7 @@ void VulkanImage::_copyBufferToImage(const ImageCreateInfo& aInfo) const
 	region.imageSubresource.baseArrayLayer = aInfo.baseArrayLayer;
 	region.imageSubresource.layerCount = aInfo.layerCount;
 	region.imageOffset = { 0, 0, 0 };
-	region.imageExtent = { aInfo.width, aInfo.height, 0 };
+	region.imageExtent = { aInfo.width, aInfo.height, aInfo.depth };
 
 	vkBeginCommandBuffer(bufHandle, &beginInfo);
 	vkCmdCopyBufferToImage(bufHandle, mStagingBuffer, mImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
