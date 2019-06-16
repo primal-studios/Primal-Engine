@@ -41,6 +41,8 @@ class IIndexBuffer
 		virtual void bind() = 0;
 		virtual void unbind() = 0;
 
+		uint32_t getCount() const;
+
 	protected:
 		IGraphicsContext* mContext;
 

@@ -8,6 +8,7 @@
 #include <unordered_set>
 
 #include <GLFW/glfw3.h>
+#include "graphics/GraphicsFactory.h"
 
 namespace detail
 {
@@ -119,6 +120,8 @@ VulkanGraphicsContext::VulkanGraphicsContext(const GraphicsContextCreateInfo& aC
 
 	mPool = new VulkanCommandPool(this);
 	mPool->construct(commandPoolInfo);
+
+	GraphicsFactory::instance().initialize(ERenderAPI::RENDERAPI_VULKAN, this);
 }
 
 VulkanGraphicsContext::~VulkanGraphicsContext()

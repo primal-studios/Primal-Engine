@@ -27,6 +27,7 @@
 // Assets
 #include "assets/Asset.h"
 #include "assets/AssetManager.h"
+#include "assets/MeshAsset.h"
 
 // Components
 #include "components/TransformComponent.h"

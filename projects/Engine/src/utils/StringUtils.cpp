@@ -693,8 +693,8 @@ bool StringUtils::endsWith(const std::string& aString, const char aSuffix)
 
 bool StringUtils::endsWith(const std::string& aString, const std::string& aSuffix)
 {
-	const std::string sub = aString.substr(aString.length() - (aSuffix.length() + 1));
-	return sub == aSuffix;
+	if (aSuffix.size() > aString.size()) return false;
+	return (0 == aString.compare(aString.length() - aSuffix.length(), aSuffix.length(), aSuffix));
 }
 
 bool StringUtils::endsWithAny(const std::string& aString, const std::vector<char>& aSuffixes)

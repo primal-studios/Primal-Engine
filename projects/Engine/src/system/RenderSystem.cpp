@@ -18,6 +18,7 @@
 
 #include "assets/AssetManager.h"
 #include "graphics/vk/VulkanSampler.h"
+#include "assets/MeshAsset.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
@@ -81,8 +82,6 @@ RenderSystem::~RenderSystem()
 	delete[] mFramebuffers;
 	delete[] mPrimaryBuffer;
 
-	delete mVertexBuffer;
-	delete mIndexBuffer;
 	delete mUniformBuffer;
 
 	delete mDescriptorPool;
@@ -197,42 +196,17 @@ void RenderSystem::initialize()
 		mPrimaryBuffer[i]->construct(commandBufferInfo);
 	}
 
-	mVertexBuffer = new VulkanVertexBuffer(mContext);
+	auto meshAsset = AssetManager::instance().load<MeshAsset>("mesh", "data/models/cube.glb");
+	auto mesh = meshAsset->getMesh(0);
 
-	float vertices[] = {
-		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-		0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-		-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
-	};
-
-	mVertexBuffer->setData(vertices, sizeof(vertices));
-
-	BufferLayout bufferLayout;
-	bufferLayout.push<Vector3f>("inPosition");
-	bufferLayout.push<Vector3f>("inColor");
-	bufferLayout.push<Vector2f>("inUV");
-
-	mVertexBuffer->setLayout(bufferLayout);
-
-	mVertexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_VERTEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
-		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
-
-	uint32_t indices[] = {
-		0, 1, 2, 2, 3, 0
-	};
-	 
-	mIndexBuffer = new VulkanIndexBuffer(mContext);
-	mIndexBuffer->setData(indices, sizeof(indices));
-
-	mIndexBuffer->construct({ 0, EBufferUsageFlagBits::BUFFER_USAGE_INDEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST,
-		ESharingMode::SHARING_MODE_EXCLUSIVE, {mContext->getGraphicsQueueIndex()} });
+	mVertexBuffer = static_cast<VulkanVertexBuffer*>(mesh->getVBO());
+	mIndexBuffer = static_cast<VulkanIndexBuffer*>(mesh->getIBO());
 
 	mUniformBuffer = new VulkanUniformBuffer(mContext);
 	mUniformBuffer->construct({ sizeof(UBO), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
 		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
 
-	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/test.jpg", STBI_rgb_alpha);
+	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/shawn.png", STBI_rgb_alpha);
 
 	VulkanSampler* sampler = new VulkanSampler(mContext);
 	sampler->construct({ 0, EFilter::LINEAR, EFilter::LINEAR, ESamplerMipmapMode::LINEAR, ESamplerAddressMode::REPEAT,
@@ -367,7 +341,7 @@ void RenderSystem::render()
 
 	UBO u = {};
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())) , 0.001f, 1000.0f);
-	u.view = Matrix4f::lookAt(Vector3f(2, 2, 2), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+	u.view = Matrix4f::lookAt(Vector3f(10, 10, 10), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
 	u.model = Matrix4f::identity();
 
 	mUniformBuffer->setData(&u, sizeof(UBO), mCurrentFrame);
@@ -407,7 +381,7 @@ void RenderSystem::render()
 	handle->bindGraphicsPipeline(mGraphicsPipeline);
 
 	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
-	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT32);
+	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT16);
 
 	VulkanDescriptorSet* sets = primal_cast<VulkanDescriptorSet*>(mUniformBuffer->getSet());
 	VulkanDescriptorSet* imagesets = primal_cast<VulkanDescriptorSet*>(mTexture->getSet());
@@ -421,7 +395,7 @@ void RenderSystem::render()
 	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0, 
 		2, &setList[0], 0, nullptr);
 
-	handle->drawIndexed(6, 1, 0, 0, 0);
+	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
 	handle->endRenderPass();
 

@@ -28,6 +28,8 @@ GameLayer::~GameLayer()
 
 void GameLayer::onAttach()
 {
+	AssetManager::instance().load<MeshAsset>("building", "data/models/building.glb");
+
 	//SystemManager::instance().addSystem<RenderSystem>();
 
 	//SystemManager::instance().configure();
