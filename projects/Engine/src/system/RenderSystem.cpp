@@ -215,6 +215,7 @@ void RenderSystem::initialize()
 	mUniformBuffer->construct(uniformBufferCreateInfo);
 
 	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/shawn.png", STBI_rgb_alpha);
+	auto texAsset2 = AssetManager::instance().load<TextureAsset>("test", "data/textures/test.jpg", STBI_rgb_alpha);
 
 	VulkanSampler* sampler = new VulkanSampler(mContext);
 	sampler->construct({ 0, EFilter::LINEAR, EFilter::LINEAR, ESamplerMipmapMode::LINEAR, ESamplerAddressMode::REPEAT,
@@ -224,8 +225,11 @@ void RenderSystem::initialize()
 	mTexture = new VulkanTexture(mContext);
 	mTexture->construct({ texAsset.get(), sampler, 2, mDescriptorPool });
 
+	mTexture2 = new VulkanTexture(mContext);
+	mTexture2->construct({ texAsset2.get(), sampler, 2, mDescriptorPool });
+
 	mSetLayout = new VulkanDescriptorSetLayout(mContext);
-	mSetLayout->construct({ 0, {mUniformBuffer->getDescriptorSetLayout(0, VK_SHADER_STAGE_VERTEX_BIT, 1), mTexture->getDescriptorSetLayout(1, VK_SHADER_STAGE_FRAGMENT_BIT, 1)} });
+	mSetLayout->construct({ 0, {VulkanUniformBuffer::getDescriptorSetLayout(0, VK_SHADER_STAGE_VERTEX_BIT, 1), VulkanTexture::getDescriptorSetLayout(1, VK_SHADER_STAGE_FRAGMENT_BIT, 1)} });
 
 	DescriptorSetCreateInfo setCreateInfo = {};
 	setCreateInfo.pool = mDescriptorPool;
@@ -421,13 +425,13 @@ void RenderSystem::render()
 
 	UBO u = {};
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
-	u.view = Matrix4f::lookAt(Vector3f(10, 10, 10), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+	u.view = Matrix4f::lookAt(Vector3f(20, 20, 20), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
 	u.model = Matrix4f::identity();
 	u.model = Matrix4f::rotate(u.model, Vector3f(0, 1, 0), angle);
 
 	angle += 0.0001f;
 
-	mUniformBuffer->setData(&u, 0);
+	mUniformBuffer->setData(&u, 0, sizeof(UBO));
 
 	setList.push_back(set);
 
@@ -441,7 +445,7 @@ void RenderSystem::render()
 	uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
 	uniformWriteDesc.dstSet = set2;
 
-	textureWriteDescHolder = mTexture->getWriteDescriptor(1, {});
+	textureWriteDescHolder = mTexture2->getWriteDescriptor(1, {});
 	textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
 	textureWriteDesc.dstSet = set2;
 
@@ -452,11 +456,11 @@ void RenderSystem::render()
 	vkUpdateDescriptorSets(mContext->getDevice(), writeSets.size(), writeSets.data(), 0, nullptr);
 
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
-	u.view = Matrix4f::lookAt(Vector3f(10, 10, 10), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+	u.view = Matrix4f::lookAt(Vector3f(20, 20, 20), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
 	u.model = Matrix4f::identity();
 	u.model = Matrix4f::translate(u.model, Vector3f(15, 0, 0));
 
-	mUniformBuffer->setData(&u, sizeof(UBO));
+	mUniformBuffer->setData(&u, sizeof(UBO), sizeof(UBO));
 
 	setList.clear();
 	setList.push_back(set2);

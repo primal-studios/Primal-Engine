@@ -53,13 +53,13 @@ void VulkanUniformBuffer::reconstruct(const UniformBufferCreateInfo& aInfo)
 	construct(aInfo);
 }
 
-void VulkanUniformBuffer::setData(void* aData, const size_t aOffset)
+void VulkanUniformBuffer::setData(void* aData, const size_t aOffset, const size_t aSize)
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
 	void* data;
 	vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
-	memcpy(static_cast<uint8_t*>(data) + aOffset, aData, mInfo.size);
+	memcpy(static_cast<uint8_t*>(data) + aOffset, aData, aSize);
 	vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
 }
 

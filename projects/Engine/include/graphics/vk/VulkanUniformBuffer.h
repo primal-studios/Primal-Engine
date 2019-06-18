@@ -23,7 +23,7 @@ class VulkanUniformBuffer final : public IUniformBuffer
 		void construct(const UniformBufferCreateInfo& aInfo) override;
 		void reconstruct(const UniformBufferCreateInfo& aInfo) override;
 
-		void setData(void* aData, const size_t aOffset) override;
+		void setData(void* aData, const size_t aOffset, const size_t aSize) override;
 
 		static DescriptorSetLayoutBinding getDescriptorSetLayout(const uint32_t aBinding, const VkShaderStageFlags aStage, const uint32_t aCount);
 

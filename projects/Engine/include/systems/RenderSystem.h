@@ -62,6 +62,7 @@ class RenderSystem final : public System
 		VulkanDescriptorSetLayout* mSetLayout;
 
 		VulkanTexture* mTexture;
+		VulkanTexture* mTexture2;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};

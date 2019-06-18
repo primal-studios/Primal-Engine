@@ -35,7 +35,7 @@ class IUniformBuffer
 		virtual void construct(const UniformBufferCreateInfo& aInfo) = 0;
 		virtual void reconstruct(const UniformBufferCreateInfo& aInfo) = 0;
 
-		virtual void setData(void* aData, const size_t aOffset) = 0;
+		virtual void setData(void* aData, const size_t aOffset, const size_t aSize) = 0;
 
 	protected:
 		IGraphicsContext* mContext;
