@@ -8,6 +8,33 @@
 #include "graphics/api/IDescriptorPool.h"
 #include "IDescriptorSetLayout.h"
 
+class OffsetSize
+{
+	public:
+		OffsetSize(const uint32_t aOffset, const uint32_t aSize) 
+			: mOffset(aOffset), mSize(aSize)
+		{
+			
+		}
+
+		const uint32_t& getOffset() const { return mOffset; }
+		const uint32_t& getSize() const { return mSize; }
+
+		bool operator == (const OffsetSize& aOther) const
+		{
+			return mOffset == aOther.mOffset && mSize == aOther.mSize;
+		}
+
+		bool operator != (const OffsetSize& aOther) const
+		{
+			return !(*this == aOther);
+		}
+
+	private:
+		uint32_t mOffset;
+		uint32_t mSize;
+};
+
 struct DescriptorSetCreateInfo
 {
 	IDescriptorPool* pool;

@@ -6,7 +6,7 @@
 #include "graphics/vk/VulkanDescriptorSet.h"
 
 VulkanUniformBuffer::VulkanUniformBuffer(IGraphicsContext* aContext)
-	: IUniformBuffer(aContext), mLayout(nullptr), mSets(nullptr)
+	: IUniformBuffer(aContext), mBuffer(nullptr), mAllocation(nullptr)
 {
 	mSize = 0;
 	mInfo = {};
@@ -15,7 +15,6 @@ VulkanUniformBuffer::VulkanUniformBuffer(IGraphicsContext* aContext)
 VulkanUniformBuffer::~VulkanUniformBuffer()
 {
 	_destroy();
-	delete mLayout;
 }
 
 void VulkanUniformBuffer::construct(const UniformBufferCreateInfo& aInfo)
@@ -27,73 +26,24 @@ void VulkanUniformBuffer::construct(const UniformBufferCreateInfo& aInfo)
 	mSize = static_cast<VkDeviceSize>(aInfo.size);
 	const bool isExclusive = (aInfo.sharingMode == ESharingMode::SHARING_MODE_EXCLUSIVE);
 
-	mBuffer.resize(aInfo.framesInFlight);
-	mAllocation.resize(aInfo.framesInFlight);
+	VkBufferCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	createInfo.size = mSize;
+	createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	createInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-	for(size_t i = 0; i < aInfo.framesInFlight; i++)
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+	const VkResult res = vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer, &mAllocation, nullptr);
+
+	if (res != VK_SUCCESS)
 	{
-		VkBufferCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		createInfo.size = mSize;
-		createInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-		createInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-
-		VmaAllocationCreateInfo allocInfo = {};
-		allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-		const VkResult res = vmaCreateBuffer(context->getBufferAllocator(), &createInfo, &allocInfo, &mBuffer[i], &mAllocation[i], nullptr);
-
-		if (res != VK_SUCCESS)
-		{
-			PRIMAL_INTERNAL_CRITICAL("Failed to create uniform buffer.");
-		}
-		else
-		{
-			PRIMAL_INTERNAL_INFO("Successfully created uniform buffer.");
-		}
+		PRIMAL_INTERNAL_CRITICAL("Failed to create uniform buffer.");
 	}
-
-	// Construct sets
-	if (!mLayout)
+	else
 	{
-		DescriptorSetLayoutCreateInfo createInfo = {};
-		createInfo.flags = 0;
-		createInfo.layoutBindings = { aInfo.binding };
-
-		mLayout = new VulkanDescriptorSetLayout(mContext);
-		mLayout->construct(createInfo);
-	}
-
-	if (!mSets)
-	{
-		const std::vector<IDescriptorSetLayout*> layouts(aInfo.framesInFlight, mLayout);
-
-		DescriptorSetCreateInfo allocInfo = {};
-		allocInfo.setLayouts = layouts;
-		allocInfo.pool = aInfo.descriptorPool;
-
-		mSets = new VulkanDescriptorSet(mContext);
-		mSets->construct(allocInfo);
-	}
-
-	VulkanDescriptorSet* vulkanSets = primal_cast<VulkanDescriptorSet*>(mSets);
-	for(uint32_t i = 0; i < aInfo.framesInFlight; i++)
-	{
-		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = mBuffer[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = mSize;
-
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = vulkanSets->getHandle(i);
-		descriptorWrite.dstBinding = aInfo.binding.binding;
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(context->getDevice(), 1, &descriptorWrite, 0, nullptr);
+		PRIMAL_INTERNAL_INFO("Successfully created uniform buffer.");
 	}
 }
 
@@ -103,32 +53,54 @@ void VulkanUniformBuffer::reconstruct(const UniformBufferCreateInfo& aInfo)
 	construct(aInfo);
 }
 
-void VulkanUniformBuffer::setData(void* aData, const size_t aSize, const size_t aCurrentImage)
+void VulkanUniformBuffer::setData(void* aData, const size_t aOffset)
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
 	void* data;
-	vmaMapMemory(context->getBufferAllocator(), mAllocation[aCurrentImage], &data);
-	memcpy(data, aData, aSize);
-	vmaUnmapMemory(context->getBufferAllocator(), mAllocation[aCurrentImage]);
+	vmaMapMemory(context->getBufferAllocator(), mAllocation, &data);
+	memcpy(static_cast<uint8_t*>(data) + aOffset, aData, mInfo.size);
+	vmaUnmapMemory(context->getBufferAllocator(), mAllocation);
 }
 
-IDescriptorSetLayout* VulkanUniformBuffer::getLayout() const
+DescriptorSetLayoutBinding VulkanUniformBuffer::getDescriptorSetLayout(const uint32_t aBinding, const VkShaderStageFlags aStage, const uint32_t aCount)
 {
-	return mLayout;
+	DescriptorSetLayoutBinding binding = {};
+	binding.binding = aBinding;
+	binding.descriptorCount = 1;
+	binding.descriptorType = EDescriptorType::UNIFORM_BUFFER;
+	binding.shaderStageFlags = aStage;
+
+	return binding;
 }
 
-IDescriptorSet* VulkanUniformBuffer::getSet() const
+WriteDescriptorSet VulkanUniformBuffer::getWriteDescriptor(const uint32_t aBinding, const std::optional<OffsetSize>& aOffsetSize) const
 {
-	return mSets;
+	VkDescriptorBufferInfo bufferInfo = {};
+	bufferInfo.buffer = mBuffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = mInfo.size;
+
+	if (aOffsetSize)
+	{
+		bufferInfo.offset = aOffsetSize->getOffset();
+		bufferInfo.range = aOffsetSize->getSize();
+	}
+
+	VkWriteDescriptorSet descriptorWrite = {};
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet = nullptr;
+	descriptorWrite.dstBinding = aBinding;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorWrite.pBufferInfo = &bufferInfo;
+
+	return { descriptorWrite, bufferInfo };
 }
 
-void VulkanUniformBuffer::_destroy()
+void VulkanUniformBuffer::_destroy() const
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
-
-	for (size_t i = 0; i < mBuffer.size(); i++)
-	{
-		vmaDestroyBuffer(context->getBufferAllocator(), mBuffer[i], mAllocation[i]);
-	}
+	vmaDestroyBuffer(context->getBufferAllocator(), mBuffer, mAllocation);
 }

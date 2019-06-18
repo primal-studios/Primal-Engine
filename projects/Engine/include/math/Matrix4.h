@@ -145,6 +145,16 @@ class Matrix4
 			return glm::lookAt(aEye._internal_value, aTarget._internal_value, aUp._internal_value);
 		}
 
+		static Matrix4 rotate(const Matrix4& aMatrix, const Vector3f& aAxis, const T aAngle)
+		{
+			return glm::rotate(aMatrix._internal_value, aAngle, aAxis._internal_value);
+		}
+
+		static Matrix4 translate(const Matrix4& aMatrix, const Vector3f& aTranslation)
+		{
+			return glm::translate(aMatrix._internal_value, aTranslation._internal_value);
+		}
+
 		T determinant() const
 		{
 			return glm::determinant(_internal_value);

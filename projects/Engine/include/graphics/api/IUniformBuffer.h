@@ -15,15 +15,10 @@
 struct UniformBufferCreateInfo
 {
 	size_t size;
-	uint32_t framesInFlight;
 
 	BufferCreateFlags flags;
 	BufferUsageFlags usage;
 	ESharingMode sharingMode;
-	std::vector<uint32_t> queueFamilyIndices;
-
-	IDescriptorPool* descriptorPool;
-	DescriptorSetLayoutBinding binding;
 };
 
 class IUniformBuffer
@@ -39,7 +34,8 @@ class IUniformBuffer
 
 		virtual void construct(const UniformBufferCreateInfo& aInfo) = 0;
 		virtual void reconstruct(const UniformBufferCreateInfo& aInfo) = 0;
-		virtual void setData(void* aData, const size_t aSize, const size_t aCurrentImage) = 0;
+
+		virtual void setData(void* aData, const size_t aOffset) = 0;
 
 	protected:
 		IGraphicsContext* mContext;

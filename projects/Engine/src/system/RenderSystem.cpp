@@ -23,7 +23,8 @@
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
 	  mUniformBuffer(nullptr),
-	  mDescriptorPool(nullptr), mTexture(nullptr), mWindow(aWindow)
+	  mDescriptorPool(nullptr), mSet(nullptr), mSetLayout(nullptr), mTexture(nullptr),
+	  mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -50,13 +51,13 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 	DescriptorPoolSize combinedSamplerSize;
 	combinedSamplerSize.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
-	combinedSamplerSize.count = 2;
+	combinedSamplerSize.count = 4;
 
 	poolSizes.push_back(combinedSamplerSize);
 
 	DescriptorPoolCreateInfo createInfo;
 	createInfo.flags = 0;
-	createInfo.maxSets = 4;
+	createInfo.maxSets = 6;
 	createInfo.poolSizes = poolSizes;
 
 	mDescriptorPool = new VulkanDescriptorPool(mContext);
@@ -70,6 +71,8 @@ RenderSystem::~RenderSystem()
 	AssetManager::instance().unloadAll();
 
 	delete mTexture;
+	delete mLayout;
+	delete mSetLayout;
 
 	delete mSwapChain;
 
@@ -86,7 +89,6 @@ RenderSystem::~RenderSystem()
 
 	delete mDescriptorPool;
 
-	delete mLayout;
 	delete mGraphicsPipeline;
 	delete mRenderPass;
 	delete mContext;
@@ -97,6 +99,7 @@ struct UBO
 	Matrix4f model;
 	Matrix4f view;
 	Matrix4f proj;
+	Matrix4f mvp;
 };
 
 void RenderSystem::initialize()
@@ -202,9 +205,14 @@ void RenderSystem::initialize()
 	mVertexBuffer = static_cast<VulkanVertexBuffer*>(mesh->getVBO());
 	mIndexBuffer = static_cast<VulkanIndexBuffer*>(mesh->getIBO());
 
+	UniformBufferCreateInfo uniformBufferCreateInfo = {};
+	uniformBufferCreateInfo.flags = 0;
+	uniformBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
+	uniformBufferCreateInfo.size = sizeof(UBO) * 2;
+	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
+
 	mUniformBuffer = new VulkanUniformBuffer(mContext);
-	mUniformBuffer->construct({ sizeof(UBO), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
-		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
+	mUniformBuffer->construct(uniformBufferCreateInfo);
 
 	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/shawn.png", STBI_rgb_alpha);
 
@@ -215,6 +223,20 @@ void RenderSystem::initialize()
 
 	mTexture = new VulkanTexture(mContext);
 	mTexture->construct({ texAsset.get(), sampler, 2, mDescriptorPool });
+
+	mSetLayout = new VulkanDescriptorSetLayout(mContext);
+	mSetLayout->construct({ 0, {mUniformBuffer->getDescriptorSetLayout(0, VK_SHADER_STAGE_VERTEX_BIT, 1), mTexture->getDescriptorSetLayout(1, VK_SHADER_STAGE_FRAGMENT_BIT, 1)} });
+
+	DescriptorSetCreateInfo setCreateInfo = {};
+	setCreateInfo.pool = mDescriptorPool;
+	setCreateInfo.setLayouts.push_back(mSetLayout);
+	setCreateInfo.setLayouts.push_back(mSetLayout);
+
+	mSet = new VulkanDescriptorSet(mContext);
+	mSet->construct(setCreateInfo);
+
+	mSet2 = new VulkanDescriptorSet(mContext);
+	mSet2->construct(setCreateInfo);
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
@@ -302,7 +324,7 @@ void RenderSystem::initialize()
 	depthState.back = {};
 
 	mLayout = new VulkanPipelineLayout(mContext);
-	mLayout->construct({ 0, {mUniformBuffer->getLayout(), mTexture->getLayout()}, {} });
+	mLayout->construct({ 0, {mSetLayout}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;
@@ -335,16 +357,11 @@ void RenderSystem::preRender()
 
 }
 
+float angle = 0.0f;
+
 void RenderSystem::render()
 {
 	const auto handle = *(mPrimaryBuffer + mCurrentFrame);
-
-	UBO u = {};
-	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())) , 0.001f, 1000.0f);
-	u.view = Matrix4f::lookAt(Vector3f(10, 10, 10), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
-	u.model = Matrix4f::identity();
-
-	mUniformBuffer->setData(&u, sizeof(UBO), mCurrentFrame);
 
 	mPrimaryInheritance.renderPass = mRenderPass;
 	mPrimaryInheritance.frameBuffer = mFramebuffers[mCurrentFrame];
@@ -383,17 +400,69 @@ void RenderSystem::render()
 	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
 	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT16);
 
-	VulkanDescriptorSet* sets = primal_cast<VulkanDescriptorSet*>(mUniformBuffer->getSet());
-	VulkanDescriptorSet* imagesets = primal_cast<VulkanDescriptorSet*>(mTexture->getSet());
-	
 	std::vector<VkDescriptorSet> setList;
-	VkDescriptorSet set = sets->getHandle(mCurrentFrame);
+	VkDescriptorSet set = mSet->getHandle(mCurrentFrame);
+	VkDescriptorSet set2 = mSet2->getHandle(mCurrentFrame);
+
+	OffsetSize offset = { 0, sizeof(UBO) };
+	auto uniformWriteDescHolder = mUniformBuffer->getWriteDescriptor(0, offset);
+	auto uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
+	uniformWriteDesc.dstSet = set;
+
+	auto textureWriteDescHolder = mTexture->getWriteDescriptor(1, {});
+	auto textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
+	textureWriteDesc.dstSet = set;
+
+	std::vector<VkWriteDescriptorSet> writeSets;
+	writeSets.push_back(uniformWriteDesc);
+	writeSets.push_back(textureWriteDesc);
+
+	vkUpdateDescriptorSets(mContext->getDevice(), writeSets.size(), writeSets.data(), 0, nullptr);
+
+	UBO u = {};
+	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
+	u.view = Matrix4f::lookAt(Vector3f(10, 10, 10), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+	u.model = Matrix4f::identity();
+	u.model = Matrix4f::rotate(u.model, Vector3f(0, 1, 0), angle);
+
+	angle += 0.0001f;
+
+	mUniformBuffer->setData(&u, 0);
+
 	setList.push_back(set);
-	VkDescriptorSet imageset = imagesets->getHandle(mCurrentFrame);
-	setList.push_back(imageset);
 
 	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0, 
-		2, &setList[0], 0, nullptr);
+		1, &setList[0], 0, nullptr);
+
+	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+
+	offset = { sizeof(UBO), sizeof(UBO) };
+	uniformWriteDescHolder = mUniformBuffer->getWriteDescriptor(0, offset);
+	uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
+	uniformWriteDesc.dstSet = set2;
+
+	textureWriteDescHolder = mTexture->getWriteDescriptor(1, {});
+	textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
+	textureWriteDesc.dstSet = set2;
+
+	writeSets.clear();
+	writeSets.push_back(uniformWriteDesc);
+	writeSets.push_back(textureWriteDesc);
+
+	vkUpdateDescriptorSets(mContext->getDevice(), writeSets.size(), writeSets.data(), 0, nullptr);
+
+	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
+	u.view = Matrix4f::lookAt(Vector3f(10, 10, 10), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+	u.model = Matrix4f::identity();
+	u.model = Matrix4f::translate(u.model, Vector3f(15, 0, 0));
+
+	mUniformBuffer->setData(&u, sizeof(UBO));
+
+	setList.clear();
+	setList.push_back(set2);
+
+	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0,
+		1, &setList[0], 0, nullptr);
 
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
@@ -520,8 +589,13 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 		mPrimaryBuffer[i]->reconstruct(commandBufferInfo);
 	}
 
-	mUniformBuffer->reconstruct({ sizeof(UBO), 2, 0, EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER, ESharingMode::SHARING_MODE_EXCLUSIVE,
-		{mContext->getGraphicsQueueIndex(), mContext->getPresentQueueIndex()}, mDescriptorPool, {0, EDescriptorType::UNIFORM_BUFFER, 1, EShaderStageFlagBits::SHADER_STAGE_VERTEX, {}} });
+	UniformBufferCreateInfo uniformBufferCreateInfo = {};
+	uniformBufferCreateInfo.flags = 0;
+	uniformBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
+	uniformBufferCreateInfo.size = sizeof(UBO);
+	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
+
+	mUniformBuffer->reconstruct(uniformBufferCreateInfo);
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
@@ -606,7 +680,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	depthState.front = {};
 	depthState.back = {};
 
-	mLayout->reconstruct({ 0, {mUniformBuffer->getLayout()}, {} });
+	mLayout->reconstruct({ 0, {mSetLayout}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;

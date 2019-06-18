@@ -18,6 +18,7 @@
 #include "graphics/vk/VulkanDescriptorPool.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanTexture.h"
+#include "graphics/vk/VulkanDescriptorSetLayout.h"
 
 class RenderSystem final : public System
 {
@@ -55,6 +56,10 @@ class RenderSystem final : public System
 		VulkanIndexBuffer* mIndexBuffer;
 		VulkanUniformBuffer* mUniformBuffer;
 		VulkanDescriptorPool* mDescriptorPool;
+
+		VulkanDescriptorSet* mSet;
+		VulkanDescriptorSet* mSet2;
+		VulkanDescriptorSetLayout* mSetLayout;
 
 		VulkanTexture* mTexture;
 

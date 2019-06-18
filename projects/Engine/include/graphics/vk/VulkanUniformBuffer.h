@@ -6,6 +6,8 @@
 
 #include "graphics/api/IUniformBuffer.h"
 #include "graphics/api/IDescriptorSet.h"
+#include <optional>
+#include "VulkanDescriptorSet.h"
 
 class VulkanUniformBuffer final : public IUniformBuffer
 {
@@ -20,19 +22,18 @@ class VulkanUniformBuffer final : public IUniformBuffer
 
 		void construct(const UniformBufferCreateInfo& aInfo) override;
 		void reconstruct(const UniformBufferCreateInfo& aInfo) override;
-		void setData(void* aData, const size_t aSize, const size_t aCurrentImage) override;
 
-		IDescriptorSetLayout* getLayout() const;
-		IDescriptorSet* getSet() const;
+		void setData(void* aData, const size_t aOffset) override;
+
+		static DescriptorSetLayoutBinding getDescriptorSetLayout(const uint32_t aBinding, const VkShaderStageFlags aStage, const uint32_t aCount);
+
+		WriteDescriptorSet getWriteDescriptor(const uint32_t aBinding, const std::optional<OffsetSize>& aOffsetSize) const;
 
 	private:
-		void _destroy();
+		void _destroy() const;
 
-		std::vector<VkBuffer> mBuffer;
-		std::vector<VmaAllocation> mAllocation;
-
-		IDescriptorSetLayout* mLayout;
-		IDescriptorSet* mSets;
+		VkBuffer mBuffer;
+		VmaAllocation mAllocation;
 
 		VkDeviceSize mSize;
 		UniformBufferCreateInfo mInfo;

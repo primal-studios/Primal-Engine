@@ -6,18 +6,14 @@
 #include "graphics/vk/VulkanGraphicsContext.h"
 
 VulkanTexture::VulkanTexture(IGraphicsContext* aContext)
-	: ITexture(aContext)
+	: ITexture(aContext), mSampler(nullptr)
 {
 	mImage = nullptr;
 	mImageView = nullptr;
-	mSets = nullptr;
-	mLayout = nullptr;
 }
 
 VulkanTexture::~VulkanTexture()
 {
-	delete mSets;
-	delete mLayout;
 	delete mImageView;
 	delete mImage;
 	delete mSampler;
@@ -38,52 +34,6 @@ void VulkanTexture::construct(const TextureCreateInfo& aInfo)
 	mImageView = new VulkanImageView(mContext);
 	mImageView->construct({ mImage, EDataFormat::R8G8B8A8_UNORM, EImageViewType::IMAGE_VIEW_TYPE_2D, {EImageAspectFlagBits::IMAGE_ASPECT_COLOR,
 	0, 1, 0, 1} });
-
-	mLayout = new VulkanDescriptorSetLayout(mContext);
-	DescriptorSetLayoutBinding binding = {};
-	binding.binding = 1;
-	binding.descriptorCount = 1;
-	binding.descriptorType = EDescriptorType::COMBINED_IMAGE_SAMPLER;
-	binding.shaderStageFlags = EShaderStageFlagBits::SHADER_STAGE_FRAGMENT;
-
-	mLayout->construct({ 0, {binding} });
-
-	if (!mSets)
-	{
-		const std::vector<IDescriptorSetLayout*> layouts(aInfo.framesInFlight, mLayout);
-
-		DescriptorSetCreateInfo allocInfo = {};
-		allocInfo.setLayouts = layouts;
-		allocInfo.pool = aInfo.descriptorPool;
-
-		mSets = new VulkanDescriptorSet(mContext);
-		mSets->construct(allocInfo);
-	}
-
-	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
-
-	VulkanDescriptorSet* vulkanSets = primal_cast<VulkanDescriptorSet*>(mSets);
-	for (uint32_t i = 0; i < aInfo.framesInFlight; i++)
-	{
-		VkDescriptorImageInfo imageInfo = {};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = mImageView->getHandle();
-		
-		VulkanSampler* sampler = primal_cast<VulkanSampler*>(aInfo.sampler);
-		imageInfo.sampler = sampler->getHandle();
-
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = vulkanSets->getHandle(i);
-		descriptorWrite.dstBinding = 1;
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pImageInfo = &imageInfo;
-		descriptorWrite.pBufferInfo = nullptr;
-
-		vkUpdateDescriptorSets(context->getDevice(), 1, &descriptorWrite, 0, nullptr);
-	}
 }
 
 void VulkanTexture::bind(const uint32_t aBinding)
@@ -91,12 +41,36 @@ void VulkanTexture::bind(const uint32_t aBinding)
 
 }
 
-IDescriptorSetLayout* VulkanTexture::getLayout() const
+DescriptorSetLayoutBinding VulkanTexture::getDescriptorSetLayout(const uint32_t aBinding,
+	const VkShaderStageFlags aStage, const uint32_t aCount)
 {
-	return mLayout;
+	DescriptorSetLayoutBinding binding = {};
+	binding.binding = 1;
+	binding.descriptorCount = 1;
+	binding.descriptorType = EDescriptorType::COMBINED_IMAGE_SAMPLER;
+	binding.shaderStageFlags = EShaderStageFlagBits::SHADER_STAGE_FRAGMENT;
+
+	return binding;
 }
 
-IDescriptorSet* VulkanTexture::getSet() const
+WriteDescriptorSet VulkanTexture::getWriteDescriptor(const uint32_t aBinding,
+	const std::optional<OffsetSize>& aOffsetSize) const
 {
-	return mSets;
+	VkDescriptorImageInfo imageInfo = {};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = mImageView->getHandle();
+
+	VulkanSampler* sampler = primal_cast<VulkanSampler*>(mSampler);
+	imageInfo.sampler = sampler->getHandle();
+
+	VkWriteDescriptorSet descriptorWrite = {};
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet = nullptr;
+	descriptorWrite.dstBinding = aBinding;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrite.pImageInfo = &imageInfo;
+
+	return { descriptorWrite, imageInfo };
 }

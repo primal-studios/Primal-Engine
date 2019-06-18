@@ -212,11 +212,11 @@ void MeshAsset::_load()
 
 					if (normalBuffer.hasData())
 					{
-						for (uint32_t i = 0; i < normalBuffer.totalSize; i += normalBuffer.dataStride)
+						for (uint32_t i = 0; i < normalBuffer.totalSize / sizeof(float); i += 3)
 						{
-							float x = normalBuffer.data[i];
-							float y = normalBuffer.data[i + elementSize];
-							float z = normalBuffer.data[i + elementSize * 2];
+							float x = ((float*)normalBuffer.data)[i];
+							float y = ((float*)normalBuffer.data)[i + 1];
+							float z = ((float*)normalBuffer.data)[i + 2];
 
 							normals.push_back({ x, y, z });
 						}
@@ -231,12 +231,12 @@ void MeshAsset::_load()
 
 					if (tangentBuffer.hasData())
 					{
-						for (uint32_t i = 0; i < tangentBuffer.totalSize; i += tangentBuffer.dataStride)
+						for (uint32_t i = 0; i < tangentBuffer.totalSize / sizeof(float); i += 4)
 						{
-							float x = tangentBuffer.data[i];
-							float y = tangentBuffer.data[i + elementSize];
-							float z = tangentBuffer.data[i + elementSize * 2];
-							float w = tangentBuffer.data[i + elementSize * 3];
+							float x = ((float*)tangentBuffer.data)[i];
+							float y = ((float*)tangentBuffer.data)[i + 1];
+							float z = ((float*)tangentBuffer.data)[i + 2];
+							float w = ((float*)tangentBuffer.data)[i + 3];
 
 							tangents.push_back({ x, y, z });
 							binormals.push_back({ w, 0, 0 });
