@@ -122,7 +122,10 @@ project "Engine"
 			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXCooking_64.dll\" \"%{sln.location}bin\" /D /Y",
 			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXDevice64.dll\" \"%{sln.location}bin\" /D /Y",
 			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXFoundation_64.dll\" \"%{sln.location}bin\" /D /Y",
-			"xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXGpu_64.dll\" \"%{sln.location}bin\" /D /Y"
+            "xcopy \"%{sln.location}dependencies\\physx\\bin\\debug\\PhysXGpu_64.dll\" \"%{sln.location}bin\" /D /Y",
+            "xcopy \"%{sln.location}dependencies\\tbb\\bin\\tbb_debug.dll\" \"%{sln.location}bin\" /D /Y",
+            "xcopy \"%{sln.location}dependencies\\tbb\\bin\\tbbmalloc_debug.dll\" \"%{sln.location}bin\" /D /Y",
+            "xcopy \"%{sln.location}dependencies\\tbb\\bin\\tbbmalloc_proxy_debug.dll\" \"%{sln.location}bin\" /D /Y"
 		}
 
         defines { 
@@ -156,7 +159,10 @@ project "Engine"
 			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXCooking_64.dll\" \"%{sln.location}bin\" /D /Y",
 			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXDevice64.dll\" \"%{sln.location}bin\" /D /Y",
 			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXFoundation_64.dll\" \"%{sln.location}bin\" /D /Y",
-			"xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXGpu_64.dll\" \"%{sln.location}bin\" /D /Y"
+            "xcopy \"%{sln.location}dependencies\\physx\\bin\\release\\PhysXGpu_64.dll\" \"%{sln.location}bin\" /D /Y",
+            "xcopy \"%{sln.location}dependencies\\tbb\\bin\\tbb.dll\" \"%{sln.location}bin\" /D /Y",
+            "xcopy \"%{sln.location}dependencies\\tbb\\bin\\tbbmalloc.dll\" \"%{sln.location}bin\" /D /Y",
+            "xcopy \"%{sln.location}dependencies\\tbb\\bin\\tbbmalloc_proxy.dll\" \"%{sln.location}bin\" /D /Y"
 		}
 
         defines { 
