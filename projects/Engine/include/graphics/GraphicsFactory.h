@@ -3,6 +3,7 @@
 
 #include "api/IVertexBuffer.h"
 #include "api/IIndexBuffer.h"
+#include "api/IUniformBuffer.h"
 
 enum ERenderAPI : uint32_t
 {
@@ -18,6 +19,7 @@ class GraphicsFactory
 
 		IVertexBuffer* createVertexBuffer() const;
 		IIndexBuffer* createIndexBuffer() const;
+		IUniformBuffer* createUniformBuffer() const;
 
 	private:
 		GraphicsFactory();

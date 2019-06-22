@@ -22,7 +22,6 @@
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
-	  mUniformBuffer(nullptr),
 	  mDescriptorPool(nullptr), mSet(nullptr), mSetLayout(nullptr), mTexture(nullptr),
 	  mWindow(aWindow)
 {
@@ -85,7 +84,7 @@ RenderSystem::~RenderSystem()
 	delete[] mFramebuffers;
 	delete[] mPrimaryBuffer;
 
-	delete mUniformBuffer;
+	delete mUboPool;
 
 	delete mDescriptorPool;
 
@@ -211,8 +210,12 @@ void RenderSystem::initialize()
 	uniformBufferCreateInfo.size = sizeof(UBO) * 2;
 	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
 
-	mUniformBuffer = new VulkanUniformBuffer(mContext);
-	mUniformBuffer->construct(uniformBufferCreateInfo);
+//	mUniformBuffer = new VulkanUniformBuffer(mContext);
+//	mUniformBuffer->construct(uniformBufferCreateInfo);
+
+	mUboPool = new UniformBufferPool(2, sizeof(UBO), uniformBufferCreateInfo);
+	mUboObject0 = mUboPool->acquire(0);
+	mUboObject1 = mUboPool->acquire(1);
 
 	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/shawn.png", STBI_rgb_alpha);
 	auto texAsset2 = AssetManager::instance().load<TextureAsset>("test", "data/textures/test.jpg", STBI_rgb_alpha);
@@ -409,7 +412,7 @@ void RenderSystem::render()
 	VkDescriptorSet set2 = mSet2->getHandle(mCurrentFrame);
 
 	OffsetSize offset = { 0, sizeof(UBO) };
-	auto uniformWriteDescHolder = mUniformBuffer->getWriteDescriptor(0, offset);
+	auto uniformWriteDescHolder = ((VulkanUniformBuffer*)mUboObject0.buffer)->getWriteDescriptor(0, offset);
 	auto uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
 	uniformWriteDesc.dstSet = set;
 
@@ -431,7 +434,7 @@ void RenderSystem::render()
 
 	angle += 0.0001f;
 
-	mUniformBuffer->setData(&u, 0, sizeof(UBO));
+	((VulkanUniformBuffer*)mUboObject0.buffer)->setData(&u, 0, sizeof(UBO));
 
 	setList.push_back(set);
 
@@ -441,7 +444,7 @@ void RenderSystem::render()
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
 	offset = { sizeof(UBO), sizeof(UBO) };
-	uniformWriteDescHolder = mUniformBuffer->getWriteDescriptor(0, offset);
+	uniformWriteDescHolder = ((VulkanUniformBuffer*)mUboObject1.buffer)->getWriteDescriptor(0, offset);
 	uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
 	uniformWriteDesc.dstSet = set2;
 
@@ -460,7 +463,7 @@ void RenderSystem::render()
 	u.model = Matrix4f::identity();
 	u.model = Matrix4f::translate(u.model, Vector3f(15, 0, 0));
 
-	mUniformBuffer->setData(&u, sizeof(UBO), sizeof(UBO));
+	((VulkanUniformBuffer*)mUboObject1.buffer)->setData(&u, sizeof(UBO), sizeof(UBO));
 
 	setList.clear();
 	setList.push_back(set2);
@@ -599,7 +602,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	uniformBufferCreateInfo.size = sizeof(UBO);
 	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
 
-	mUniformBuffer->reconstruct(uniformBufferCreateInfo);
+	((VulkanUniformBuffer*)mUboObject0.buffer)->reconstruct(uniformBufferCreateInfo);
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");

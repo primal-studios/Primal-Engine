@@ -1,6 +1,7 @@
 #include "graphics/GraphicsFactory.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
+#include "graphics/vk/VulkanUniformBuffer.h"
 
 GraphicsFactory& GraphicsFactory::instance()
 {
@@ -50,6 +51,25 @@ IIndexBuffer* GraphicsFactory::createIndexBuffer() const
 	}
 
 	return nullptr;
+}
+
+IUniformBuffer* GraphicsFactory::createUniformBuffer() const
+{
+	switch (mAPI)
+	{
+		case RENDERAPI_VULKAN:
+		{
+			return new VulkanUniformBuffer(mContext);
+		}
+		case RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+		default:
+		{
+			return nullptr;
+		}
+	}
 }
 
 GraphicsFactory::GraphicsFactory() 
