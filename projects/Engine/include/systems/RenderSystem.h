@@ -16,7 +16,6 @@
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanDescriptorPool.h"
-#include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanTexture.h"
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 
@@ -56,11 +55,10 @@ class RenderSystem final : public System
 
 		VulkanVertexBuffer* mVertexBuffer;
 		VulkanIndexBuffer* mIndexBuffer;
-//		VulkanUniformBuffer* mUniformBuffer;
 		VulkanDescriptorPool* mDescriptorPool;
 
-		UniformBufferObject mUboObject0;
-		UniformBufferObject mUboObject1;
+		UniformBufferObject* mUboObject0;
+		UniformBufferObject* mUboObject1;
 		UniformBufferPool* mUboPool;
 
 		VulkanDescriptorSet* mSet;
@@ -69,6 +67,7 @@ class RenderSystem final : public System
 
 		VulkanTexture* mTexture;
 		VulkanTexture* mTexture2;
+		VulkanSampler* mSampler;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};

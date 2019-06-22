@@ -16,7 +16,6 @@ VulkanTexture::~VulkanTexture()
 {
 	delete mImageView;
 	delete mImage;
-	delete mSampler;
 }
 
 void VulkanTexture::construct(const TextureCreateInfo& aInfo)
