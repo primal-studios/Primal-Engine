@@ -6,6 +6,7 @@
 #include "systems/RenderSystem.h"
 #include "physics/PhysicsSystem.h"
 #include "application/ApplicationLayer.h"
+#include "systems/VulkanRenderSystem.h"
 
 Application* Application::sInstance;
 
@@ -18,14 +19,14 @@ Application::Application()
 	mWindow = Window::create();
 	mWindow->setEventCallback(BIND_EVENT_FUNCTION(Application::onEvent));
 
-	SystemManager::instance().addSystem<RenderSystem>(mWindow);
+	SystemManager::instance().addSystem<VulkanRenderSystem>(mWindow);
 	SystemManager::instance().addSystem<PhysicsSystem>();
 	SystemManager::instance().configure();
 }
 
 Application::~Application()
 {
-	SystemManager::instance().removeSystem<RenderSystem>();
+	SystemManager::instance().removeSystem<VulkanRenderSystem>();
 	SystemManager::instance().removeSystem<PhysicsSystem>();
 	delete mWindow;
 	sInstance = nullptr;
