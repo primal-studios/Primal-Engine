@@ -6,6 +6,7 @@
 
 class ShaderAsset final : public Asset
 {
+	friend class AssetManager;
 	public:
 		explicit ShaderAsset(const std::string& aPath);
 		~ShaderAsset();

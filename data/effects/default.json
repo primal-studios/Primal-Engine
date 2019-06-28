@@ -1,0 +1,136 @@
+{
+  "shaders": {
+    "vertexPath": "data/effects/vert.spv",
+    "fragmentPath": "data/effects/frag.spv"
+  },
+  "graphicspipeline": {
+    "vertexstate": {
+      "bindingdescriptions": [
+        {
+          "binding": 0,
+          "stride": 0,
+          "rate": 0
+        },
+        {
+          "binding": 1,
+          "stride": 1,
+          "rate": 0
+        }
+      ],
+      "attributedescriptions": [
+        {
+          "location": 0,
+          "binding": 0,
+          "format": 0,
+          "offset": 0
+        },
+        {
+          "location": 1,
+          "binding": 1,
+          "format": 0,
+          "offset": 1
+        }
+      ]
+    },
+    "assemblystate": {
+      "topology": 0,
+      "primitiverestartenable": false
+    },
+    "viewportstate": {
+      "viewports": [
+        {
+          "x": 5,
+          "y": 10,
+          "width": 25,
+          "height": 20,
+          "mindepth": 10,
+          "maxdepth": 20
+        }
+      ],
+      "rectangles": [
+        {
+          "x": 0,
+          "y": 0,
+          "z": 1,
+          "w": 1
+        }
+      ]
+    },
+    "rasterizationstate": {
+      "depthclampenable": false,
+      "rasterizerdiscardenable": false,
+      "polygonmode": 1,
+      "cullmode": 1,
+      "frontface": 1,
+      "depthbiasenable": false,
+      "depthbiasconstantfactor": 2.5,
+      "depthbiasclamp": 2.0,
+      "depthbiasslopefactor": 1.2,
+      "linewidth": 1.0
+    },
+    "multisamplestate": {
+      "rasterizationsamples": 2,
+      "sampleshadingenable": false,
+      "minsampleshading": 0.5,
+      "samplemask": 12,
+      "alphatocoverageenable": false,
+      "alphatooneenable": false
+    },
+    "depthstencilstate": {
+      "depthtestenable": false,
+      "depthwriteenable": false,
+      "depthcompareop": 2,
+      "depthboundstestenable": false,
+      "stenciltestenable": false,
+      "front": {
+        "failop": 0,
+        "passop": 0,
+        "depthfailop": 0,
+        "compareop": 0,
+        "comparemask": 0,
+        "writemask": 0,
+        "reference": 0
+      },
+      "back": {
+        "failop": 0,
+        "passop": 0,
+        "depthfailop": 0,
+        "compareop": 0,
+        "comparemask": 0,
+        "writemask": 0,
+        "reference": 0
+      },
+      "mindepthbounds": 0.0,
+      "maxdepthbounds": 24.5
+    },
+    "colorblendstate": {
+      "logicopenable": false,
+      "logicop": 0,
+      "attachments": [
+        {
+          "blendenable": false,
+          "srccolorblendfactor": 0,
+          "dstcolorblendfactor": 0,
+          "colorblendop": 0,
+          "srcalphablendfactor": 0,
+          "dstalphablendfactor": 0,
+          "alphablendop": 0,
+          "colorwritemask": 0
+        }
+      ],
+      "blendconstants": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "dynamicstate": {
+      "states": [
+        0,
+        2,
+        5
+      ]
+    }
+  }
+}

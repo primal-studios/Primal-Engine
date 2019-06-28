@@ -72,6 +72,25 @@ IUniformBuffer* GraphicsFactory::createUniformBuffer() const
 	}
 }
 
+IDescriptorSet* GraphicsFactory::createDescriptorSet() const
+{
+	switch (mAPI)
+	{
+		case RENDERAPI_VULKAN:
+		{
+			return new VulkanDescriptorSet(mContext);
+		}
+		case RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+		default:
+		{
+			return nullptr;
+		}
+	}
+}
+
 GraphicsFactory::GraphicsFactory() 
 	: mAPI(ERenderAPI::RENDERAPI_NONE), mContext(nullptr)
 {

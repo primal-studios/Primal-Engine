@@ -3,8 +3,8 @@
 
 static constexpr uint32_t UboSize = 1 << 16;
 
-UniformBufferObject::UniformBufferObject(IUniformBuffer* aBuffer, const uint32_t aOffset, const uint32_t aSize, const uint32_t aPoolIndex, const std::vector<UniformBufferObjectElement*>& aElements)
-	: mElements(aElements), mBuffer(aBuffer), mOffset(aOffset), mSize(aSize), mPoolIndex(aPoolIndex)
+UniformBufferObject::UniformBufferObject(IUniformBuffer* aBuffer, const uint32_t aOffset, const uint32_t aSize, const uint32_t aPoolIndex, const uint32_t aBindingPoint, const std::vector<UniformBufferObjectElement*>& aElements)
+	: mElements(aElements), mBuffer(aBuffer), mOffset(aOffset), mSize(aSize), mPoolIndex(aPoolIndex), mBinding(aBindingPoint)
 {
 }
 
@@ -45,9 +45,14 @@ uint32_t UniformBufferObject::getPoolIndex() const
 	return mPoolIndex;
 }
 
-UniformBufferPool::UniformBufferPool(const uint32_t aChunkSize, const uint32_t aStride, const UniformBufferCreateInfo aUboCreateInfo,
+uint32_t UniformBufferObject::getBindingPoint() const
+{
+	return mBinding;
+}
+
+UniformBufferPool::UniformBufferPool(const uint32_t aChunkSize, const uint32_t aStride, const uint32_t aBindingPoint, const UniformBufferCreateInfo aUboCreateInfo,
                                      std::vector<UniformBufferObjectElement*> aBufferElements)
-	: mCreateInfo(aUboCreateInfo), mBufferElements(std::move(aBufferElements)), mCursor(0), mChunkSize(aChunkSize), mStride(aStride)
+	: mCreateInfo(aUboCreateInfo), mBufferElements(std::move(aBufferElements)), mCursor(0), mChunkSize(aChunkSize), mStride(aStride), mBindingPoint(aBindingPoint)
 {
 	PRIMAL_ASSERT(aChunkSize * aUboCreateInfo.size < UboSize, "Requested a UBO that is too large.");
 }
@@ -69,6 +74,13 @@ UniformBufferPool::~UniformBufferPool()
 
 UniformBufferObject* UniformBufferPool::acquire()
 {
+	if (!mFreeSlots.empty())
+	{
+		const uint32_t slot = *mFreeSlots.begin();
+		mFreeSlots.erase(slot);
+		return acquire(slot);
+	}
+
 	return acquire(mCursor++);
 }
 
@@ -79,8 +91,9 @@ UniformBufferObject* UniformBufferPool::acquire(const uint32_t aIndex)
 		mFreeSlots.erase(aIndex);
 		const uint32_t index = aIndex / mChunkSize;
 		const uint32_t offset = aIndex - (index * mChunkSize);
-		return new UniformBufferObject(mBuffers[index], offset * mStride, mStride, aIndex, mBufferElements);
+		return new UniformBufferObject(mBuffers[index], offset * mStride, mStride, aIndex, mBindingPoint, mBufferElements);
 	}
+
 	mCursor = aIndex + 1;
 	IUniformBuffer* ubo = GraphicsFactory::instance().createUniformBuffer();
 	ubo->construct(mCreateInfo);
@@ -88,7 +101,7 @@ UniformBufferObject* UniformBufferPool::acquire(const uint32_t aIndex)
 
 	const uint32_t index = aIndex / mChunkSize;
 	const uint32_t offset = aIndex - (index * mChunkSize);
-	return new UniformBufferObject(mBuffers[index], offset * mStride, mStride, aIndex, mBufferElements);
+	return new UniformBufferObject(mBuffers[index], offset * mStride, mStride, aIndex, mBindingPoint, mBufferElements);
 }
 
 void UniformBufferPool::release(UniformBufferObject* aObject)

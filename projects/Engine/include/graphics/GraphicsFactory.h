@@ -1,9 +1,10 @@
 #ifndef graphicsfactory_h__
 #define graphicsfactory_h__
 
-#include "api/IVertexBuffer.h"
-#include "api/IIndexBuffer.h"
-#include "api/IUniformBuffer.h"
+#include "graphics/api/IDescriptorSet.h"
+#include "graphics/api/IIndexBuffer.h"
+#include "graphics/api/IUniformBuffer.h"
+#include "graphics/api/IVertexBuffer.h"
 
 enum ERenderAPI : uint32_t
 {
@@ -20,6 +21,7 @@ class GraphicsFactory
 		IVertexBuffer* createVertexBuffer() const;
 		IIndexBuffer* createIndexBuffer() const;
 		IUniformBuffer* createUniformBuffer() const;
+		IDescriptorSet* createDescriptorSet() const;
 
 	private:
 		GraphicsFactory();

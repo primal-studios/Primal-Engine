@@ -21,6 +21,7 @@
 #include "assets/AssetManager.h"
 #include "graphics/vk/VulkanSampler.h"
 #include "assets/MeshAsset.h"
+#include "assets/ShaderAsset.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
@@ -204,6 +205,8 @@ void RenderSystem::initialize()
 		mPrimaryBuffer[i]->construct(commandBufferInfo);
 	}
 
+	auto shaderAsset = AssetManager::instance().load<ShaderAsset>("testShader", "data/effects/default.json");
+
 	auto meshAsset = AssetManager::instance().load<MeshAsset>("mesh", "data/models/cube.glb");
 	auto mesh = meshAsset->getMesh(0);
 
@@ -249,7 +252,7 @@ void RenderSystem::initialize()
 
 	std::vector<UniformBufferObjectElement*> elements = { modl, view, proj, mvp };
 
-	mUboPool = new UniformBufferPool(1, sizeof(UBO), uniformBufferCreateInfo, elements);
+	mUboPool = new UniformBufferPool(1, sizeof(UBO), 0, uniformBufferCreateInfo, elements);
 	mUboObject0 = mUboPool->acquire(0);
 	mUboObject1 = mUboPool->acquire(1);
 
@@ -460,7 +463,7 @@ void RenderSystem::render()
 	writeSets.push_back(uniformWriteDesc);
 	writeSets.push_back(textureWriteDesc);
 
-	vkUpdateDescriptorSets(mContext->getDevice(), writeSets.size(), writeSets.data(), 0, nullptr);
+	vkUpdateDescriptorSets(mContext->getDevice(), static_cast<size_t>(writeSets.size()), writeSets.data(), 0, nullptr);
 
 	UBO u = {};
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
@@ -492,7 +495,7 @@ void RenderSystem::render()
 	writeSets.push_back(uniformWriteDesc);
 	writeSets.push_back(textureWriteDesc);
 
-	vkUpdateDescriptorSets(mContext->getDevice(), writeSets.size(), writeSets.data(), 0, nullptr);
+	vkUpdateDescriptorSets(mContext->getDevice(), static_cast<size_t>(writeSets.size()), writeSets.data(), 0, nullptr);
 
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
 	u.view = Matrix4f::lookAt(Vector3f(20, 20, 20), Vector3f(0, 0, 0), Vector3f(0, 0, -1));

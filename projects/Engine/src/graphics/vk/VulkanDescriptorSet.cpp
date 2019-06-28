@@ -13,7 +13,7 @@ VulkanDescriptorSet::VulkanDescriptorSet(IGraphicsContext* aContext)
 
 VulkanDescriptorSet::~VulkanDescriptorSet()
 {
-
+	
 }
 
 void VulkanDescriptorSet::construct(const DescriptorSetCreateInfo& aInfo)

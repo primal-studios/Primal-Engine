@@ -4,6 +4,8 @@
 #include "UniformBufferPool.h"
 #include "core/PrimalCast.h"
 
+#include "graphics/api/ICommandBuffer.h"
+#include "graphics/api/IDescriptorSet.h"
 #include "graphics/api/IGraphicsPipeline.h"
 
 class Material
@@ -25,9 +27,12 @@ class Material
 		template <typename T>
 		T getVariable(const std::string& aName);
 
+		void use(ICommandBuffer* aBuffer);
+
 	private:
 		Material* mParentMaterial = nullptr;
 
+		IDescriptorSet* mSet;
 		std::unordered_map<std::string, void*> mVariableData;
 		std::vector<UniformBufferObject*> mUBOs;
 };

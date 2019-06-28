@@ -51,7 +51,7 @@ struct UniformBufferObjectElement
 class UniformBufferObject
 {
 	public:
-		explicit UniformBufferObject(IUniformBuffer* aBuffer, uint32_t aOffset, uint32_t aSize, uint32_t aPoolIndex, const std::vector<UniformBufferObjectElement*>& aElements);
+		explicit UniformBufferObject(IUniformBuffer* aBuffer, uint32_t aOffset, uint32_t aSize, uint32_t aPoolIndex, uint32_t aBinding, const std::vector<UniformBufferObjectElement*>& aElements);
 		UniformBufferObject(const UniformBufferObject&) = default;
 		UniformBufferObject(UniformBufferObject&&) noexcept = default;
 		~UniformBufferObject() = default;
@@ -64,18 +64,20 @@ class UniformBufferObject
 		uint32_t getOffset() const;
 		uint32_t getSize() const;
 		uint32_t getPoolIndex() const;
+		uint32_t getBindingPoint() const;
 	private:
 		const std::vector<UniformBufferObjectElement*>& mElements;
 		IUniformBuffer* mBuffer;
 		uint32_t mOffset;
 		uint32_t mSize;
 		uint32_t mPoolIndex;
+		uint32_t mBinding;
 };
 
 class UniformBufferPool
 {
 	public:
-		explicit UniformBufferPool(uint32_t aChunkSize, uint32_t aStride, UniformBufferCreateInfo aUboCreateInfo,
+		UniformBufferPool(uint32_t aChunkSize, uint32_t aStride, uint32_t aBindingPoint, UniformBufferCreateInfo aUboCreateInfo,
 		                           std::vector<UniformBufferObjectElement*> aBufferElements);
 		UniformBufferPool(const UniformBufferPool&) = delete;
 		UniformBufferPool(UniformBufferPool&&) noexcept = delete;
@@ -96,6 +98,7 @@ class UniformBufferPool
 		uint32_t mCursor;
 		uint32_t mChunkSize;
 		uint32_t mStride;
+		uint32_t mBindingPoint;
 };
 
 #endif // uniformbufferpool_h__
