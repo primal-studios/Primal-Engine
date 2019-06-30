@@ -2,6 +2,8 @@
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
+#include "graphics/vk/VulkanShaderModule.h"
+#include "graphics/vk/VulkanShaderStage.h"
 
 GraphicsFactory& GraphicsFactory::instance()
 {
@@ -13,6 +15,40 @@ void GraphicsFactory::initialize(uint32_t aAPI, IGraphicsContext* aContext)
 {
 	mAPI = aAPI;
 	mContext = aContext;
+}
+
+IShaderModule* GraphicsFactory::createShaderModule() const
+{
+	switch (mAPI)
+	{
+		case ERenderAPI::RENDERAPI_VULKAN:
+		{
+			VulkanShaderModule* module = new VulkanShaderModule(mContext);
+			return module;
+		}
+		case ERenderAPI::RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+	return nullptr;
+}
+
+IShaderStage* GraphicsFactory::createShaderStage() const
+{
+	switch (mAPI)
+	{
+	case ERenderAPI::RENDERAPI_VULKAN:
+	{
+		VulkanShaderStage* stage = new VulkanShaderStage(mContext);
+		return stage;
+	}
+	case ERenderAPI::RENDERAPI_NONE:
+	{
+		return nullptr;
+	}
+	}
+	return nullptr;
 }
 
 IVertexBuffer* GraphicsFactory::createVertexBuffer() const

@@ -3,6 +3,7 @@
 #include "filesystem/FileSystem.h"
 
 #include <json/json.hpp>
+#include "graphics/GraphicsFactory.h"
 
 ShaderAsset::ShaderAsset(const std::string& aPath)
 {
@@ -12,7 +13,14 @@ ShaderAsset::ShaderAsset(const std::string& aPath)
 
 ShaderAsset::~ShaderAsset()
 {
-	
+	delete mGraphicsPipelineCreateInfo.vertexState;
+	delete mGraphicsPipelineCreateInfo.assemblyState;
+	delete mGraphicsPipelineCreateInfo.viewportState;
+	delete mGraphicsPipelineCreateInfo.rasterizationState;
+	delete mGraphicsPipelineCreateInfo.multisampleState;
+	delete mGraphicsPipelineCreateInfo.depthStencilState;
+	delete mGraphicsPipelineCreateInfo.colorBlendState;
+	delete mGraphicsPipelineCreateInfo.dynamicState;
 }
 
 void ShaderAsset::_load()
@@ -30,6 +38,111 @@ void ShaderAsset::_load()
 	const std::string tesPath = shaders.contains("tesPath") ? shaders["tesPath"] : "";
 	const std::string tcsPath = shaders.contains("tcsPath") ? shaders["tcsPath"] : "";
 
+	if (!vertPath.empty())
+	{
+		auto data = FileSystem::instance().getBytes(vertPath);
+
+		ShaderStageCreateInfo info = {};
+		ShaderModuleCreateInfo moduleCreateInfo = {};
+		moduleCreateInfo.flags = 0;
+		moduleCreateInfo.code = data;
+
+		info.flags = 0;
+		info.module = GraphicsFactory::instance().createShaderModule();
+		info.module->construct(moduleCreateInfo);
+		info.stage = SHADER_STAGE_VERTEX;
+		info.name = vertPath;
+
+		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
+		stage->construct(info);
+
+		mGraphicsPipelineCreateInfo.stages.push_back(stage);
+	}
+
+	if (!fragPath.empty())
+	{
+		auto data = FileSystem::instance().getBytes(fragPath);
+
+		ShaderStageCreateInfo info = {};
+		ShaderModuleCreateInfo moduleCreateInfo = {};
+		moduleCreateInfo.flags = 0;
+		moduleCreateInfo.code = data;
+
+		info.flags = 0;
+		info.module = GraphicsFactory::instance().createShaderModule();
+		info.module->construct(moduleCreateInfo);
+		info.stage = SHADER_STAGE_VERTEX;
+		info.name = fragPath;
+
+		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
+		stage->construct(info);
+
+		mGraphicsPipelineCreateInfo.stages.push_back(stage);
+	}
+
+	if (!geomPath.empty())
+	{
+		auto data = FileSystem::instance().getBytes(geomPath);
+
+		ShaderStageCreateInfo info = {};
+		ShaderModuleCreateInfo moduleCreateInfo = {};
+		moduleCreateInfo.flags = 0;
+		moduleCreateInfo.code = data;
+
+		info.flags = 0;
+		info.module = GraphicsFactory::instance().createShaderModule();
+		info.module->construct(moduleCreateInfo);
+		info.stage = SHADER_STAGE_VERTEX;
+		info.name = geomPath;
+
+		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
+		stage->construct(info);
+
+		mGraphicsPipelineCreateInfo.stages.push_back(stage);
+	}
+
+	if (!tcsPath.empty())
+	{
+		auto data = FileSystem::instance().getBytes(tcsPath);
+
+		ShaderStageCreateInfo info = {};
+		ShaderModuleCreateInfo moduleCreateInfo = {};
+		moduleCreateInfo.flags = 0;
+		moduleCreateInfo.code = data;
+
+		info.flags = 0;
+		info.module = GraphicsFactory::instance().createShaderModule();
+		info.module->construct(moduleCreateInfo);
+		info.stage = SHADER_STAGE_VERTEX;
+		info.name = tcsPath;
+
+		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
+		stage->construct(info);
+
+		mGraphicsPipelineCreateInfo.stages.push_back(stage);
+	}
+
+	if (!tesPath.empty())
+	{
+		auto data = FileSystem::instance().getBytes(tesPath);
+
+		ShaderStageCreateInfo info = {};
+		ShaderModuleCreateInfo moduleCreateInfo = {};
+		moduleCreateInfo.flags = 0;
+		moduleCreateInfo.code = data;
+
+		info.flags = 0;
+		info.module = GraphicsFactory::instance().createShaderModule();
+		info.module->construct(moduleCreateInfo);
+		info.stage = SHADER_STAGE_VERTEX;
+		info.name = tesPath;
+
+		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
+		stage->construct(info);
+
+		mGraphicsPipelineCreateInfo.stages.push_back(stage);
+	}
+
 	PRIMAL_ASSERT(jsonValue.contains("graphicspipeline"), "Shader does not contain a graphics pipeline.");
 	const auto pipeline = jsonValue["graphicspipeline"];
 	PRIMAL_ASSERT(pipeline.is_object(), "Could not load pipeline.");
@@ -37,11 +150,15 @@ void ShaderAsset::_load()
 	const auto vertexState = pipeline["vertexstate"];
 	PRIMAL_ASSERT(vertexState.is_object(), "Could not load vertex state.");
 
+	mGraphicsPipelineCreateInfo.vertexState = new PipelineVertexStateCreateInfo;
+
 	for (const auto& bindingdesc : vertexState["bindingdescriptions"])
 	{
 		uint32_t binding = bindingdesc["binding"];
 		uint32_t stride = bindingdesc["stride"];
 		uint32_t rate = bindingdesc["rate"];
+
+		mGraphicsPipelineCreateInfo.vertexState->bindingDescriptions.push_back(VertexInputBindingDescription{ binding, stride, static_cast<EVertexInputRate>(rate) });
 	}
 
 	for (const auto& attributedesc : vertexState["attributedescriptions"])
@@ -50,32 +167,53 @@ void ShaderAsset::_load()
 		uint32_t binding = attributedesc["binding"];
 		uint32_t format = attributedesc["format"];
 		uint32_t offset = attributedesc["offset"];
+
+		mGraphicsPipelineCreateInfo.vertexState->attributeDescriptions.push_back(VertexInputAttributeDescription{ location, binding, static_cast<EDataFormat>(format), offset });
 	}
+
+	mGraphicsPipelineCreateInfo.vertexState->flags = 0;
+
+	mGraphicsPipelineCreateInfo.assemblyState = new PipelineInputAssemblyStateCreateInfo;
 
 	const auto assemblyState = pipeline["assemblystate"];
 	uint32_t topology = assemblyState["topology"];
 	bool primitiverestartenable = assemblyState["primitiverestartenable"];
 
+	mGraphicsPipelineCreateInfo.assemblyState->topology = static_cast<PrimitiveTopology>(topology);
+	mGraphicsPipelineCreateInfo.assemblyState->primitiveRestartEnable = primitiverestartenable;
+	mGraphicsPipelineCreateInfo.assemblyState->flags = 0;
+
+	mGraphicsPipelineCreateInfo.viewportState = new PipelineViewportStateCreateInfo;
+
 	const auto viewportState = pipeline["viewportstate"];
 	for (const auto& viewport : viewportState["viewports"])
 	{
-		uint32_t x = viewport["x"];
-		uint32_t y = viewport["y"];
-		uint32_t width = viewport["width"];
-		uint32_t height = viewport["height"];
-		uint32_t mindepth = viewport["mindepth"];
-		uint32_t maxdepth = viewport["maxdepth"];
+		float x = viewport["x"];
+		float y = viewport["y"];
+		float width = viewport["width"];
+		float height = viewport["height"];
+		float mindepth = viewport["mindepth"];
+		float maxdepth = viewport["maxdepth"];
+
+		mGraphicsPipelineCreateInfo.viewportState->viewports.emplace_back(x, y, width, height, mindepth, maxdepth);
 	}
 
 	for (const auto& rect : viewportState["rectangles"])
 	{
-		uint32_t x = rect["x"];
-		uint32_t y = rect["y"];
-		uint32_t z = rect["z"];
-		uint32_t w = rect["w"];
+		int32_t x = rect["x"];
+		int32_t y = rect["y"];
+		int32_t z = rect["z"];
+		int32_t w = rect["w"];
+
+		mGraphicsPipelineCreateInfo.viewportState->rectangles.emplace_back(x, y, z, w);
 	}
 
+	mGraphicsPipelineCreateInfo.viewportState->flags = 0;
+
 	const auto rasterizationState = pipeline["rasterizationstate"];
+
+	mGraphicsPipelineCreateInfo.rasterizationState = new PipelineRasterizationStateCreateInfo;
+
 	bool depthclampenable = rasterizationState["depthclampenable"];
 	bool rasterizerdiscardenable = rasterizationState["rasterizerdiscardenable"];
 	uint32_t polygonmode = rasterizationState["polygonmode"];
@@ -87,13 +225,37 @@ void ShaderAsset::_load()
 	float depthbiasslopefactor = rasterizationState["depthbiasslopefactor"];
 	float linewidth = rasterizationState["linewidth"];
 
+	mGraphicsPipelineCreateInfo.rasterizationState->depthClampEnable = depthclampenable;
+	mGraphicsPipelineCreateInfo.rasterizationState->rasterizerDiscardEnable = rasterizerdiscardenable;
+	mGraphicsPipelineCreateInfo.rasterizationState->polygonMode = static_cast<EPolygonMode>(polygonmode);
+	mGraphicsPipelineCreateInfo.rasterizationState->cullMode = static_cast<ECullMode>(cullmode);
+	mGraphicsPipelineCreateInfo.rasterizationState->frontFace = static_cast<EFrontFace>(frontface);
+	mGraphicsPipelineCreateInfo.rasterizationState->depthBiasEnable = depthbiasenable;
+	mGraphicsPipelineCreateInfo.rasterizationState->depthBiasConstantFactor = depthbiasconstantfactor;
+	mGraphicsPipelineCreateInfo.rasterizationState->depthBiasClamp = depthbiasclamp;
+	mGraphicsPipelineCreateInfo.rasterizationState->depthBiasSlopeFactor = depthbiasslopefactor;
+	mGraphicsPipelineCreateInfo.rasterizationState->lineWidth = linewidth;
+	mGraphicsPipelineCreateInfo.rasterizationState->flags = 0;
+
+	mGraphicsPipelineCreateInfo.multisampleState = new PipelineMultisampleStateCreateInfo;
+
 	const auto multisamplestate = pipeline["multisamplestate"];
 	uint32_t samples = multisamplestate["rasterizationsamples"];
 	bool sampleShading = multisamplestate["sampleshadingenable"];
 	float minSampleShading = multisamplestate["minsampleshading"];
-	uint32_t sampleMask = multisamplestate["samplemask"];
+	uint32_t sampleMask = multisamplestate["samplemask"]; // currently unused
 	bool alphaToCoverage = multisamplestate["alphatocoverageenable"];
 	bool alphaToOne = multisamplestate["alphatooneenable"];
+
+	mGraphicsPipelineCreateInfo.multisampleState->rasterizationSamples = samples;
+	mGraphicsPipelineCreateInfo.multisampleState->sampleShadingEnable = sampleShading;
+	mGraphicsPipelineCreateInfo.multisampleState->minSampleShading = minSampleShading;
+	mGraphicsPipelineCreateInfo.multisampleState->sampleMask = nullptr;
+	mGraphicsPipelineCreateInfo.multisampleState->alphaToCoverageEnable = alphaToCoverage;
+	mGraphicsPipelineCreateInfo.multisampleState->alphaToOneEnable = alphaToOne;
+	mGraphicsPipelineCreateInfo.multisampleState->flags = 0;
+
+	mGraphicsPipelineCreateInfo.depthStencilState = new PipelineDepthStencilStateCreateInfo;
 
 	const auto depthstencilstate = pipeline["depthstencilstate"];
 	bool depthTest = depthstencilstate["depthtestenable"];
@@ -118,9 +280,41 @@ void ShaderAsset::_load()
 	float minDepthBounds = depthstencilstate["mindepthbounds"];
 	float maxDepthBounds = depthstencilstate["maxdepthbounds"];
 
+	mGraphicsPipelineCreateInfo.depthStencilState->depthTestEnable = depthTest;
+	mGraphicsPipelineCreateInfo.depthStencilState->depthWriteEnable = depthWrite;
+	mGraphicsPipelineCreateInfo.depthStencilState->depthCompareOp = static_cast<ECompareOp>(depthCompareOp);
+	mGraphicsPipelineCreateInfo.depthStencilState->depthBoundsTestEnable = depthBoundTest;
+	mGraphicsPipelineCreateInfo.depthStencilState->stencilTestEnable = stencilTest;
+	mGraphicsPipelineCreateInfo.depthStencilState->front = StencilOpState {
+		static_cast<EStencilOp>(frontFail),
+		static_cast<EStencilOp>(frontPass),
+		static_cast<EStencilOp>(frontDepthFail),
+		static_cast<ECompareOp>(frontCompare),
+		frontCompareMask,
+		frontWriteMask,
+		frontReference
+	};
+	mGraphicsPipelineCreateInfo.depthStencilState->back = StencilOpState{
+		static_cast<EStencilOp>(backFail),
+		static_cast<EStencilOp>(backPass),
+		static_cast<EStencilOp>(backDepthFail),
+		static_cast<ECompareOp>(backCompare),
+		backCompareMask,
+		backWriteMask,
+		backReference
+	};
+	mGraphicsPipelineCreateInfo.depthStencilState->minDepthBounds = minDepthBounds;
+	mGraphicsPipelineCreateInfo.depthStencilState->maxDepthBounds = maxDepthBounds;
+	mGraphicsPipelineCreateInfo.depthStencilState->flags = 0;
+
+	mGraphicsPipelineCreateInfo.colorBlendState = new PipelineColorBlendStateCreateInfo;
+	
 	const auto colorblendstate = pipeline["colorblendstate"];
 	bool logicOpEnable = colorblendstate["logicopenable"];
 	uint32_t logicOp = colorblendstate["logicop"];
+
+	mGraphicsPipelineCreateInfo.colorBlendState->logicOpEnable = logicOpEnable;
+	mGraphicsPipelineCreateInfo.colorBlendState->logicOp = static_cast<ELogicOp>(logicOp);
 
 	for (const auto& attachment : colorblendstate["attachments"])
 	{
@@ -132,22 +326,32 @@ void ShaderAsset::_load()
 		uint32_t dstAlphaBlendFactor = attachment["dstalphablendfactor"];
 		uint32_t alphaBlendOp = attachment["alphablendop"];
 		uint32_t colorWriteMask = attachment["colorwritemask"];
+
+		mGraphicsPipelineCreateInfo.colorBlendState->attachments.emplace_back(blendEnable, static_cast<EBlendFactor>(srcColorBlendFactor), 
+			static_cast<EBlendFactor>(dstColorBlendFactor), static_cast<EBlendOp>(colorBlendOp), static_cast<EBlendFactor>(srcAlphaBlendFactor),
+			static_cast<EBlendFactor>(dstAlphaBlendFactor), static_cast<EBlendOp>(alphaBlendOp), colorWriteMask);
 	}
 
-	std::vector<uint32_t> blendConstants;
-	for (uint32_t constant : colorblendstate["blendconstants"])
+	size_t blendConstantIt = 0;
+	for (float constant : colorblendstate["blendconstants"])
 	{
-		blendConstants.push_back(constant);
+		mGraphicsPipelineCreateInfo.colorBlendState->blendConstants[blendConstantIt++] = constant;
 	}
+
+	mGraphicsPipelineCreateInfo.colorBlendState->flags = 0;
 
 	const auto dynamicstate = pipeline["dynamicstate"];
 
-	std::vector<uint32_t> states;
+	std::vector<EDynamicState> states;
 	for (uint32_t state : dynamicstate["states"])
 	{
-		states.push_back(state);
+		states.push_back(static_cast<EDynamicState>(state));
 	}
 
-	int jonathan = 0;
+	mGraphicsPipelineCreateInfo.dynamicState->dynamicStates = states;
+	mGraphicsPipelineCreateInfo.dynamicState->flags = 0;
 
+	mGraphicsPipelineCreateInfo.flags = 0;
+
+	int jonathan = 0;
 }

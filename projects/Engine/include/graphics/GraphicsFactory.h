@@ -3,6 +3,8 @@
 
 #include "graphics/api/IDescriptorSet.h"
 #include "graphics/api/IIndexBuffer.h"
+#include "graphics/api/IShaderModule.h"
+#include "graphics/api/IShaderStage.h"
 #include "graphics/api/IUniformBuffer.h"
 #include "graphics/api/IVertexBuffer.h"
 
@@ -18,6 +20,8 @@ class GraphicsFactory
 		static GraphicsFactory& instance();
 		void initialize(uint32_t aAPI, IGraphicsContext* aContext);
 
+		IShaderModule* createShaderModule() const;
+		IShaderStage* createShaderStage() const;
 		IVertexBuffer* createVertexBuffer() const;
 		IIndexBuffer* createIndexBuffer() const;
 		IUniformBuffer* createUniformBuffer() const;
