@@ -34,8 +34,6 @@ void VulkanGraphicsPipeline::construct(const GraphicsPipelineCreateInfo& aInfo)
 
 	createInfo.pStages = shaderStageCreateInfos.data();
 
-	int jonathan = 0;
-
 	VkPipelineVertexInputStateCreateInfo vertexState = {};
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	std::vector<VkVertexInputBindingDescription> bindingDescriptions;

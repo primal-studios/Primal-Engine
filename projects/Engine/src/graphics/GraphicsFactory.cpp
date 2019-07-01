@@ -1,9 +1,13 @@
 #include "graphics/GraphicsFactory.h"
-#include "graphics/vk/VulkanVertexBuffer.h"
+#include "graphics/vk/VulkanDescriptorSetLayout.h"
+#include "graphics/vk/VulkanGraphicsPipeline.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
-#include "graphics/vk/VulkanUniformBuffer.h"
+#include "graphics/vk/VulkanPipelineLayout.h"
+#include "graphics/vk/VulkanRenderPass.h"
 #include "graphics/vk/VulkanShaderModule.h"
 #include "graphics/vk/VulkanShaderStage.h"
+#include "graphics/vk/VulkanUniformBuffer.h"
+#include "graphics/vk/VulkanVertexBuffer.h"
 
 GraphicsFactory& GraphicsFactory::instance()
 {
@@ -89,6 +93,25 @@ IIndexBuffer* GraphicsFactory::createIndexBuffer() const
 	return nullptr;
 }
 
+IPipelineLayout* GraphicsFactory::createPipelineLayout() const
+{
+	switch (mAPI)
+	{
+		case ERenderAPI::RENDERAPI_VULKAN:
+		{
+			VulkanPipelineLayout* layout = new VulkanPipelineLayout(mContext);
+			return layout;
+		}
+
+		case ERenderAPI::RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+
+	return nullptr;
+}
+
 IUniformBuffer* GraphicsFactory::createUniformBuffer() const
 {
 	switch (mAPI)
@@ -125,6 +148,57 @@ IDescriptorSet* GraphicsFactory::createDescriptorSet() const
 			return nullptr;
 		}
 	}
+}
+
+IRenderPass* GraphicsFactory::createRenderPass() const
+{
+	switch (mAPI)
+	{
+		case RENDERAPI_VULKAN:
+		{
+			VulkanRenderPass* renderPass = new VulkanRenderPass(mContext);
+			return renderPass;
+		}
+		case RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+	return nullptr;
+}
+
+IDescriptorSetLayout* GraphicsFactory::createDescriptorSetLayout() const
+{
+	switch (mAPI)
+	{
+		case RENDERAPI_VULKAN:
+		{
+			VulkanDescriptorSetLayout* setLayout = new VulkanDescriptorSetLayout(mContext);
+			return setLayout;
+		}
+		case RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+	return nullptr;
+}
+
+IGraphicsPipeline* GraphicsFactory::createGraphicsPipeline() const
+{
+	switch (mAPI)
+	{
+		case RENDERAPI_VULKAN:
+		{
+			VulkanGraphicsPipeline* pipeline = new VulkanGraphicsPipeline(mContext);
+			return pipeline;
+		}
+		case RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+	return nullptr;
 }
 
 GraphicsFactory::GraphicsFactory() 

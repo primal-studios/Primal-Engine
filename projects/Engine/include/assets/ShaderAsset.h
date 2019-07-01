@@ -15,6 +15,7 @@ class ShaderAsset final : public Asset
 		void _load() override;
 
 		GraphicsPipelineCreateInfo mGraphicsPipelineCreateInfo;
+		IGraphicsPipeline* mPipeline;
 		std::string mPath;
 };
 

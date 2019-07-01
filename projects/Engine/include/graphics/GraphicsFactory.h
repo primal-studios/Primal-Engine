@@ -2,7 +2,10 @@
 #define graphicsfactory_h__
 
 #include "graphics/api/IDescriptorSet.h"
+#include "graphics/api/IGraphicsPipeline.h"
 #include "graphics/api/IIndexBuffer.h"
+#include "graphics/api/IPipelineLayout.h"
+#include "graphics/api/IRenderPass.h"
 #include "graphics/api/IShaderModule.h"
 #include "graphics/api/IShaderStage.h"
 #include "graphics/api/IUniformBuffer.h"
@@ -20,12 +23,16 @@ class GraphicsFactory
 		static GraphicsFactory& instance();
 		void initialize(uint32_t aAPI, IGraphicsContext* aContext);
 
-		IShaderModule* createShaderModule() const;
-		IShaderStage* createShaderStage() const;
-		IVertexBuffer* createVertexBuffer() const;
-		IIndexBuffer* createIndexBuffer() const;
-		IUniformBuffer* createUniformBuffer() const;
-		IDescriptorSet* createDescriptorSet() const;
+		[[nodiscard]] IDescriptorSet* createDescriptorSet() const;
+		[[nodiscard]] IDescriptorSetLayout* createDescriptorSetLayout() const;
+		[[nodiscard]] IGraphicsPipeline* createGraphicsPipeline() const;
+		[[nodiscard]] IIndexBuffer* createIndexBuffer() const;
+		[[nodiscard]] IPipelineLayout* createPipelineLayout() const;
+		[[nodiscard]] IRenderPass* createRenderPass() const;
+		[[nodiscard]] IShaderModule* createShaderModule() const;
+		[[nodiscard]] IShaderStage* createShaderStage() const;
+		[[nodiscard]] IUniformBuffer* createUniformBuffer() const;
+		[[nodiscard]] IVertexBuffer* createVertexBuffer() const;
 
 	private:
 		GraphicsFactory();

@@ -1,11 +1,13 @@
 #include "assets/ShaderAsset.h"
 #include "core/PrimalAssert.h"
 #include "filesystem/FileSystem.h"
+#include "graphics/GraphicsFactory.h"
+#include "graphics/RenderPassManager.h"
 
 #include <json/json.hpp>
-#include "graphics/GraphicsFactory.h"
 
 ShaderAsset::ShaderAsset(const std::string& aPath)
+	: mPipeline(nullptr)
 {
 	mGraphicsPipelineCreateInfo = {};
 	mPath = aPath;
@@ -21,6 +23,7 @@ ShaderAsset::~ShaderAsset()
 	delete mGraphicsPipelineCreateInfo.depthStencilState;
 	delete mGraphicsPipelineCreateInfo.colorBlendState;
 	delete mGraphicsPipelineCreateInfo.dynamicState;
+	delete mGraphicsPipelineCreateInfo.layout;
 }
 
 void ShaderAsset::_load()
@@ -71,7 +74,7 @@ void ShaderAsset::_load()
 		info.flags = 0;
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
-		info.stage = SHADER_STAGE_VERTEX;
+		info.stage = SHADER_STAGE_FRAGMENT;
 		info.name = fragPath;
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
@@ -92,7 +95,7 @@ void ShaderAsset::_load()
 		info.flags = 0;
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
-		info.stage = SHADER_STAGE_VERTEX;
+		info.stage = SHADER_STAGE_GEOMETRY;
 		info.name = geomPath;
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
@@ -113,7 +116,7 @@ void ShaderAsset::_load()
 		info.flags = 0;
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
-		info.stage = SHADER_STAGE_VERTEX;
+		info.stage = SHADER_STAGE_TESSELLATION_CONTROL;
 		info.name = tcsPath;
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
@@ -134,7 +137,7 @@ void ShaderAsset::_load()
 		info.flags = 0;
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
-		info.stage = SHADER_STAGE_VERTEX;
+		info.stage = SHADER_STAGE_TESSELLATION_EVALUATION;
 		info.name = tesPath;
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
@@ -142,6 +145,63 @@ void ShaderAsset::_load()
 
 		mGraphicsPipelineCreateInfo.stages.push_back(stage);
 	}
+
+	PRIMAL_ASSERT(jsonValue.contains("pipelinelayout"), "Shader does not contain a pipeline layout.");
+	const auto layout = jsonValue["pipelinelayout"];
+	PRIMAL_ASSERT(layout.is_object(), "Could not load layout.");
+
+	uint32_t flags = layout["flags"];
+	const auto layouts = layout["layouts"];
+	const auto pushconstants = layout["pushconstants"];
+
+	PipelineLayoutCreateInfo layoutCreateInfo = {};
+	layoutCreateInfo.flags = flags;
+
+	std::vector<IDescriptorSetLayout*> setLayouts;
+
+	for (const auto & l : layouts)
+	{
+		IDescriptorSetLayout* setLayout = GraphicsFactory::instance().createDescriptorSetLayout();
+		DescriptorSetLayoutCreateInfo setLayoutCreateInfo = {};
+
+		uint32_t layoutFlags = l["flags"];
+		const auto bindings = l["bindings"];
+
+		setLayoutCreateInfo.flags = layoutFlags;
+
+		for (const auto & b : bindings)
+		{
+			uint32_t binding = b["binding"];
+			uint32_t descriptortype = b["descriptortype"];
+			uint32_t descriptorcount = b["descriptorcount"];
+			uint32_t stageflags = b["stageflags"];
+
+			setLayoutCreateInfo.layoutBindings.push_back(DescriptorSetLayoutBinding{ binding, static_cast<EDescriptorType>(descriptortype), descriptorcount, stageflags, {} });
+		}
+
+		setLayout->construct(setLayoutCreateInfo);
+
+		setLayouts.push_back(setLayout);
+	}
+
+	std::vector<PushConstantRange> pushConstantRanges;
+
+	for (const auto & constant : pushconstants)
+	{
+		uint32_t stageflags = constant["stageflags"];
+		uint32_t offset = constant["offset"];
+		uint32_t size = constant["size"];
+
+		pushConstantRanges.push_back(PushConstantRange{ stageflags, offset, size });
+	}
+
+	layoutCreateInfo.pushConstantRanges = pushConstantRanges;
+	layoutCreateInfo.setLayouts = setLayouts;
+
+	IPipelineLayout* pipelineLayout = GraphicsFactory::instance().createPipelineLayout();
+	pipelineLayout->construct(layoutCreateInfo);
+
+	mGraphicsPipelineCreateInfo.layout = pipelineLayout;
 
 	PRIMAL_ASSERT(jsonValue.contains("graphicspipeline"), "Shader does not contain a graphics pipeline.");
 	const auto pipeline = jsonValue["graphicspipeline"];
@@ -195,7 +255,7 @@ void ShaderAsset::_load()
 		float mindepth = viewport["mindepth"];
 		float maxdepth = viewport["maxdepth"];
 
-		mGraphicsPipelineCreateInfo.viewportState->viewports.emplace_back(x, y, width, height, mindepth, maxdepth);
+		mGraphicsPipelineCreateInfo.viewportState->viewports.push_back(Viewport{ x, y, width, height, mindepth, maxdepth });
 	}
 
 	for (const auto& rect : viewportState["rectangles"])
@@ -205,7 +265,7 @@ void ShaderAsset::_load()
 		int32_t z = rect["z"];
 		int32_t w = rect["w"];
 
-		mGraphicsPipelineCreateInfo.viewportState->rectangles.emplace_back(x, y, z, w);
+		mGraphicsPipelineCreateInfo.viewportState->rectangles.emplace_back(Vector4i{ x, y, z, w });
 	}
 
 	mGraphicsPipelineCreateInfo.viewportState->flags = 0;
@@ -327,9 +387,9 @@ void ShaderAsset::_load()
 		uint32_t alphaBlendOp = attachment["alphablendop"];
 		uint32_t colorWriteMask = attachment["colorwritemask"];
 
-		mGraphicsPipelineCreateInfo.colorBlendState->attachments.emplace_back(blendEnable, static_cast<EBlendFactor>(srcColorBlendFactor), 
+		mGraphicsPipelineCreateInfo.colorBlendState->attachments.emplace_back(PipelineColorBlendAttachmentState{ blendEnable, static_cast<EBlendFactor>(srcColorBlendFactor),
 			static_cast<EBlendFactor>(dstColorBlendFactor), static_cast<EBlendOp>(colorBlendOp), static_cast<EBlendFactor>(srcAlphaBlendFactor),
-			static_cast<EBlendFactor>(dstAlphaBlendFactor), static_cast<EBlendOp>(alphaBlendOp), colorWriteMask);
+			static_cast<EBlendFactor>(dstAlphaBlendFactor), static_cast<EBlendOp>(alphaBlendOp), colorWriteMask });
 	}
 
 	size_t blendConstantIt = 0;
@@ -348,10 +408,17 @@ void ShaderAsset::_load()
 		states.push_back(static_cast<EDynamicState>(state));
 	}
 
+	mGraphicsPipelineCreateInfo.dynamicState = new PipelineDynamicStateCreateInfo;
 	mGraphicsPipelineCreateInfo.dynamicState->dynamicStates = states;
 	mGraphicsPipelineCreateInfo.dynamicState->flags = 0;
 
 	mGraphicsPipelineCreateInfo.flags = 0;
+
+	mGraphicsPipelineCreateInfo.renderPass = RenderPassManager::instance().findPass(jsonValue["renderpass"]);
+	mGraphicsPipelineCreateInfo.subPass = jsonValue["subpass"];
+
+	mPipeline = GraphicsFactory::instance().createGraphicsPipeline();
+	mPipeline->construct(mGraphicsPipelineCreateInfo);
 
 	int jonathan = 0;
 }

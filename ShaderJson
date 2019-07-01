@@ -6,18 +6,38 @@
     "tesPath" : "mycac/tes.spv",
     "tcsPath" : "mycac/tcs.spv"
   },
-  
+  "pipelinelayout" : {
+    "flags" : 0,
+    "layouts" : [
+      {
+        "flags" : 0,
+        "bindings" : [ 
+          {
+            "binding" : 0,
+            "descriptortype" : 6,
+            "descriptorcount" : 1,
+            "stageflags" : 1,
+          },
+          {
+            "binding": 1,
+            "descriptortype": 1,
+            "descriptortype": 1,
+            "stageflags": 16
+          }
+        ]
+      }
+    ],
+    "pushconstants" : [
+    ]
+  },
+  "renderpass" : "passname",
+  "subpass" : 0,
   "graphicspipeline" : {
     "vertexstate" : {
       "bindingdescriptions" : [
         {
           "binding" : 0,
-          "stride" : 0,
-          "rate" : 0
-        },
-        {
-          "binding" : 1,
-          "stride" : 1,
+          "stride" : 72,
           "rate" : 0
         }
       ],
@@ -25,65 +45,89 @@
         {
           "location" : 0,
           "binding" : 0,
-          "format" : 0,
+          "format" : 106,
           "offset" : 0
         },
         {
           "location" : 1,
-          "binding" : 1,
-          "format" : 0,
-          "offset" : 1
+          "binding" : 0,
+          "format" : 103,
+          "offset" : 12
+        },
+        {
+            "location": 2,
+            "binding": 0,
+            "format": 106,
+            "offset": 20
+        },
+        {
+            "location": 3,
+            "binding": 0,
+            "format": 106,
+            "offset": 32
+        },
+        {
+            "location": 4,
+            "binding": 0,
+            "format": 106,
+            "offset": 44
+        },
+        {
+            "location": 5,
+            "binding": 0,
+            "format": 106,
+            "offset": 56
         }
       ]
     },
     "assemblystate" : {
-      "topology" : 0,
+      "topology" : 3,
       "primitiverestartenable" : false
     },
     "viewportstate" : {
       "viewports" : [
         {
-          "x" : 5,
-          "y" : 10,
-          "width" : 25,
-          "height" : 20,
-          "mindepth" : 10,
-          "maxdepth" : 20
+          "x" : 0,
+          "y" : 0,
+          "width" : 1280,
+          "height" : 720,
+          "mindepth" : 0,
+          "maxdepth" : 1
         }
       ],
       "rectangles" : [
         {
           "x" : 0,
           "y" : 0,
-          "z" : 1,
-          "w" : 1
+          "z" : 1280,
+          "w" : 720
         }
       ]
     },
     "rasterizationstate" : {
       "depthclampenable" : false,
       "rasterizerdiscardenable" : false,
-      "polygonmode" : 1,
-      "cullmode" : 1,
+      "polygonmode" : 0,
+      "cullmode" : 2,
       "frontface" : 1,
       "depthbiasenable" : false,
-      "depthbiasconstantfactor" : 2.5,
-      "depthbiasclamp" : 2.0,
-      "depthbiasslopefactor" : 1.2,
+      "depthbiasconstantfactor" : 0,
+      "depthbiasclamp" : 0,
+      "depthbiasslopefactor" : 0,
       "linewidth" : 1.0
     },
     "multisamplestate" : {
-      "rasterizationsamples": 2,
+      "rasterizationsamples": 1,
       "sampleshadingenable" : false,
-      "minsampleshading" : 0.5,
-      "samplemask" : 12,
+      "minsampleshading" : 0.0,
+      "samplemask" : 0,
       "alphatocoverageenable" : false,
       "alphatooneenable" : false
     },
     "depthstencilstate" : {
-      "depthtestenable" : false,
-      "depthwriteenable" : false,
-      "depthcompareop" : 2,
+      "depthtestenable" : true,
+      "depthwriteenable" : true,
+      "depthcompareop" : 1,
       "depthboundstestenable" : false,
       "stenciltestenable" : false,
       "front" : {
@@ -105,11 +149,11 @@
         "reference" : 0
       },
       "mindepthbounds" : 0.0,
-      "maxdepthbounds": 24.5
+      "maxdepthbounds": 1.0
     },
     "colorblendstate" : {
       "logicopenable" : false,
-      "logicop" : 0,
+      "logicop" : 3,
       "attachments" : [
         {
           "blendenable" : false,
@@ -119,21 +163,18 @@
           "srcalphablendfactor" : 0,
           "dstalphablendfactor" : 0,
           "alphablendop" : 0,
-          "colorwritemask" : 0
+          "colorwritemask" : 15
         }
       ],
       "blendconstants" : [
-        0,
-        1,
-        2,
-        3
+        0.0,
+        0.0,
+        0.0,
+        0.0
       ]
     },
     "dynamicstate" : {
       "states" : [
-        0,
-        2,
-        5
       ]
     }
   }
