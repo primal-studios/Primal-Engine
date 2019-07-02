@@ -1,0 +1,52 @@
+{
+    "attachments" : [
+        {
+            "format" : 0,
+            "samples" : 0,
+            "load" : 0,
+            "store" : 0,
+            "loadstencil" : 0,
+            "storestencil" : 0,
+            "initialformat" : 0,
+            "finalformat" : 1
+        }
+    ],
+    "descriptions" : [
+        {
+            "inputs" : [
+                {
+                    "index" : 0,
+                    "layout" : 0
+                }
+            ],
+            "colors" : [
+                {
+                    "index" : 0,
+                    "layout" : 0
+                }
+            ],
+            "resolve" : [
+                {
+                    "index" : 0,
+                    "layout" : 0
+                }
+            ],
+            "depth" : {
+                "index" : 0,
+                "layout" : 0
+            },
+            "preserve" : [ 0, 1, 2 ]
+        }
+    ],
+    "dependencies" : [
+        {
+            "srcsubpass" : 0,
+            "dstsubpass" : 1,
+            "srcstages" : 0,
+            "dststages" : 0,
+            "srcaccess" : 0,
+            "dstaccess" : 0,
+            "dependencyflags" : 0
+        }
+    ]
+}
