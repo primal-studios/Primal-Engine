@@ -20,6 +20,8 @@
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 
 #include "graphics/UniformBufferPool.h"
+#include "assets/ShaderAsset.h"
+#include "assets/RenderPassAsset.h"
 
 class RenderSystem final : public System
 {
@@ -45,9 +47,9 @@ class RenderSystem final : public System
 
 		VulkanGraphicsContext* mContext;
 		VulkanSwapChain* mSwapChain;
-		VulkanRenderPass* mRenderPass;
+		IRenderPass* mRenderPass;
 
-		VulkanGraphicsPipeline* mGraphicsPipeline;
+		IGraphicsPipeline* mGraphicsPipeline;
 		VulkanPipelineLayout* mLayout;
 
 		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
@@ -75,6 +77,9 @@ class RenderSystem final : public System
 		Window* mWindow;
 
 		bool _onResize(WindowResizeEvent& aEvent) const;
+
+		std::shared_ptr<ShaderAsset> mShaderAsset;
+		std::shared_ptr<RenderPassAsset> mRenderPassAsset;
 };
 
 #endif // rendersystem_h__

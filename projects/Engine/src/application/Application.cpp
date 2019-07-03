@@ -1,5 +1,6 @@
 #include "application/Application.h"
 
+#include "assets/AssetManager.h"
 #include "core/Log.h"
 #include "input/Input.h"
 #include "ecs/SystemManager.h"

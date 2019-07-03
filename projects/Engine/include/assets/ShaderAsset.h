@@ -11,6 +11,8 @@ class ShaderAsset final : public Asset
 		explicit ShaderAsset(const std::string& aPath);
 		~ShaderAsset();
 
+		[[nodiscard]] IGraphicsPipeline* getPipeline() const;
+		[[nodiscard]] IPipelineLayout* getLayout() const;
 	private:
 		void _load() override;
 

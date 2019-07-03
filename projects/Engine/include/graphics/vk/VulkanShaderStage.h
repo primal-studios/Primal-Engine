@@ -19,9 +19,11 @@ class VulkanShaderStage final : public IShaderStage
 		void construct(const ShaderStageCreateInfo& aInfo) override;
 
 		VkPipelineShaderStageCreateInfo getStage() const;
+		IShaderModule* getModule() const override;
 
 	private:
 		VkPipelineShaderStageCreateInfo mStage;
+		IShaderModule* mModule;
 		void* mData;
 };
 

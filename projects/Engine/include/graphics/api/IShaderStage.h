@@ -27,6 +27,7 @@ class IShaderStage
 		IShaderStage& operator=(IShaderStage&&) noexcept = delete;
 
 		virtual void construct(const ShaderStageCreateInfo& aInfo) = 0;
+		virtual IShaderModule* getModule() const = 0;
 
 	protected:
 		IGraphicsContext* mContext;

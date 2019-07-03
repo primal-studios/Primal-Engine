@@ -27,7 +27,7 @@
    "pushconstants" : [
    ]
   },
-  "renderpass" : "default",
+  "renderpass" : "defaultRenderpass",
   "subpass" : 0,
   "graphicspipeline" : {
     "vertexstate" : {

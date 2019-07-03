@@ -1,10 +1,11 @@
+#include "assets/AssetManager.h"
 #include "assets/ShaderAsset.h"
 #include "core/PrimalAssert.h"
 #include "filesystem/FileSystem.h"
 #include "graphics/GraphicsFactory.h"
-#include "graphics/RenderPassManager.h"
 
 #include <json/json.hpp>
+#include "assets/RenderPassAsset.h"
 
 ShaderAsset::ShaderAsset(const std::string& aPath)
 	: mPipeline(nullptr)
@@ -24,6 +25,19 @@ ShaderAsset::~ShaderAsset()
 	delete mGraphicsPipelineCreateInfo.colorBlendState;
 	delete mGraphicsPipelineCreateInfo.dynamicState;
 	delete mGraphicsPipelineCreateInfo.layout;
+
+	// TODO: delete owned render pass?
+	delete mPipeline;
+}
+
+IGraphicsPipeline* ShaderAsset::getPipeline() const
+{
+	return mPipeline;
+}
+
+IPipelineLayout* ShaderAsset::getLayout() const
+{
+	return mGraphicsPipelineCreateInfo.layout;
 }
 
 void ShaderAsset::_load()
@@ -54,7 +68,7 @@ void ShaderAsset::_load()
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
 		info.stage = SHADER_STAGE_VERTEX;
-		info.name = vertPath;
+		info.name = "main";
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
 		stage->construct(info);
@@ -75,7 +89,7 @@ void ShaderAsset::_load()
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
 		info.stage = SHADER_STAGE_FRAGMENT;
-		info.name = fragPath;
+		info.name = "main";
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
 		stage->construct(info);
@@ -96,7 +110,7 @@ void ShaderAsset::_load()
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
 		info.stage = SHADER_STAGE_GEOMETRY;
-		info.name = geomPath;
+		info.name = "main";
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
 		stage->construct(info);
@@ -117,7 +131,7 @@ void ShaderAsset::_load()
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
 		info.stage = SHADER_STAGE_TESSELLATION_CONTROL;
-		info.name = tcsPath;
+		info.name = "main";
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
 		stage->construct(info);
@@ -138,7 +152,7 @@ void ShaderAsset::_load()
 		info.module = GraphicsFactory::instance().createShaderModule();
 		info.module->construct(moduleCreateInfo);
 		info.stage = SHADER_STAGE_TESSELLATION_EVALUATION;
-		info.name = tesPath;
+		info.name = "main";
 
 		IShaderStage* stage = GraphicsFactory::instance().createShaderStage();
 		stage->construct(info);
@@ -414,11 +428,21 @@ void ShaderAsset::_load()
 
 	mGraphicsPipelineCreateInfo.flags = 0;
 
-	mGraphicsPipelineCreateInfo.renderPass = RenderPassManager::instance().findPass(jsonValue["renderpass"]);
+	mGraphicsPipelineCreateInfo.renderPass = AssetManager::instance().get<RenderPassAsset>(jsonValue["renderpass"])->getRenderPass();
 	mGraphicsPipelineCreateInfo.subPass = jsonValue["subpass"];
 
 	mPipeline = GraphicsFactory::instance().createGraphicsPipeline();
 	mPipeline->construct(mGraphicsPipelineCreateInfo);
 
-	int jonathan = 0;
+	for (const auto & stage : mGraphicsPipelineCreateInfo.stages)
+	{
+		delete stage->getModule();
+		delete stage;
+	}
+	mGraphicsPipelineCreateInfo.stages.clear();
+
+	for (const auto& l : layoutCreateInfo.setLayouts)
+	{
+		delete l;
+	}
 }

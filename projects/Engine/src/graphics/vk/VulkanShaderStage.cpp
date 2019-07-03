@@ -26,9 +26,15 @@ void VulkanShaderStage::construct(const ShaderStageCreateInfo& aInfo)
 	charData[aInfo.name.size()] = '\0';
 
 	mStage.pName = charData;
+	mModule = aInfo.module;
 }
 
 VkPipelineShaderStageCreateInfo VulkanShaderStage::getStage() const
 {
 	return mStage;
+}
+
+IShaderModule* VulkanShaderStage::getModule() const
+{
+	return mModule;
 }

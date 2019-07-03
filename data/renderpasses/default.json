@@ -1,0 +1,52 @@
+{
+  "attachments": [
+    {
+      "format": 44,
+      "samples": 1,
+      "load": 1,
+      "store": 0,
+      "loadstencil": 2,
+      "storestencil": 1,
+      "initial": 0,
+      "final": 1000001002
+    },
+    {
+      "format": 126,
+      "samples": 1,
+      "load": 1,
+      "store": 1,
+      "loadstencil": 2,
+      "storestencil": 1,
+      "initial": 0,
+      "final": 3
+    }
+  ],
+  "dependencies": [
+    {
+      "srcsubpass": 4294967295,
+      "dstsubpass": 0,
+      "srcstages": 1024,
+      "dststages": 1024,
+      "srcaccess": 0,
+      "dstaccess": 384,
+      "dependencyflags": 0
+    }
+  ],
+  "descriptions": [
+    {
+      "inputs": [],
+      "colors": [
+        {
+          "index": 0,
+          "layout": 2
+        }
+      ],
+      "resolves": [],
+      "depth": {
+        "index": 1,
+        "layout": 3
+      },
+      "preserve": []
+    }
+  ]
+}

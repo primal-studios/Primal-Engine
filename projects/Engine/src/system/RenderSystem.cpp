@@ -69,13 +69,16 @@ RenderSystem::RenderSystem(Window* aWindow)
 RenderSystem::~RenderSystem()
 {
 	vkDeviceWaitIdle(primal_cast<VulkanGraphicsContext*>(mContext)->getDevice());
-
+	
 	AssetManager::instance().unloadAll();
+
+	delete mSet;
+	delete mSet2;
 
 	delete mTexture;
 	delete mTexture2;
 	delete mSampler;
-	delete mLayout;
+//	delete mLayout;
 	delete mSetLayout;
 
 	delete mSwapChain;
@@ -95,8 +98,14 @@ RenderSystem::~RenderSystem()
 
 	delete mDescriptorPool;
 
-	delete mGraphicsPipeline;
-	delete mRenderPass;
+//	delete mGraphicsPipeline;
+//	delete mRenderPass;
+
+	{
+		mShaderAsset = nullptr;
+		mRenderPassAsset = nullptr;
+	}
+
 	delete mContext;
 }
 
@@ -170,8 +179,11 @@ void RenderSystem::initialize()
 	renderPassInfo.dependencies.push_back(dep);
 	renderPassInfo.descriptions.push_back(desc);
 
-	mRenderPass = new VulkanRenderPass(mContext);
-	mRenderPass->construct(renderPassInfo);
+//	mRenderPass = new VulkanRenderPass(mContext);
+//	mRenderPass->construct(renderPassInfo);
+
+	mRenderPassAsset = AssetManager::instance().load<RenderPassAsset>("defaultRenderpass", "data/renderpasses/default.json");
+	mRenderPass = mRenderPassAsset->getRenderPass();
 
 	auto views = mSwapChain->getImageViews();
 
@@ -205,7 +217,8 @@ void RenderSystem::initialize()
 		mPrimaryBuffer[i]->construct(commandBufferInfo);
 	}
 
-	auto shaderAsset = AssetManager::instance().load<ShaderAsset>("testShader", "data/effects/default.json");
+	mShaderAsset = AssetManager::instance().load<ShaderAsset>("testShader", "data/effects/default.json");
+	mGraphicsPipeline = mShaderAsset->getPipeline();
 
 	auto meshAsset = AssetManager::instance().load<MeshAsset>("mesh", "data/models/cube.glb");
 	auto mesh = meshAsset->getMesh(0);
@@ -284,118 +297,120 @@ void RenderSystem::initialize()
 	mSet2 = new VulkanDescriptorSet(mContext);
 	mSet2->construct(setCreateInfo);
 
-	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
-	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
+//	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
+//	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
 
-	IShaderModule* vertModule = new VulkanShaderModule(mContext);
-	vertModule->construct({ 0, vertSource });
+//	IShaderModule* vertModule = new VulkanShaderModule(mContext);
+//	vertModule->construct({ 0, vertSource });
+//
+//	IShaderModule* fragModule = new VulkanShaderModule(mContext);
+//	fragModule->construct({ 0, fragSource });
+//
+//	IShaderStage* vertStage = new VulkanShaderStage(mContext);
+//	vertStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_VERTEX, vertModule, "main" });
+//
+//	IShaderStage* fragStage = new VulkanShaderStage(mContext);
+//	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
 
-	IShaderModule* fragModule = new VulkanShaderModule(mContext);
-	fragModule->construct({ 0, fragSource });
+//	mGraphicsPipeline = new VulkanGraphicsPipeline(mContext);
 
-	IShaderStage* vertStage = new VulkanShaderStage(mContext);
-	vertStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_VERTEX, vertModule, "main" });
+//	PipelineVertexStateCreateInfo vertexState = {};
+//	vertexState.flags = 0;
+//	vertexState.bindingDescriptions = { mVertexBuffer->getBinding() };
+//	vertexState.attributeDescriptions = mVertexBuffer->getAttributes();
+//
+//	PipelineInputAssemblyStateCreateInfo assemblyState = {};
+//	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+//	assemblyState.primitiveRestartEnable = false;
+//
+//	Viewport viewport = {};
+//	viewport.x = 0.0f;
+//	viewport.y = 0.0f;
+//	viewport.width = static_cast<float>(mWindow->width());
+//	viewport.height = static_cast<float>(mWindow->height());
+//	viewport.minDepth = 0.0f;
+//	viewport.maxDepth = 1.0f;
+//
+//	Vector4i rect = {};
+//	rect.x = 0;
+//	rect.y = 0;
+//	rect.z = static_cast<int32_t>(mWindow->width());
+//	rect.w = static_cast<int32_t>(mWindow->height());
+//
+//	PipelineViewportStateCreateInfo viewportState = {};
+//	viewportState.flags = 0;
+//	viewportState.viewports = { viewport };
+//	viewportState.rectangles = { rect };
+//
+//	PipelineRasterizationStateCreateInfo rasterizationState = {};
+//	rasterizationState.flags = 0;
+//	rasterizationState.depthClampEnable = false;
+//	rasterizationState.rasterizerDiscardEnable = false;
+//	rasterizationState.polygonMode = EPolygonMode::FILL;
+//	rasterizationState.lineWidth = 1.0f;
+//	rasterizationState.cullMode = ECullMode::BACK;
+//	rasterizationState.frontFace = EFrontFace::CLOCKWISE;
+//	rasterizationState.depthBiasEnable = false;
+//
+//	PipelineMultisampleStateCreateInfo multisampleState = {};
+//	multisampleState.sampleShadingEnable = false;
+//	multisampleState.rasterizationSamples = SAMPLE_COUNT_1;
+//
+//	PipelineColorBlendAttachmentState colorBlendStateAttachement = {};
+//	colorBlendStateAttachement.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+//	colorBlendStateAttachement.blendEnable = false;
+//
+//	PipelineColorBlendStateCreateInfo colorBlendState = {};
+//	colorBlendState.flags = 0;
+//	colorBlendState.attachments = { colorBlendStateAttachement };
+//	colorBlendState.logicOpEnable = false;
+//	colorBlendState.logicOp = ELogicOp::LOGIC_OP_COPY;
+//	colorBlendState.blendConstants[0] = 0.0f;
+//	colorBlendState.blendConstants[1] = 0.0f;
+//	colorBlendState.blendConstants[2] = 0.0f;
+//	colorBlendState.blendConstants[3] = 0.0f;
+//
+//	PipelineDepthStencilStateCreateInfo depthState = {};
+//	depthState.flags = 0;
+//	depthState.depthTestEnable = true;
+//	depthState.depthWriteEnable = true;
+//	depthState.depthCompareOp = ECompareOp::COMPARE_OP_LESS;
+//	depthState.depthBoundsTestEnable = false;
+//	depthState.minDepthBounds = 0.0f;
+//	depthState.maxDepthBounds = 1.0f;
+//	depthState.stencilTestEnable = false;
+//	depthState.front = {};
+//	depthState.back = {};
+//
+//	mLayout = new VulkanPipelineLayout(mContext);
+//	mLayout->construct({ 0, {mSetLayout}, {} });
+//
+//	GraphicsPipelineCreateInfo createInfo = {};
+//	createInfo.flags = 0;
+//	createInfo.stages = { vertStage, fragStage };
+//
+//	createInfo.vertexState = &vertexState;
+//	createInfo.assemblyState = &assemblyState;
+//	createInfo.viewportState = &viewportState;
+//	createInfo.rasterizationState = &rasterizationState;
+//	createInfo.multisampleState = &multisampleState;
+//	createInfo.colorBlendState = &colorBlendState;
+//	createInfo.layout = mLayout;
+//	createInfo.basePipelineHandle = nullptr;
+//	createInfo.basePipelineIndex = -1;
+//	createInfo.renderPass = mRenderPass;
+//	createInfo.depthStencilState = &depthState;
+//	createInfo.subPass = 0;
+//
+//	mGraphicsPipeline->construct(createInfo);
+//
+//	delete vertStage;
+//	delete fragStage;
+//
+//	delete vertModule;
+//	delete fragModule;
 
-	IShaderStage* fragStage = new VulkanShaderStage(mContext);
-	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
-
-	mGraphicsPipeline = new VulkanGraphicsPipeline(mContext);
-
-	PipelineVertexStateCreateInfo vertexState = {};
-	vertexState.flags = 0;
-	vertexState.bindingDescriptions = { mVertexBuffer->getBinding() };
-	vertexState.attributeDescriptions = mVertexBuffer->getAttributes();
-
-	PipelineInputAssemblyStateCreateInfo assemblyState = {};
-	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	assemblyState.primitiveRestartEnable = false;
-
-	Viewport viewport = {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(mWindow->width());
-	viewport.height = static_cast<float>(mWindow->height());
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	Vector4i rect = {};
-	rect.x = 0;
-	rect.y = 0;
-	rect.z = static_cast<int32_t>(mWindow->width());
-	rect.w = static_cast<int32_t>(mWindow->height());
-
-	PipelineViewportStateCreateInfo viewportState = {};
-	viewportState.flags = 0;
-	viewportState.viewports = { viewport };
-	viewportState.rectangles = { rect };
-
-	PipelineRasterizationStateCreateInfo rasterizationState = {};
-	rasterizationState.flags = 0;
-	rasterizationState.depthClampEnable = false;
-	rasterizationState.rasterizerDiscardEnable = false;
-	rasterizationState.polygonMode = EPolygonMode::FILL;
-	rasterizationState.lineWidth = 1.0f;
-	rasterizationState.cullMode = ECullMode::BACK;
-	rasterizationState.frontFace = EFrontFace::CLOCKWISE;
-	rasterizationState.depthBiasEnable = false;
-
-	PipelineMultisampleStateCreateInfo multisampleState = {};
-	multisampleState.sampleShadingEnable = false;
-	multisampleState.rasterizationSamples = SAMPLE_COUNT_1;
-
-	PipelineColorBlendAttachmentState colorBlendStateAttachement = {};
-	colorBlendStateAttachement.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlendStateAttachement.blendEnable = false;
-
-	PipelineColorBlendStateCreateInfo colorBlendState = {};
-	colorBlendState.flags = 0;
-	colorBlendState.attachments = { colorBlendStateAttachement };
-	colorBlendState.logicOpEnable = false;
-	colorBlendState.logicOp = ELogicOp::LOGIC_OP_COPY;
-	colorBlendState.blendConstants[0] = 0.0f;
-	colorBlendState.blendConstants[1] = 0.0f;
-	colorBlendState.blendConstants[2] = 0.0f;
-	colorBlendState.blendConstants[3] = 0.0f;
-
-	PipelineDepthStencilStateCreateInfo depthState = {};
-	depthState.flags = 0;
-	depthState.depthTestEnable = true;
-	depthState.depthWriteEnable = true;
-	depthState.depthCompareOp = ECompareOp::COMPARE_OP_LESS;
-	depthState.depthBoundsTestEnable = false;
-	depthState.minDepthBounds = 0.0f;
-	depthState.maxDepthBounds = 1.0f;
-	depthState.stencilTestEnable = false;
-	depthState.front = {};
-	depthState.back = {};
-
-	mLayout = new VulkanPipelineLayout(mContext);
-	mLayout->construct({ 0, {mSetLayout}, {} });
-
-	GraphicsPipelineCreateInfo createInfo = {};
-	createInfo.flags = 0;
-	createInfo.stages = { vertStage, fragStage };
-
-	createInfo.vertexState = &vertexState;
-	createInfo.assemblyState = &assemblyState;
-	createInfo.viewportState = &viewportState;
-	createInfo.rasterizationState = &rasterizationState;
-	createInfo.multisampleState = &multisampleState;
-	createInfo.colorBlendState = &colorBlendState;
-	createInfo.layout = mLayout;
-	createInfo.basePipelineHandle = nullptr;
-	createInfo.basePipelineIndex = -1;
-	createInfo.renderPass = mRenderPass;
-	createInfo.depthStencilState = &depthState;
-	createInfo.subPass = 0;
-
-	mGraphicsPipeline->construct(createInfo);
-
-	delete vertStage;
-	delete fragStage;
-
-	delete vertModule;
-	delete fragModule;
+	mGraphicsPipeline = mShaderAsset->getPipeline();
 }
 
 void RenderSystem::preRender()
@@ -477,7 +492,7 @@ void RenderSystem::render()
 
 	setList.push_back(set);
 
-	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0, 
+	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, primal_cast<VulkanPipelineLayout*>(mShaderAsset->getLayout())->getHandle(), 0, 
 		1, &setList[0], 0, nullptr);
 
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
@@ -507,7 +522,7 @@ void RenderSystem::render()
 	setList.clear();
 	setList.push_back(set2);
 
-	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mLayout->getHandle(), 0,
+	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, primal_cast<VulkanPipelineLayout*>(mShaderAsset->getLayout())->getHandle(), 0,
 		1, &setList[0], 0, nullptr);
 
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
