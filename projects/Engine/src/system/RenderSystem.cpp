@@ -25,8 +25,8 @@
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
-	  mDescriptorPool(nullptr), mSet(nullptr), mSetLayout(nullptr), mTexture(nullptr), mTexture2(nullptr), mSampler(nullptr),
-	  mWindow(aWindow)
+	  mDescriptorPool(nullptr), mUboObject0(nullptr), mUboObject1(nullptr), mUboPool(nullptr), mSet(nullptr),
+	  mSet2(nullptr), mSetLayout(nullptr), mTexture(nullptr), mTexture2(nullptr), mSampler(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -47,11 +47,11 @@ RenderSystem::RenderSystem(Window* aWindow)
 	mSwapChain->construct(swapChainInfo);
 
 	std::vector<DescriptorPoolSize> poolSizes;
-	DescriptorPoolSize uniformBufferSize;
+	DescriptorPoolSize uniformBufferSize{};
 	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER;
 	uniformBufferSize.count = 2;
 
-	DescriptorPoolSize combinedSamplerSize;
+	DescriptorPoolSize combinedSamplerSize{};
 	combinedSamplerSize.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
 	combinedSamplerSize.count = 4;
 
@@ -223,8 +223,8 @@ void RenderSystem::initialize()
 	auto meshAsset = AssetManager::instance().load<MeshAsset>("mesh", "data/models/cube.glb");
 	auto mesh = meshAsset->getMesh(0);
 
-	mVertexBuffer = static_cast<VulkanVertexBuffer*>(mesh->getVBO());
-	mIndexBuffer = static_cast<VulkanIndexBuffer*>(mesh->getIBO());
+	mVertexBuffer = primal_cast<VulkanVertexBuffer*>(mesh->getVBO());
+	mIndexBuffer = primal_cast<VulkanIndexBuffer*>(mesh->getIBO());
 
 	UniformBufferCreateInfo uniformBufferCreateInfo = {};
 	uniformBufferCreateInfo.flags = 0;
@@ -449,7 +449,7 @@ void RenderSystem::render()
 	clear.color.float32[2] = 0.0f;
 	clear.color.float32[3] = 0.0f;
 
-	ClearValue depth;
+	ClearValue depth = {};
 	depth.depthStencil = { 1.0f, 0 };
 	recordInfo.clearValues.push_back(clear);
 	recordInfo.clearValues.push_back(depth);
@@ -466,7 +466,7 @@ void RenderSystem::render()
 	VkDescriptorSet set2 = mSet2->getHandle(mCurrentFrame);
 
 	OffsetSize offset = { 0, sizeof(UBO) };
-	auto uniformWriteDescHolder = ((VulkanUniformBuffer*)mUboObject0->getBuffer())->getWriteDescriptor(0, offset);
+	auto uniformWriteDescHolder = primal_cast<VulkanUniformBuffer*>(mUboObject0->getBuffer())->getWriteDescriptor(0, offset);
 	auto uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
 	uniformWriteDesc.dstSet = set;
 
@@ -498,7 +498,7 @@ void RenderSystem::render()
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
 	offset = { sizeof(UBO), sizeof(UBO) };
-	uniformWriteDescHolder = ((VulkanUniformBuffer*)mUboObject1->getBuffer())->getWriteDescriptor(0, offset);
+	uniformWriteDescHolder = primal_cast<VulkanUniformBuffer*>(mUboObject1->getBuffer())->getWriteDescriptor(0, offset);
 	uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
 	uniformWriteDesc.dstSet = set2;
 
@@ -656,7 +656,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	uniformBufferCreateInfo.size = sizeof(UBO);
 	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
 
-	((VulkanUniformBuffer*)mUboObject0->getBuffer())->reconstruct(uniformBufferCreateInfo);
+	primal_cast<VulkanUniformBuffer*>(mUboObject0->getBuffer())->reconstruct(uniformBufferCreateInfo);
 
 	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
 	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
