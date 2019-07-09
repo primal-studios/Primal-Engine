@@ -8,6 +8,7 @@
 #include "graphics/vk/VulkanShaderStage.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
+#include "graphics/vk/VulkanFramebuffer.h"
 
 GraphicsFactory& GraphicsFactory::instance()
 {
@@ -180,6 +181,23 @@ IDescriptorSetLayout* GraphicsFactory::createDescriptorSetLayout() const
 		{
 			return nullptr;
 		}
+	}
+	return nullptr;
+}
+
+IFramebuffer* GraphicsFactory::createFramebuffer() const
+{
+	switch (mAPI)
+	{
+	case RENDERAPI_VULKAN:
+	{
+		VulkanFramebuffer* fb = new VulkanFramebuffer(mContext);
+		return fb;
+	}
+	case RENDERAPI_NONE:
+	{
+		return nullptr;
+	}
 	}
 	return nullptr;
 }

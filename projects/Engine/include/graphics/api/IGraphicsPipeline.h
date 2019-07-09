@@ -385,6 +385,9 @@ class IGraphicsPipeline
 
 		virtual void construct(const GraphicsPipelineCreateInfo& aInfo) = 0;
 		virtual void reconstruct(const GraphicsPipelineCreateInfo& aInfo) = 0;
+		virtual void destroy() = 0;
+
+		virtual GraphicsPipelineCreateInfo& getCreateInfo() = 0;
 	protected:
 		IGraphicsContext* mContext;
 };

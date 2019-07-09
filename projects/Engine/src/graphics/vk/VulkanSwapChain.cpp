@@ -162,11 +162,10 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 	}
 	else
 	{
-		VkExtent2D actual = { aInfo.width, aInfo.height };
+		int width, height;
+		glfwGetFramebufferSize(reinterpret_cast<GLFWwindow*>(aInfo.windowHandle), &width, &height);
+		VkExtent2D actual = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
-		actual.width = details.capabilities.minImageExtent.width > actual.width ? details.capabilities.minImageExtent.width : actual.width;
-		actual.height = details.capabilities.minImageExtent.height > actual.height ? details.capabilities.minImageExtent.height : actual.height;
-		
 		extent = actual;
 	}
 
@@ -254,9 +253,13 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 
 void VulkanSwapChain::reconstruct(const SwapChainCreateInfo& aInfo)
 {
-	mOldSwapchain = mSwapchain;
-	_destroy();
 	construct(aInfo);
+	destroy();
+}
+
+void VulkanSwapChain::destroy()
+{
+	_destroy();
 }
 
 uint32_t VulkanSwapChain::getImageCount()
@@ -289,7 +292,7 @@ void VulkanSwapChain::beginFrame()
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	const VkDevice device = context->getDevice();
 
-	vkAcquireNextImageKHR(device, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailable[mCurrentImage], nullptr, &mCurrentImageInChain);
+	const auto result = vkAcquireNextImageKHR(device, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailable[mCurrentImage], nullptr, &mCurrentImageInChain);
 }
 
 void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
@@ -334,7 +337,7 @@ void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
 	vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mFences[mCurrentImage]);
 }
 
-void VulkanSwapChain::swap()
+bool VulkanSwapChain::swap()
 {
 	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
 
@@ -357,6 +360,8 @@ void VulkanSwapChain::swap()
 
 	vkWaitForFences(context->getDevice(), 1, &mFences[mCurrentImage], VK_TRUE, 0xFFFFFFFFFFFFFFFF);
 	vkResetFences(context->getDevice(), 1, &mFences[mCurrentImage]);
+
+	return res == VK_SUCCESS;
 }
 
 EDataFormat VulkanSwapChain::getSwapchainFormat() const
@@ -436,6 +441,7 @@ void VulkanSwapChain::_createDepthResources()
 void VulkanSwapChain::_destroy()
 {
 	VulkanGraphicsContext* context = reinterpret_cast<VulkanGraphicsContext*>(mContext);
+	vkDeviceWaitIdle(context->getDevice());
 
 	for (IImageView* view : mImageViews)
 	{

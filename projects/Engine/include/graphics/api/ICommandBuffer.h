@@ -92,6 +92,7 @@ class ICommandBuffer
 
 		virtual void construct(const CommandBufferCreateInfo&) = 0;
 		virtual void reconstruct(const CommandBufferCreateInfo&) = 0;
+		virtual void destroy() = 0;
 
 		virtual void record(const CommandBufferRecordInfo&) = 0;
 		virtual void end() = 0;

@@ -38,6 +38,7 @@ class IPipelineLayout
 
 		virtual void construct(const PipelineLayoutCreateInfo& aInfo) = 0;
 		virtual void reconstruct(const PipelineLayoutCreateInfo& aInfo) = 0;
+		virtual void destroy() = 0;
 
 	protected:
 		IGraphicsContext* mContext;

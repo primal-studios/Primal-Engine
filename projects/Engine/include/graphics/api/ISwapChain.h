@@ -10,6 +10,7 @@
 struct SwapChainCreateInfo
 {
 	uint64_t surfaceHandle;
+	uint64_t windowHandle;
 	uint32_t minImageCount;
 	uint32_t maxImageCount;
 	EDataFormat format;
@@ -32,6 +33,7 @@ class ISwapChain
 
 		virtual void construct(const SwapChainCreateInfo&) = 0;
 		virtual void reconstruct(const SwapChainCreateInfo&) = 0;
+		virtual void destroy() = 0;
 
 		virtual uint32_t getImageCount() = 0;
 };

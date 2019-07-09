@@ -30,6 +30,7 @@ class IFramebuffer
 
 		virtual void construct(const FramebufferCreateInfo&) = 0;
 		virtual void reconstruct(const FramebufferCreateInfo&) = 0;
+		virtual void destroy() = 0;
 };
 
 #endif // iframebuffer_h__

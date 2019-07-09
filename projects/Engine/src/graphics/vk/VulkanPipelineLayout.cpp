@@ -15,6 +15,8 @@ VulkanPipelineLayout::~VulkanPipelineLayout()
 
 void VulkanPipelineLayout::construct(const PipelineLayoutCreateInfo& aInfo)
 {
+	mCreateInfo = aInfo;
+
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
 	VkPipelineLayoutCreateInfo createInfo = {};
@@ -50,13 +52,23 @@ void VulkanPipelineLayout::construct(const PipelineLayoutCreateInfo& aInfo)
 
 void VulkanPipelineLayout::reconstruct(const PipelineLayoutCreateInfo& aInfo)
 {
-	_destroy();
+	destroy();
 	construct(aInfo);
+}
+
+void VulkanPipelineLayout::destroy()
+{
+	_destroy();
 }
 
 VkPipelineLayout VulkanPipelineLayout::getHandle() const
 {
 	return mLayout;
+}
+
+PipelineLayoutCreateInfo& VulkanPipelineLayout::getCreateInfo()
+{
+	return mCreateInfo;
 }
 
 void VulkanPipelineLayout::_destroy() const

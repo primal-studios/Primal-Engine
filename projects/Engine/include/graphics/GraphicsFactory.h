@@ -2,6 +2,7 @@
 #define graphicsfactory_h__
 
 #include "graphics/api/IDescriptorSet.h"
+#include "graphics/api/IFramebuffer.h"
 #include "graphics/api/IGraphicsPipeline.h"
 #include "graphics/api/IIndexBuffer.h"
 #include "graphics/api/IPipelineLayout.h"
@@ -10,6 +11,8 @@
 #include "graphics/api/IShaderStage.h"
 #include "graphics/api/IUniformBuffer.h"
 #include "graphics/api/IVertexBuffer.h"
+
+#include <vector>
 
 enum ERenderAPI : uint32_t
 {
@@ -25,6 +28,7 @@ class GraphicsFactory
 
 		[[nodiscard]] IDescriptorSet* createDescriptorSet() const;
 		[[nodiscard]] IDescriptorSetLayout* createDescriptorSetLayout() const;
+		[[nodiscard]] IFramebuffer* createFramebuffer() const;
 		[[nodiscard]] IGraphicsPipeline* createGraphicsPipeline() const;
 		[[nodiscard]] IIndexBuffer* createIndexBuffer() const;
 		[[nodiscard]] IPipelineLayout* createPipelineLayout() const;

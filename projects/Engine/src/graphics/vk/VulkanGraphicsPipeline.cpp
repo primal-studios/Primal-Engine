@@ -18,6 +18,8 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
 
 void VulkanGraphicsPipeline::construct(const GraphicsPipelineCreateInfo& aInfo)
 {
+	mCreateInfo = aInfo;
+
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 
 	VkGraphicsPipelineCreateInfo createInfo = {};
@@ -323,8 +325,18 @@ void VulkanGraphicsPipeline::construct(const GraphicsPipelineCreateInfo& aInfo)
 
 void VulkanGraphicsPipeline::reconstruct(const GraphicsPipelineCreateInfo& aInfo)
 {
-	_destroy();
+	destroy();
 	construct(aInfo);
+}
+
+void VulkanGraphicsPipeline::destroy()
+{
+	_destroy();
+}
+
+GraphicsPipelineCreateInfo& VulkanGraphicsPipeline::getCreateInfo()
+{
+	return mCreateInfo;
 }
 
 VkPipeline VulkanGraphicsPipeline::getHandle() const

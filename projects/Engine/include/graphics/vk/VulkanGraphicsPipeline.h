@@ -18,10 +18,14 @@ class VulkanGraphicsPipeline final : public IGraphicsPipeline
 
 		void construct(const GraphicsPipelineCreateInfo& aInfo) override;
 		void reconstruct(const GraphicsPipelineCreateInfo& aInfo) override;
+		void destroy() override;
 
+		GraphicsPipelineCreateInfo& getCreateInfo() override;
 		VkPipeline getHandle() const;
 	private:
 		void _destroy() const;
+
+		GraphicsPipelineCreateInfo mCreateInfo;
 		VkPipeline mPipeline{};
 };
 

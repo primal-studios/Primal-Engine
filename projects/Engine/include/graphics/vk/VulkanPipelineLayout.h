@@ -18,13 +18,16 @@ class VulkanPipelineLayout final : public IPipelineLayout
 
 		void construct(const PipelineLayoutCreateInfo& aInfo) override;
 		void reconstruct(const PipelineLayoutCreateInfo& aInfo) override;
+		void destroy() override;
 
 		VkPipelineLayout getHandle() const;
+		PipelineLayoutCreateInfo& getCreateInfo();
 
 	private:
 		void _destroy() const;
 
 		VkPipelineLayout mLayout{};
+		PipelineLayoutCreateInfo mCreateInfo;
 };
 
 #endif // vulkanpipelinelayout_h__

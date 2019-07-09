@@ -56,10 +56,14 @@ void VulkanFramebuffer::construct(const FramebufferCreateInfo& aInfo)
 
 void VulkanFramebuffer::reconstruct(const FramebufferCreateInfo& aInfo)
 {
+	destroy();
+	construct(aInfo);
+}
+
+void VulkanFramebuffer::destroy()
+{
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkDestroyFramebuffer(context->getDevice(), mBuffer, nullptr);
-
-	construct(aInfo);
 }
 
 VkFramebuffer VulkanFramebuffer::getHandle() const

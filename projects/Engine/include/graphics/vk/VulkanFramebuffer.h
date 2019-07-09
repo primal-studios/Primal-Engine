@@ -18,6 +18,8 @@ class VulkanFramebuffer final : public IFramebuffer
 
 		void construct(const FramebufferCreateInfo&) override;
 		void reconstruct(const FramebufferCreateInfo&) override;
+		void destroy() override;
+
 		VkFramebuffer getHandle() const;
 	private:
 		IGraphicsContext* mContext;

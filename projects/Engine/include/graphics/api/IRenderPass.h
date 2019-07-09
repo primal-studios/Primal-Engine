@@ -70,6 +70,9 @@ class IRenderPass
 
 		virtual void construct(const RenderPassCreateInfo&) = 0;
 		virtual void reconstruct(const RenderPassCreateInfo& aInfo) = 0;
+		virtual void destroy() = 0;
+
+		virtual RenderPassCreateInfo& getCreateInfo() = 0;
 };
 
 #endif // irenderpass_h__

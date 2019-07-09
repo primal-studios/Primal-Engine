@@ -29,6 +29,7 @@ class VulkanSwapChain final : public ISwapChain
 
 		void construct(const SwapChainCreateInfo& aInfo) override;
 		void reconstruct(const SwapChainCreateInfo& aInfo) override;
+		void destroy() override;
 		uint32_t getImageCount() override;
 
 		VkSwapchainKHR getHandle() const;
@@ -39,7 +40,7 @@ class VulkanSwapChain final : public ISwapChain
 
 		void beginFrame();
 		void submit(ICommandBuffer* aBuffer) const;
-		void swap();
+		bool swap();
 
 		EDataFormat getSwapchainFormat() const;
 	private:

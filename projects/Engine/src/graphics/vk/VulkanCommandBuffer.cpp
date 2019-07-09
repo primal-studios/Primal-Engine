@@ -111,8 +111,13 @@ void VulkanCommandBuffer::construct(const CommandBufferCreateInfo& aInfo)
 
 void VulkanCommandBuffer::reconstruct(const CommandBufferCreateInfo& aInfo)
 {
-	_destroy();
+	destroy();
 	construct(aInfo);
+}
+
+void VulkanCommandBuffer::destroy()
+{
+	_destroy();
 }
 
 void VulkanCommandBuffer::record(const CommandBufferRecordInfo& aInfo)

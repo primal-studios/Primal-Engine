@@ -18,6 +18,8 @@ VulkanRenderPass::~VulkanRenderPass()
 
 void VulkanRenderPass::construct(const RenderPassCreateInfo& aInfo)
 {
+	mCreateInfo = aInfo;
+
 	using std::vector;
 	
 	vector<VkAttachmentDescription> attachments;
@@ -193,8 +195,18 @@ void VulkanRenderPass::construct(const RenderPassCreateInfo& aInfo)
 
 void VulkanRenderPass::reconstruct(const RenderPassCreateInfo& aInfo)
 {
-	_destroy();
+	destroy();
 	construct(aInfo);
+}
+
+void VulkanRenderPass::destroy()
+{
+	_destroy();
+}
+
+RenderPassCreateInfo& VulkanRenderPass::getCreateInfo()
+{
+	return mCreateInfo;
 }
 
 VkRenderPass VulkanRenderPass::getHandle() const
