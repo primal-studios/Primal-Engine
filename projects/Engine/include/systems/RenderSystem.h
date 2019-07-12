@@ -76,7 +76,7 @@ class RenderSystem final : public System
 
 		Window* mWindow;
 
-		bool _onResize(WindowResizeEvent& aEvent) const;
+		bool _onResize(WindowResizeEvent& aEvent);
 
 		std::shared_ptr<ShaderAsset> mShaderAsset;
 		std::shared_ptr<RenderPassAsset> mRenderPassAsset;

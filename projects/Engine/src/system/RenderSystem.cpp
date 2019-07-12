@@ -431,7 +431,7 @@ void RenderSystem::onEvent(Event& aEvent)
 	dispatcher.dispatch<WindowResizeEvent>(BIND_EVENT_FUNCTION(RenderSystem::_onResize));
 }
 
-bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
+bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 {
 	VulkanGraphicsContext* vkContext = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkContext->idle();
@@ -446,7 +446,8 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	mLayout->destroy();
 	mRenderPass->destroy();
 
-	mSwapChain->destroy();
+//	mSwapChain->destroy();
+	delete mSwapChain;
 
 	const uint32_t newWidth = aEvent.width();
 	const uint32_t newHeight = aEvent.height();
@@ -457,6 +458,7 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 	swapChainInfo.height = newHeight;
 	swapChainInfo.maxImageCount = mFlightSize;
 	swapChainInfo.windowHandle = reinterpret_cast<uint64_t>(mWindow->getNativeWindow());
+	mSwapChain = new VulkanSwapChain(mContext);
 	mSwapChain->construct(swapChainInfo);
 
 	const CommandBufferCreateInfo commandBufferInfo =
