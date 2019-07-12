@@ -7,6 +7,8 @@
 
 #include <cstdint>
 
+class ISwapChain;
+
 struct SwapChainCreateInfo
 {
 	uint64_t surfaceHandle;
@@ -18,6 +20,7 @@ struct SwapChainCreateInfo
 	uint32_t height;
 	uint32_t layers;
 	ImageUsageFlags usage;
+	ISwapChain* oldSwapchain;
 };
 
 class ISwapChain

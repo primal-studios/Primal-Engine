@@ -204,7 +204,14 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 	info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	info.presentMode = presentMode;
 	info.clipped = VK_TRUE;
-	info.oldSwapchain = nullptr;
+	if (aInfo.oldSwapchain)
+	{
+		info.oldSwapchain = primal_cast<VulkanSwapChain*>(aInfo.oldSwapchain)->getHandle();
+	}
+	else
+	{
+		info.oldSwapchain = VK_NULL_HANDLE;
+	}
 
 	const VkResult res = vkCreateSwapchainKHR(device, &info, nullptr, &mSwapchain);
 	if (res != VK_SUCCESS)

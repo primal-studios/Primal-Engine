@@ -447,7 +447,6 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	mRenderPass->destroy();
 
 //	mSwapChain->destroy();
-	delete mSwapChain;
 
 	const uint32_t newWidth = aEvent.width();
 	const uint32_t newHeight = aEvent.height();
@@ -458,8 +457,11 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	swapChainInfo.height = newHeight;
 	swapChainInfo.maxImageCount = mFlightSize;
 	swapChainInfo.windowHandle = reinterpret_cast<uint64_t>(mWindow->getNativeWindow());
-	mSwapChain = new VulkanSwapChain(mContext);
-	mSwapChain->construct(swapChainInfo);
+	swapChainInfo.oldSwapchain = mSwapChain;
+	auto swapChain = new VulkanSwapChain(mContext);
+	swapChain->construct(swapChainInfo);
+	delete mSwapChain;
+	mSwapChain = swapChain;
 
 	const CommandBufferCreateInfo commandBufferInfo =
 	{
