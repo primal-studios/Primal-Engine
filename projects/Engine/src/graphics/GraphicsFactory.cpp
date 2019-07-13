@@ -9,6 +9,8 @@
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanFramebuffer.h"
+#include "graphics/vk/VulkanSampler.h"
+#include "graphics/vk/VulkanTexture.h"
 
 GraphicsFactory& GraphicsFactory::instance()
 {
@@ -53,6 +55,25 @@ IShaderStage* GraphicsFactory::createShaderStage() const
 		return nullptr;
 	}
 	}
+	return nullptr;
+}
+
+ITexture* GraphicsFactory::createTexture() const
+{
+	switch (mAPI)
+	{
+		case ERenderAPI::RENDERAPI_VULKAN:
+		{
+			VulkanTexture* buffer = new VulkanTexture(mContext);
+			return buffer;
+		}
+
+		case ERenderAPI::RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+
 	return nullptr;
 }
 
@@ -159,6 +180,23 @@ IRenderPass* GraphicsFactory::createRenderPass() const
 		{
 			VulkanRenderPass* renderPass = new VulkanRenderPass(mContext);
 			return renderPass;
+		}
+		case RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+	return nullptr;
+}
+
+ISampler* GraphicsFactory::createSampler() const
+{
+	switch (mAPI)
+	{
+		case RENDERAPI_VULKAN:
+		{
+			VulkanSampler* sampler = new VulkanSampler(mContext);
+			return sampler;
 		}
 		case RENDERAPI_NONE:
 		{

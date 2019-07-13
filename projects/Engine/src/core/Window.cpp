@@ -47,7 +47,7 @@ Window::Window(const WindowProperties& aProps)
 	}
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-//	glfwWindowHint(GLFW_RESIZABLE, false);
+	glfwWindowHint(GLFW_RESIZABLE, false);
 
 	if(mData.fullscreen)
 	{

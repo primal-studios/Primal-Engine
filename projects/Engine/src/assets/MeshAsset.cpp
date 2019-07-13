@@ -119,6 +119,8 @@ Mesh* MeshAsset::getMesh(const size_t aIndex)
 	{
 		return mMeshes[aIndex];
 	}
+
+	return nullptr;
 }
 
 void MeshAsset::_load()

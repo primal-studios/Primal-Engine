@@ -5,6 +5,8 @@
 #include "graphics/vk/VulkanSampler.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 
+#include "assets/TextureAsset.h"
+
 VulkanTexture::VulkanTexture(IGraphicsContext* aContext)
 	: ITexture(aContext), mSampler(nullptr)
 {

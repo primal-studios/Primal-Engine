@@ -1,0 +1,18 @@
+{
+    "flags" : 0,
+	"magfilter" : 1,
+	"minfilter" : 1,
+	"mipmapmode" : 1,
+	"addressmodeu" : 0,
+	"addressmodev" : 0,
+	"addressmodew" : 0,
+	"miplodbias" : 0.0,
+	"anisotropyenable" : false,
+	"maxanisotropy" : 16.0,
+	"compareenable" : false,
+	"compareop" : 7,
+	"minlod" : 0.0,
+	"maxlod" : 1.0,
+	"bordercolor" : 2,
+	"unnormalizedcoordinates" : false
+}

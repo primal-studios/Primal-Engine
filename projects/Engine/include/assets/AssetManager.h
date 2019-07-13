@@ -62,6 +62,11 @@ std::shared_ptr<T> AssetManager::load(const std::string& aName,
 {
 	static_assert(std::is_base_of<Asset, T>::value, "T is not derived from Asset");
 
+	if(get<T>(aName) != nullptr)
+	{
+		return get<T>(aName);
+	}
+
 	std::shared_ptr<T> asset = std::make_shared<T>(std::forward<Arguments>(aArgs)...);
 	asset->mName = aName;
 

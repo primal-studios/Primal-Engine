@@ -13,6 +13,7 @@
 
 class VulkanTexture final : public ITexture
 {
+		friend class VulkanCommandBuffer;
 	public:
 		explicit VulkanTexture(IGraphicsContext* aContext);
 		VulkanTexture(const VulkanTexture&) = delete;

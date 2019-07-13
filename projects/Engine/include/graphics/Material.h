@@ -1,17 +1,19 @@
 #ifndef material_h__
 #define material_h__
 
-#include "UniformBufferPool.h"
 #include "core/PrimalCast.h"
 
-#include "graphics/api/ICommandBuffer.h"
+#include "graphics/UniformBufferPool.h"
 #include "graphics/api/IDescriptorSet.h"
 #include "graphics/api/IGraphicsPipeline.h"
+#include "graphics/api/ITexture.h"
 
 class Material
 {
+	friend class VulkanCommandBuffer;
+
 	public:
-		Material(IGraphicsPipeline& aPipeline, const std::vector<UniformBufferObject*> aUBOs, Material* aParentMaterial = nullptr);
+		Material(IGraphicsPipeline& aPipeline, const std::vector<UniformBufferObject*>& aUBOs, const std::vector<ITexture*>& aTextures, Material* aParentMaterial = nullptr);
 		Material(const Material&) = delete;
 		Material(Material&&) noexcept = delete;
 		~Material();
@@ -19,7 +21,7 @@ class Material
 		Material& operator=(const Material&) = delete;
 		Material& operator=(Material&&) noexcept = delete;
 
-		bool isInstanced() const;
+		[[nodiscard]] bool isInstanced() const;
 		
 		template <typename T>
 		void setVariable(const std::string& aName, T aValue);
@@ -27,37 +29,39 @@ class Material
 		template <typename T>
 		T getVariable(const std::string& aName);
 
-		void use(ICommandBuffer* aBuffer);
-
 	private:
+		IGraphicsPipeline& mPipeline;
 		Material* mParentMaterial = nullptr;
+		std::vector<std::pair<void*, uint32_t>> mData;
 
 		IDescriptorSet* mSet;
-		std::unordered_map<std::string, void*> mVariableData;
+		std::unordered_map<std::string, std::pair<uint32_t, std::pair<UniformBufferObjectElement*, UniformBufferObject*>>> mVariableData;
 		std::vector<UniformBufferObject*> mUBOs;
+		std::vector<ITexture*> mTextures;
 };
 
 template <typename T>
 void Material::setVariable(const std::string& aName, T aValue)
 {
-	mVariableData[aName] = aValue;
-	for(const auto& ubo : mUBOs)
+	const auto it = mVariableData.find(aName);
+	if (it == mVariableData.end())
 	{
-		const auto element = ubo->getElement(aName);
-		if(element != nullptr)
-		{
-			ubo->getBuffer()->setData(aValue, element->offset, element->size);
-		}
+		PRIMAL_ERROR("Could not find variable named: {}", aName.c_str());
+	}
+	else
+	{
+		const uint32_t buf = it->second.first;
+		std::pair<UniformBufferObjectElement*, UniformBufferObject*> bufferInfo = it->second.second;
+		char* buffer = static_cast<char*>(mData[buf].first);
+		memcpy(buffer + bufferInfo.first->offset, &aValue, bufferInfo.first->size);
 	}
 }
 
 template <typename T>
 T Material::getVariable(const std::string& aName)
 {
-	if (mVariableData.find(aName) == mVariableData.end())
-		return primal_cast<T>(0);
-
-	return primal_cast<T>(mVariableData[aName]);
+	// TODO: getting the variable from the correct buffer
+	return T();
 }
 
 #endif // material_h__

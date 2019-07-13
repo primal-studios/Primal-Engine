@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "assets/Asset.h"
+#include "graphics/api/ISampler.h"
+#include "graphics/api/ITexture.h"
 
 struct ImageFile
 {
@@ -23,6 +25,9 @@ class TextureAsset final : public Asset
 
 		ImageFile getData() const;
 
+		ITexture* getTexture() const;
+		ISampler* getSampler() const;
+
 	private:
 		void _load() override;
 
@@ -30,6 +35,9 @@ class TextureAsset final : public Asset
 		uint32_t mDesiredChannels;
 
 		ImageFile mFile;
+
+		ITexture* mTexture;
+		ISampler* mSampler;
 };
 
 #endif // textureasset_h__

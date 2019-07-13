@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 
 #include "graphics/api/IGraphicsPipeline.h"
+#include "VulkanPipelineLayout.h"
 
 class VulkanGraphicsPipeline final : public IGraphicsPipeline
 {
@@ -22,6 +23,7 @@ class VulkanGraphicsPipeline final : public IGraphicsPipeline
 
 		GraphicsPipelineCreateInfo& getCreateInfo() override;
 		VkPipeline getHandle() const;
+		VulkanPipelineLayout* getLayout() const;
 	private:
 		void _destroy() const;
 

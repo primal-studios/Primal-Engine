@@ -71,6 +71,8 @@ class RenderSystem final : public System
 		VulkanTexture* mTexture2;
 		VulkanSampler* mSampler;
 
+		Material* mMaterial;
+
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};
 

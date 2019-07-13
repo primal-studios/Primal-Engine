@@ -10,6 +10,10 @@
 #include <algorithm>
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
+#include "graphics/vk/VulkanDescriptorSet.h"
+#include "graphics/vk/VulkanUniformBuffer.h"
+#include "graphics/vk/VulkanTexture.h"
+#include "graphics/vk/VulkanPipelineLayout.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(IGraphicsContext* aContext)
 	: ICommandBuffer(aContext), mContext(aContext)
@@ -186,7 +190,7 @@ void VulkanCommandBuffer::bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBi
 	std::vector<VkBuffer> buffers;
 	for(const auto& b : aBuffers)
 	{
-		VulkanVertexBuffer* vkBuffer = static_cast<VulkanVertexBuffer*>(b);
+		VulkanVertexBuffer* vkBuffer = primal_cast<VulkanVertexBuffer*>(b);
 		buffers.push_back(vkBuffer->getHandle());
 	}
 	vkCmdBindVertexBuffers(mBuffer, aFirstBinding, aBindingCount, buffers.data(), aOffsets.data());
@@ -194,8 +198,48 @@ void VulkanCommandBuffer::bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBi
 
 void VulkanCommandBuffer::bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType)
 {
-	VulkanIndexBuffer* iBuffer = static_cast<VulkanIndexBuffer*>(aBuffer);
+	VulkanIndexBuffer* iBuffer = primal_cast<VulkanIndexBuffer*>(aBuffer);
 	vkCmdBindIndexBuffer(mBuffer, iBuffer->getHandle(), aOffset, static_cast<VkIndexType>(aType));
+}
+
+void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFrame)
+{
+	const VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aMaterial->mSet)->getHandle(aFrame);
+	
+	std::vector<VkWriteDescriptorSet> writeSets;
+
+	for (UniformBufferObject* ubo : aMaterial->mUBOs)
+	{
+		VulkanUniformBuffer* vubo = primal_cast<VulkanUniformBuffer*>(ubo->getBuffer());
+		OffsetSize sz = { ubo->getOffset(), ubo->getSize() };
+		auto writeDesc = vubo->getWriteDescriptor(ubo->getBindingPoint(), sz);
+		auto writeDescSet = writeDesc.getWriteDescriptorSet();
+		writeDescSet.dstSet = set;
+		writeSets.push_back(writeDescSet);
+	}
+
+	for (ITexture* tex : aMaterial->mTextures)
+	{
+		VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex);
+		auto writeDesc = vtex->getWriteDescriptor(0, {});
+		auto writeDescSet = writeDesc.getWriteDescriptorSet();
+		writeDescSet.dstSet = set;
+		writeSets.push_back(writeDescSet);
+	}
+
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+
+	uint32_t i = 0;
+	for (const auto ubo : aMaterial->mUBOs)
+	{
+		ubo->getBuffer()->setData(aMaterial->mData[i++].first, 0, ubo->getSize());
+	}
+
+	vkUpdateDescriptorSets(context->getDevice(), static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
+
+	VulkanGraphicsPipeline& pipeline = static_cast<VulkanGraphicsPipeline&>(aMaterial->mPipeline);
+	VulkanPipelineLayout* layout = pipeline.getLayout();
+	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), 0, 1, &set, 0, nullptr);
 }
 
 void VulkanCommandBuffer::draw(const uint32_t aVertexCount, const uint32_t aInstanceCount, const uint32_t aFirstVertex,

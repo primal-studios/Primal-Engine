@@ -344,6 +344,11 @@ VkPipeline VulkanGraphicsPipeline::getHandle() const
 	return mPipeline;
 }
 
+VulkanPipelineLayout* VulkanGraphicsPipeline::getLayout() const
+{
+	return primal_cast<VulkanPipelineLayout*>(mCreateInfo.layout);
+}
+
 void VulkanGraphicsPipeline::_destroy() const
 {
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);

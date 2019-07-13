@@ -15,6 +15,7 @@
 #include "graphics/vk/VulkanDescriptorPool.h"
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 #include "graphics/vk/VulkanDescriptorSet.h"
+#include "assets/TextureAsset.h"
 
 #include <stb/stb_image.h>
 
@@ -74,12 +75,7 @@ RenderSystem::~RenderSystem()
 	AssetManager::instance().unloadAll();
 
 	delete mSet;
-	delete mSet2;
 
-	delete mTexture;
-	delete mTexture2;
-	delete mSampler;
-//	delete mLayout;
 	delete mSetLayout;
 
 	delete mSwapChain;
@@ -94,13 +90,9 @@ RenderSystem::~RenderSystem()
 	delete[] mPrimaryBuffer;
 
 	delete mUboObject0;
-	delete mUboObject1;
 	delete mUboPool;
 
 	delete mDescriptorPool;
-
-//	delete mGraphicsPipeline;
-//	delete mRenderPass;
 
 	{
 		mShaderAsset = nullptr;
@@ -263,21 +255,11 @@ void RenderSystem::initialize()
 
 	mUboPool = new UniformBufferPool(1, sizeof(UBO), 0, uniformBufferCreateInfo, elements);
 	mUboObject0 = mUboPool->acquire(0);
-	mUboObject1 = mUboPool->acquire(1);
 
-	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/shawn.png", STBI_rgb_alpha);
-	auto texAsset2 = AssetManager::instance().load<TextureAsset>("test", "data/textures/test.jpg", STBI_rgb_alpha);
+	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/Shawn.json", STBI_rgb_alpha);
+	mTexture = primal_cast<VulkanTexture*>(texAsset->getTexture());
 
-	mSampler = new VulkanSampler(mContext);
-	mSampler->construct({ 0, EFilter::LINEAR, EFilter::LINEAR, ESamplerMipmapMode::LINEAR, ESamplerAddressMode::REPEAT,
-	ESamplerAddressMode::REPEAT , ESamplerAddressMode::REPEAT , 0.0f, false, 16.0f, false, ECompareOp::COMPARE_OP_ALWAYS,
-	0, 1, EBorderColor::FLOAT_OPAQUE_BLACK, false });
-
-	mTexture = new VulkanTexture(mContext);
-	mTexture->construct({ texAsset.get(), mSampler, 2, mDescriptorPool });
-
-	mTexture2 = new VulkanTexture(mContext);
-	mTexture2->construct({ texAsset2.get(), mSampler, 2, mDescriptorPool });
+	mMaterial = new Material(*mGraphicsPipeline, { mUboObject0 }, { mTexture }, nullptr);
 
 	mSetLayout = new VulkanDescriptorSetLayout(mContext);
 	mSetLayout->construct({ 0, {VulkanUniformBuffer::getDescriptorSetLayout(0, VK_SHADER_STAGE_VERTEX_BIT, 1), VulkanTexture::getDescriptorSetLayout(1, VK_SHADER_STAGE_FRAGMENT_BIT, 1)} });
@@ -289,9 +271,6 @@ void RenderSystem::initialize()
 
 	mSet = new VulkanDescriptorSet(mContext);
 	mSet->construct(setCreateInfo);
-
-	mSet2 = new VulkanDescriptorSet(mContext);
-	mSet2->construct(setCreateInfo);
 
 	mGraphicsPipeline = mShaderAsset->getPipeline();
 }
@@ -344,24 +323,23 @@ void RenderSystem::render()
 	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
 	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT16);
 
-	std::vector<VkDescriptorSet> setList;
-	VkDescriptorSet set = mSet->getHandle(mCurrentFrame);
-	VkDescriptorSet set2 = mSet2->getHandle(mCurrentFrame);
-
-	OffsetSize offset = { 0, sizeof(UBO) };
-	auto uniformWriteDescHolder = primal_cast<VulkanUniformBuffer*>(mUboObject0->getBuffer())->getWriteDescriptor(0, offset);
-	auto uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
-	uniformWriteDesc.dstSet = set;
-
-	auto textureWriteDescHolder = mTexture->getWriteDescriptor(1, {});
-	auto textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
-	textureWriteDesc.dstSet = set;
-
-	std::vector<VkWriteDescriptorSet> writeSets;
-	writeSets.push_back(uniformWriteDesc);
-	writeSets.push_back(textureWriteDesc);
-
-	vkUpdateDescriptorSets(mContext->getDevice(), static_cast<size_t>(writeSets.size()), writeSets.data(), 0, nullptr);
+//	std::vector<VkDescriptorSet> setList;
+//	VkDescriptorSet set = mSet->getHandle(mCurrentFrame);
+//
+//	OffsetSize offset = { 0, sizeof(UBO) };
+//	auto uniformWriteDescHolder = primal_cast<VulkanUniformBuffer*>(mUboObject0->getBuffer())->getWriteDescriptor(0, offset);
+//	auto uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
+//	uniformWriteDesc.dstSet = set;
+//
+//	auto textureWriteDescHolder = mTexture->getWriteDescriptor(1, {});
+//	auto textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
+//	textureWriteDesc.dstSet = set;
+//
+//	std::vector<VkWriteDescriptorSet> writeSets;
+//	writeSets.push_back(uniformWriteDesc);
+//	writeSets.push_back(textureWriteDesc);
+//
+//	vkUpdateDescriptorSets(mContext->getDevice(), static_cast<size_t>(writeSets.size()), writeSets.data(), 0, nullptr);
 
 	UBO u = {};
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
@@ -371,42 +349,18 @@ void RenderSystem::render()
 
 	angle += 0.0001f;
 
-	mUboObject0->getBuffer()->setData(&u, 0, sizeof(UBO));
+	mMaterial->setVariable<Matrix4f>("proj", u.proj);
+	mMaterial->setVariable<Matrix4f>("view", u.view);
+	mMaterial->setVariable<Matrix4f>("model", u.model);
 
-	setList.push_back(set);
+	handle->bindMaterial(mMaterial, mCurrentFrame);
 
-	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, primal_cast<VulkanPipelineLayout*>(mShaderAsset->getLayout())->getHandle(), 0, 
-		1, &setList[0], 0, nullptr);
-
-	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
-
-	offset = { sizeof(UBO), sizeof(UBO) };
-	uniformWriteDescHolder = primal_cast<VulkanUniformBuffer*>(mUboObject1->getBuffer())->getWriteDescriptor(0, offset);
-	uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
-	uniformWriteDesc.dstSet = set2;
-
-	textureWriteDescHolder = mTexture2->getWriteDescriptor(1, {});
-	textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
-	textureWriteDesc.dstSet = set2;
-
-	writeSets.clear();
-	writeSets.push_back(uniformWriteDesc);
-	writeSets.push_back(textureWriteDesc);
-
-	vkUpdateDescriptorSets(mContext->getDevice(), static_cast<size_t>(writeSets.size()), writeSets.data(), 0, nullptr);
-
-	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
-	u.view = Matrix4f::lookAt(Vector3f(20, 20, 20), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
-	u.model = Matrix4f::identity();
-	u.model = Matrix4f::translate(u.model, Vector3f(15, 0, 0));
-
-	mUboObject1->getBuffer()->setData(&u, sizeof(UBO), sizeof(UBO));
-
-	setList.clear();
-	setList.push_back(set2);
-
-	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, primal_cast<VulkanPipelineLayout*>(mShaderAsset->getLayout())->getHandle(), 0,
-		1, &setList[0], 0, nullptr);
+//	mUboObject0->getBuffer()->setData(&u, 0, sizeof(UBO));
+//
+//	setList.push_back(set);
+//
+//	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, primal_cast<VulkanPipelineLayout*>(mShaderAsset->getLayout())->getHandle(), 0, 
+//		1, &setList[0], 0, nullptr);
 
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 

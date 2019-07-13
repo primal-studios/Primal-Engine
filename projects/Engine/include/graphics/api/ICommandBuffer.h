@@ -2,16 +2,17 @@
 #define icommandbuffer_h__
 
 #include "graphics/ClearValue.h"
+#include "graphics/Material.h"
 #include "graphics/api/ICommandPool.h"
 #include "graphics/api/IFramebuffer.h"
 #include "graphics/api/IGraphicsContext.h"
 #include "graphics/api/IGraphicsPipeline.h"
+#include "graphics/api/IIndexBuffer.h"
 #include "graphics/api/IRenderPass.h"
+#include "graphics/api/IVertexBuffer.h"
 #include "math/Vector4.h"
 
 #include <cstdint>
-#include "graphics/api/IVertexBuffer.h"
-#include "graphics/api/IIndexBuffer.h"
 
 struct CommandBufferCreateInfo
 {
@@ -103,6 +104,7 @@ class ICommandBuffer
 		virtual void bindGraphicsPipeline(IGraphicsPipeline*) = 0;
 		virtual void bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount, std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets) = 0;
 		virtual void bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType) = 0;
+		virtual void bindMaterial(Material* aMaterial, uint32_t aFrame) = 0;
 
 		virtual void draw(uint32_t aVertexCount, uint32_t aInstanceCount = 1, uint32_t aFirstVertex = 0, uint32_t aFirstInstance = 0) = 0;
 		virtual void drawIndexed(uint32_t aIndexCount, uint32_t aInstanceCount = 1, uint32_t aFirstIndex = 0, int32_t aVertexOffset = 0, uint32_t aFirstInstance = 0) = 0;

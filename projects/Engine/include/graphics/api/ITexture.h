@@ -5,16 +5,13 @@
 #include "graphics/api/IImage.h"
 #include "graphics/api/IImageView.h"
 #include "graphics/api/ISampler.h"
-#include "assets/TextureAsset.h"
 #include "graphics/api/IDescriptorPool.h"
 
+class TextureAsset;
 struct TextureCreateInfo
 {
 	TextureAsset* textureAsset;
 	ISampler* sampler;
-
-	uint32_t framesInFlight;
-	IDescriptorPool* descriptorPool;
 };
 
 class ITexture

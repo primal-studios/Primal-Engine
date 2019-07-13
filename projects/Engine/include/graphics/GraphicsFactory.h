@@ -13,6 +13,7 @@
 #include "graphics/api/IVertexBuffer.h"
 
 #include <vector>
+#include "api/ITexture.h"
 
 enum ERenderAPI : uint32_t
 {
@@ -33,8 +34,10 @@ class GraphicsFactory
 		[[nodiscard]] IIndexBuffer* createIndexBuffer() const;
 		[[nodiscard]] IPipelineLayout* createPipelineLayout() const;
 		[[nodiscard]] IRenderPass* createRenderPass() const;
+		[[nodiscard]] ISampler* createSampler() const;
 		[[nodiscard]] IShaderModule* createShaderModule() const;
 		[[nodiscard]] IShaderStage* createShaderStage() const;
+		[[nodiscard]] ITexture* createTexture() const;
 		[[nodiscard]] IUniformBuffer* createUniformBuffer() const;
 		[[nodiscard]] IVertexBuffer* createVertexBuffer() const;
 

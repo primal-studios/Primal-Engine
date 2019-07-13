@@ -1,9 +1,14 @@
 #include "assets/TextureAsset.h"
 #include "core/Types.h"
 #include "filesystem/FileSystem.h"
+#include "assets/AssetManager.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #include "core/Log.h"
+#include <json/json.hpp>
+#include "assets/SamplerAsset.h"
+#include "graphics/vk/VulkanTexture.h"
+#include "graphics/GraphicsFactory.h"
 
 TextureAsset::TextureAsset(const std::string& aPath, const uint32_t aDesiredChannels)
 {
@@ -14,7 +19,7 @@ TextureAsset::TextureAsset(const std::string& aPath, const uint32_t aDesiredChan
 
 TextureAsset::~TextureAsset()
 {
-	
+	delete mTexture;
 }
 
 ImageFile TextureAsset::getData() const
@@ -22,10 +27,30 @@ ImageFile TextureAsset::getData() const
 	return mFile;
 }
 
+ITexture* TextureAsset::getTexture() const
+{
+	return mTexture;
+}
+
+ISampler* TextureAsset::getSampler() const
+{
+	return mSampler;
+}
+
 void TextureAsset::_load()
 {
 	Path loadPath = FileSystem::instance().getMountedDirectory();
-	loadPath += mPath;
+
+	const std::string jsonData = FileSystem::instance().loadToString(mPath);
+	const auto jsonValue = nlohmann::json::parse(jsonData);
+
+	const std::string samplerName = jsonValue["samplername"];
+	auto sampler = AssetManager::instance().load<SamplerAsset>(samplerName, samplerName);
+
+	mSampler = sampler->getSampler();
+
+	const std::string textureFileName = jsonValue["texturefile"];
+	loadPath += textureFileName;
 
 	int x, y, channels;
 	auto widePath = loadPath.native();
@@ -33,7 +58,7 @@ void TextureAsset::_load()
 	std::vector<char> convertedPath;
 	convertedPath.reserve(widePath.size());
 
-	std::string s = "";
+	std::string s;
 
 	for (const auto& c : widePath)
 	{
@@ -57,4 +82,11 @@ void TextureAsset::_load()
 	mFile.channels = mDesiredChannels;
 	mFile.width = x;
 	mFile.height = y;
+
+	TextureCreateInfo textureCreateInfo = {};
+	textureCreateInfo.sampler = mSampler;
+	textureCreateInfo.textureAsset = this;
+
+	mTexture = GraphicsFactory::instance().createTexture();
+	mTexture->construct(textureCreateInfo);
 }
