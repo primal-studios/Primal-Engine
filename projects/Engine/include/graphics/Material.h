@@ -13,7 +13,7 @@ class Material
 	friend class VulkanCommandBuffer;
 
 	public:
-		Material(IGraphicsPipeline& aPipeline, const std::vector<UniformBufferObject*>& aUBOs, const std::vector<ITexture*>& aTextures, Material* aParentMaterial = nullptr);
+		Material(IGraphicsPipeline& aPipeline, IDescriptorPool* aPool, const std::vector<UniformBufferObject*>& aUBOs, const std::vector<ITexture*>& aTextures, Material* aParentMaterial = nullptr);
 		Material(const Material&) = delete;
 		Material(Material&&) noexcept = delete;
 		~Material();
@@ -38,6 +38,7 @@ class Material
 		std::unordered_map<std::string, std::pair<uint32_t, std::pair<UniformBufferObjectElement*, UniformBufferObject*>>> mVariableData;
 		std::vector<UniformBufferObject*> mUBOs;
 		std::vector<ITexture*> mTextures;
+		IDescriptorSetLayout* mLayout = nullptr;
 };
 
 template <typename T>

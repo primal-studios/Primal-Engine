@@ -212,7 +212,7 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 	{
 		VulkanUniformBuffer* vubo = primal_cast<VulkanUniformBuffer*>(ubo->getBuffer());
 		OffsetSize sz = { ubo->getOffset(), ubo->getSize() };
-		auto writeDesc = vubo->getWriteDescriptor(ubo->getBindingPoint(), sz);
+		WriteDescriptorSet writeDesc = vubo->getWriteDescriptor(ubo->getBindingPoint(), sz);
 		auto writeDescSet = writeDesc.getWriteDescriptorSet();
 		writeDescSet.dstSet = set;
 		writeSets.push_back(writeDescSet);
@@ -221,21 +221,29 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 	for (ITexture* tex : aMaterial->mTextures)
 	{
 		VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex);
-		auto writeDesc = vtex->getWriteDescriptor(0, {});
+		auto writeDesc = vtex->getWriteDescriptor(tex->getBindingPoint(), {});
 		auto writeDescSet = writeDesc.getWriteDescriptorSet();
 		writeDescSet.dstSet = set;
 		writeSets.push_back(writeDescSet);
 	}
 
-	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+//	OffsetSize offset = { 0, aMaterial->mUBOs[0]->getSize() };
+//	auto uniformWriteDescHolder = primal_cast<VulkanUniformBuffer*>(aMaterial->mUBOs[0]->getBuffer())->getWriteDescriptor(0, offset);
+//	auto uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
+//	uniformWriteDesc.dstSet = primal_cast<VulkanDescriptorSet*>(aMaterial->mSet)->getHandle(aFrame);
+//	auto textureWriteDescHolder = primal_cast<VulkanTexture*>(aMaterial->mTextures[0])->getWriteDescriptor(1, {});
+//	auto textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
+//	textureWriteDesc.dstSet = primal_cast<VulkanDescriptorSet*>(aMaterial->mSet)->getHandle(aFrame);
+//	writeSets.push_back(uniformWriteDesc);
+//	writeSets.push_back(textureWriteDesc);
 
-	uint32_t i = 0;
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	vkUpdateDescriptorSets(context->getDevice(), static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
+
 	for (const auto ubo : aMaterial->mUBOs)
 	{
-		ubo->getBuffer()->setData(aMaterial->mData[i++].first, 0, ubo->getSize());
+		ubo->getBuffer()->setData(aMaterial->mData[ubo->getBindingPoint()].first, 0, ubo->getSize());
 	}
-
-	vkUpdateDescriptorSets(context->getDevice(), static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
 
 	VulkanGraphicsPipeline& pipeline = static_cast<VulkanGraphicsPipeline&>(aMaterial->mPipeline);
 	VulkanPipelineLayout* layout = pipeline.getLayout();

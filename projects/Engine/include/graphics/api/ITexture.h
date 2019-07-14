@@ -12,6 +12,8 @@ struct TextureCreateInfo
 {
 	TextureAsset* textureAsset;
 	ISampler* sampler;
+	ShaderStageFlags shaderStageAccess;
+	uint32_t binding;
 };
 
 class ITexture
@@ -26,9 +28,8 @@ class ITexture
 		ITexture& operator=(ITexture&&) noexcept = delete;
 
 		virtual void construct(const TextureCreateInfo&) = 0;
-
-		virtual void bind(const uint32_t aBinding = 0) = 0;
-
+		virtual ShaderStageFlags getStageFlags() const = 0;
+		virtual uint32_t getBindingPoint() const = 0;
 	protected:
 		IGraphicsContext* mContext;
 };

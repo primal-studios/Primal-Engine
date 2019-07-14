@@ -13,21 +13,18 @@
 #include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanDescriptorPool.h"
-#include "graphics/vk/VulkanDescriptorSetLayout.h"
-#include "graphics/vk/VulkanDescriptorSet.h"
 #include "assets/TextureAsset.h"
 
 #include <stb/stb_image.h>
 
 #include "assets/AssetManager.h"
-#include "graphics/vk/VulkanSampler.h"
 #include "assets/MeshAsset.h"
 #include "assets/ShaderAsset.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
-	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mLayout(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
-	  mDescriptorPool(nullptr), mUboObject0(nullptr), mUboObject1(nullptr), mUboPool(nullptr), mSet(nullptr),
-	  mSet2(nullptr), mSetLayout(nullptr), mTexture(nullptr), mTexture2(nullptr), mSampler(nullptr), mWindow(aWindow)
+	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
+	  mDescriptorPool(nullptr), mUboObject0(nullptr), mUboPool(nullptr), mSet(nullptr),
+	  mTexture(nullptr), mTexture2(nullptr), mSampler(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -76,8 +73,6 @@ RenderSystem::~RenderSystem()
 
 	delete mSet;
 
-	delete mSetLayout;
-
 	delete mSwapChain;
 
 	for (uint32_t i = 0; i < mFlightSize; i++)
@@ -91,6 +86,7 @@ RenderSystem::~RenderSystem()
 
 	delete mUboObject0;
 	delete mUboPool;
+	delete mMaterial;
 
 	delete mDescriptorPool;
 
@@ -254,25 +250,13 @@ void RenderSystem::initialize()
 	std::vector<UniformBufferObjectElement*> elements = { modl, view, proj, mvp };
 
 	mUboPool = new UniformBufferPool(1, sizeof(UBO), 0, uniformBufferCreateInfo, elements);
-	mUboObject0 = mUboPool->acquire(0);
+	mUboObject0 = mUboPool->acquire();
 
 	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/Shawn.json", STBI_rgb_alpha);
 	mTexture = primal_cast<VulkanTexture*>(texAsset->getTexture());
 
-	mMaterial = new Material(*mGraphicsPipeline, { mUboObject0 }, { mTexture }, nullptr);
-
-	mSetLayout = new VulkanDescriptorSetLayout(mContext);
-	mSetLayout->construct({ 0, {VulkanUniformBuffer::getDescriptorSetLayout(0, VK_SHADER_STAGE_VERTEX_BIT, 1), VulkanTexture::getDescriptorSetLayout(1, VK_SHADER_STAGE_FRAGMENT_BIT, 1)} });
-
-	DescriptorSetCreateInfo setCreateInfo = {};
-	setCreateInfo.pool = mDescriptorPool;
-	setCreateInfo.setLayouts.push_back(mSetLayout);
-	setCreateInfo.setLayouts.push_back(mSetLayout);
-
-	mSet = new VulkanDescriptorSet(mContext);
-	mSet->construct(setCreateInfo);
-
 	mGraphicsPipeline = mShaderAsset->getPipeline();
+	mMaterial = new Material(*mGraphicsPipeline, mDescriptorPool, { mUboObject0 }, { mTexture }, nullptr);
 }
 
 void RenderSystem::preRender()
@@ -323,24 +307,6 @@ void RenderSystem::render()
 	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
 	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT16);
 
-//	std::vector<VkDescriptorSet> setList;
-//	VkDescriptorSet set = mSet->getHandle(mCurrentFrame);
-//
-//	OffsetSize offset = { 0, sizeof(UBO) };
-//	auto uniformWriteDescHolder = primal_cast<VulkanUniformBuffer*>(mUboObject0->getBuffer())->getWriteDescriptor(0, offset);
-//	auto uniformWriteDesc = uniformWriteDescHolder.getWriteDescriptorSet();
-//	uniformWriteDesc.dstSet = set;
-//
-//	auto textureWriteDescHolder = mTexture->getWriteDescriptor(1, {});
-//	auto textureWriteDesc = textureWriteDescHolder.getWriteDescriptorSet();
-//	textureWriteDesc.dstSet = set;
-//
-//	std::vector<VkWriteDescriptorSet> writeSets;
-//	writeSets.push_back(uniformWriteDesc);
-//	writeSets.push_back(textureWriteDesc);
-//
-//	vkUpdateDescriptorSets(mContext->getDevice(), static_cast<size_t>(writeSets.size()), writeSets.data(), 0, nullptr);
-
 	UBO u = {};
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
 	u.view = Matrix4f::lookAt(Vector3f(20, 20, 20), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
@@ -354,13 +320,6 @@ void RenderSystem::render()
 	mMaterial->setVariable<Matrix4f>("model", u.model);
 
 	handle->bindMaterial(mMaterial, mCurrentFrame);
-
-//	mUboObject0->getBuffer()->setData(&u, 0, sizeof(UBO));
-//
-//	setList.push_back(set);
-//
-//	vkCmdBindDescriptorSets(handle->getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, primal_cast<VulkanPipelineLayout*>(mShaderAsset->getLayout())->getHandle(), 0, 
-//		1, &setList[0], 0, nullptr);
 
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
@@ -553,8 +512,6 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
 	depthState.stencilTestEnable = false;
 	depthState.front = {};
 	depthState.back = {};
-
-	mLayout->construct({ 0, {mSetLayout}, {} });
 
 	GraphicsPipelineCreateInfo createInfo = {};
 	createInfo.flags = 0;

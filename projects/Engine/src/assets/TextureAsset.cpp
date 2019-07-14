@@ -49,6 +49,9 @@ void TextureAsset::_load()
 
 	mSampler = sampler->getSampler();
 
+	uint32_t bindingPoint = jsonValue["bindingpoint"];
+	uint32_t shaderStage = jsonValue["shaderstage"];
+
 	const std::string textureFileName = jsonValue["texturefile"];
 	loadPath += textureFileName;
 
@@ -86,6 +89,8 @@ void TextureAsset::_load()
 	TextureCreateInfo textureCreateInfo = {};
 	textureCreateInfo.sampler = mSampler;
 	textureCreateInfo.textureAsset = this;
+	textureCreateInfo.binding = bindingPoint;
+	textureCreateInfo.shaderStageAccess = shaderStage;
 
 	mTexture = GraphicsFactory::instance().createTexture();
 	mTexture->construct(textureCreateInfo);

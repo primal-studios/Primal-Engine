@@ -10,23 +10,29 @@ class WriteDescriptorSet
 {
 	public:
 		WriteDescriptorSet(const VkWriteDescriptorSet& aWriteDescriptorSet, const VkDescriptorImageInfo& aImageInfo)
-			: mWriteDescriptorSet(aWriteDescriptorSet), mImageInfo(std::make_unique<VkDescriptorImageInfo>(aImageInfo))
+			: mWriteDescriptorSet(aWriteDescriptorSet)
 		{
-			mWriteDescriptorSet.pImageInfo = mImageInfo.get();
+			mWriteDescriptorSet.pImageInfo = new VkDescriptorImageInfo(aImageInfo);
 		}
 
 		WriteDescriptorSet(const VkWriteDescriptorSet& aWriteDescriptorSet, const VkDescriptorBufferInfo& aImageInfo)
-			: mWriteDescriptorSet(aWriteDescriptorSet), mBufferInfo(std::make_unique<VkDescriptorBufferInfo>(aImageInfo))
+			: mWriteDescriptorSet(aWriteDescriptorSet)
 		{
-			mWriteDescriptorSet.pBufferInfo = mBufferInfo.get();
+			mWriteDescriptorSet.pBufferInfo = new VkDescriptorBufferInfo(aImageInfo);
+		}
+
+		~WriteDescriptorSet()
+		{
+			delete mImageInfo;
+			delete mBufferInfo;
 		}
 
 		const VkWriteDescriptorSet& getWriteDescriptorSet() const { return mWriteDescriptorSet; }
 
 	private:
 		VkWriteDescriptorSet mWriteDescriptorSet;
-		std::unique_ptr<VkDescriptorImageInfo> mImageInfo;
-		std::unique_ptr<VkDescriptorBufferInfo> mBufferInfo;
+		VkDescriptorImageInfo* mImageInfo = nullptr;
+		VkDescriptorBufferInfo* mBufferInfo = nullptr;
 };
 
 class VulkanDescriptorSet final : public IDescriptorSet

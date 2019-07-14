@@ -1,4 +1,6 @@
 {
 	"samplername" : "name",
-	"texturefile" : "file"
+	"texturefile" : "file",
+	"shaderstage" : 0,
+	"bindingpoint" : 0
 }

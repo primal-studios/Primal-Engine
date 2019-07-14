@@ -22,6 +22,9 @@ VulkanTexture::~VulkanTexture()
 
 void VulkanTexture::construct(const TextureCreateInfo& aInfo)
 {
+	mBindingPoint = aInfo.binding;
+	mStages = aInfo.shaderStageAccess;
+
 	mImage = new VulkanImage(mContext);
 	const uint32_t size = aInfo.textureAsset->getData().channels * (aInfo.textureAsset->getData().height * aInfo.textureAsset->getData().width);
 	mImage->setData(&aInfo.textureAsset->getData().payload[0], size);
@@ -35,11 +38,6 @@ void VulkanTexture::construct(const TextureCreateInfo& aInfo)
 	mImageView = new VulkanImageView(mContext);
 	mImageView->construct({ mImage, EDataFormat::R8G8B8A8_UNORM, EImageViewType::IMAGE_VIEW_TYPE_2D, {EImageAspectFlagBits::IMAGE_ASPECT_COLOR,
 	0, 1, 0, 1} });
-}
-
-void VulkanTexture::bind(const uint32_t aBinding)
-{
-
 }
 
 DescriptorSetLayoutBinding VulkanTexture::getDescriptorSetLayout(const uint32_t aBinding,
@@ -74,4 +72,14 @@ WriteDescriptorSet VulkanTexture::getWriteDescriptor(const uint32_t aBinding,
 	descriptorWrite.pImageInfo = &imageInfo;
 
 	return { descriptorWrite, imageInfo };
+}
+
+ShaderStageFlags VulkanTexture::getStageFlags() const
+{
+	return mStages;
+}
+
+uint32_t VulkanTexture::getBindingPoint() const
+{
+	return mBindingPoint;
 }

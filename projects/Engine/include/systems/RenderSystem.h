@@ -60,12 +60,9 @@ class RenderSystem final : public System
 		VulkanDescriptorPool* mDescriptorPool;
 
 		UniformBufferObject* mUboObject0;
-		UniformBufferObject* mUboObject1;
 		UniformBufferPool* mUboPool;
 
 		VulkanDescriptorSet* mSet;
-		VulkanDescriptorSet* mSet2;
-		VulkanDescriptorSetLayout* mSetLayout;
 
 		VulkanTexture* mTexture;
 		VulkanTexture* mTexture2;

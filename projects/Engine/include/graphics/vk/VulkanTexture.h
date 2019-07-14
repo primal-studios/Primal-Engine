@@ -25,16 +25,18 @@ class VulkanTexture final : public ITexture
 
 		void construct(const TextureCreateInfo& aInfo) override;
 
-		void bind(const uint32_t aBinding) override;
-
 		static DescriptorSetLayoutBinding getDescriptorSetLayout(const uint32_t aBinding, const VkShaderStageFlags aStage, const uint32_t aCount);
 
 		WriteDescriptorSet getWriteDescriptor(const uint32_t aBinding, const std::optional<OffsetSize>& aOffsetSize) const;
-
+		ShaderStageFlags getStageFlags() const override;
+		uint32_t getBindingPoint() const override;
 	private:
 		VulkanImage* mImage;
 		VulkanImageView* mImageView;
 		VulkanSampler* mSampler;
+
+		ShaderStageFlags mStages;
+		uint32_t mBindingPoint;
 };
 
 #endif // vulkantexture_h__

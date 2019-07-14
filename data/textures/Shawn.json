@@ -1,4 +1,6 @@
 {
     "samplername" : "data/samplers/ShawnSampler.json",
-    "texturefile" : "data/textures/shawn.png"
+    "texturefile" : "data/textures/shawn.png",
+    "shaderstage" : 16,
+    "bindingpoint" : 1
 }

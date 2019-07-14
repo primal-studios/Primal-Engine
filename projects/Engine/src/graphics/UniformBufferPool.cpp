@@ -80,8 +80,9 @@ UniformBufferObject* UniformBufferPool::acquire()
 		mFreeSlots.erase(slot);
 		return acquire(slot);
 	}
-
-	return acquire(mCursor++);
+	const auto res = acquire(mCursor);
+	mCursor++;
+	return res;
 }
 
 UniformBufferObject* UniformBufferPool::acquire(const uint32_t aIndex)
