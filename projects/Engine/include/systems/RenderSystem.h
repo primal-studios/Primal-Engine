@@ -17,7 +17,6 @@
 #include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanDescriptorPool.h"
 #include "graphics/vk/VulkanTexture.h"
-#include "graphics/vk/VulkanDescriptorSetLayout.h"
 
 #include "graphics/UniformBufferPool.h"
 #include "assets/ShaderAsset.h"
@@ -69,6 +68,8 @@ class RenderSystem final : public System
 		VulkanSampler* mSampler;
 
 		Material* mMaterial;
+		MaterialInstance* mMaterialInstance;
+		MaterialInstance* mMaterialInstance2;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};

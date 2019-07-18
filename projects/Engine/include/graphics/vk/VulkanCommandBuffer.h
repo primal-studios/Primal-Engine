@@ -35,6 +35,7 @@ class VulkanCommandBuffer final : public ICommandBuffer
 		void bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount, std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets) override;
 		void bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType) override;
 		void bindMaterial(Material* aMaterial, uint32_t aFrame) override;
+		void bindMaterialInstance(MaterialInstance* aInstance, uint32_t aFrame) override;
 
 		void draw(uint32_t aVertexCount, uint32_t aInstanceCount, uint32_t aFirstVertex, uint32_t aFirstInstance) override;
 		void drawIndexed(uint32_t aIndexCount, uint32_t aInstanceCount, uint32_t aFirstIndex, int32_t aVertexOffset, uint32_t aFirstInstance) override;
@@ -45,9 +46,9 @@ class VulkanCommandBuffer final : public ICommandBuffer
 		std::vector<VkSemaphore>& getSemaphoresToSignal();
 		std::vector<VkSemaphore>& getSemaphoresToWaitOn();
 		VkFence& getFence();
+
 	private:
 		void _destroy();
-
 		IGraphicsContext* mContext;
 		VkCommandBuffer mBuffer{};
 		VkCommandPool mPool{};

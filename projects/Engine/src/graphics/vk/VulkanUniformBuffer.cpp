@@ -68,7 +68,7 @@ DescriptorSetLayoutBinding VulkanUniformBuffer::getDescriptorSetLayout(const uin
 	DescriptorSetLayoutBinding binding = {};
 	binding.binding = aBinding;
 	binding.descriptorCount = 1;
-	binding.descriptorType = EDescriptorType::UNIFORM_BUFFER;
+	binding.descriptorType = EDescriptorType::UNIFORM_BUFFER_DYNAMIC;
 	binding.shaderStageFlags = aStage;
 
 	return binding;
@@ -93,7 +93,7 @@ WriteDescriptorSet VulkanUniformBuffer::getWriteDescriptor(const uint32_t aBindi
 	descriptorWrite.dstBinding = aBinding;
 	descriptorWrite.dstArrayElement = 0;
 	descriptorWrite.descriptorCount = 1;
-	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	descriptorWrite.pBufferInfo = &bufferInfo;
 
 	return { descriptorWrite, bufferInfo };

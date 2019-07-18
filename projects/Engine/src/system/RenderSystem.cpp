@@ -47,7 +47,7 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 	std::vector<DescriptorPoolSize> poolSizes;
 	DescriptorPoolSize uniformBufferSize{};
-	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER;
+	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER_DYNAMIC;
 	uniformBufferSize.count = 2;
 
 	DescriptorPoolSize combinedSamplerSize{};
@@ -86,6 +86,8 @@ RenderSystem::~RenderSystem()
 
 	delete mUboObject0;
 	delete mUboPool;
+	delete mMaterialInstance;
+	delete mMaterialInstance2;
 	delete mMaterial;
 
 	delete mDescriptorPool;
@@ -216,7 +218,7 @@ void RenderSystem::initialize()
 	UniformBufferCreateInfo uniformBufferCreateInfo = {};
 	uniformBufferCreateInfo.flags = 0;
 	uniformBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
-	uniformBufferCreateInfo.size = sizeof(UBO) * 2;
+	uniformBufferCreateInfo.size = 65536;
 	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
 	
 	UniformBufferObjectElement* modl = new UniformBufferObjectElement{
@@ -249,14 +251,21 @@ void RenderSystem::initialize()
 
 	std::vector<UniformBufferObjectElement*> elements = { modl, view, proj, mvp };
 
-	mUboPool = new UniformBufferPool(1, sizeof(UBO), 0, uniformBufferCreateInfo, elements);
+	mUboPool = new UniformBufferPool(65536 / sizeof(UBO), sizeof(UBO), 0, uniformBufferCreateInfo, elements);
 	mUboObject0 = mUboPool->acquire();
 
 	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/Shawn.json", STBI_rgb_alpha);
 	mTexture = primal_cast<VulkanTexture*>(texAsset->getTexture());
 
 	mGraphicsPipeline = mShaderAsset->getPipeline();
-	mMaterial = new Material(*mGraphicsPipeline, mDescriptorPool, { mUboObject0 }, { mTexture }, nullptr);
+	MaterialCreateInfo materialCreateInfo;
+	materialCreateInfo.layouts = { mUboPool };
+	materialCreateInfo.pipeline = mGraphicsPipeline;
+	materialCreateInfo.pool = mDescriptorPool;
+	materialCreateInfo.textures = { mTexture };
+	mMaterial = new Material(materialCreateInfo);
+	mMaterialInstance = mMaterial->createInstance();
+	mMaterialInstance2 = mMaterial->createInstance();
 }
 
 void RenderSystem::preRender()
@@ -309,18 +318,26 @@ void RenderSystem::render()
 
 	UBO u = {};
 	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
-	u.view = Matrix4f::lookAt(Vector3f(20, 20, 20), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+	u.view = Matrix4f::lookAt(Vector3f(40, 0, 40), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
 	u.model = Matrix4f::identity();
-	u.model = Matrix4f::rotate(u.model, Vector3f(0, 1, 0), angle);
+	u.model = Matrix4f::rotate(u.model, Vector3f(1, 1, 0), angle);
 
 	angle += 0.0001f;
 
-	mMaterial->setVariable<Matrix4f>("proj", u.proj);
-	mMaterial->setVariable<Matrix4f>("view", u.view);
-	mMaterial->setVariable<Matrix4f>("model", u.model);
+	mMaterialInstance->setVariable<Matrix4f>("proj", u.proj);
+	mMaterialInstance->setVariable<Matrix4f>("view", u.view);
+	mMaterialInstance->setVariable<Matrix4f>("model", u.model);
+
+	u.model = Matrix4f::identity();
+	u.model = Matrix4f::translate(u.model, Vector3f(0, 20, 0));
+	mMaterialInstance2->setVariable<Matrix4f>("proj", u.proj);
+	mMaterialInstance2->setVariable<Matrix4f>("view", u.view);
+	mMaterialInstance2->setVariable<Matrix4f>("model", u.model);
 
 	handle->bindMaterial(mMaterial, mCurrentFrame);
-
+	handle->bindMaterialInstance(mMaterialInstance, mCurrentFrame);
+	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+	handle->bindMaterialInstance(mMaterialInstance2, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
 	handle->endRenderPass();

@@ -54,7 +54,7 @@ UniformBufferPool::UniformBufferPool(const uint32_t aChunkSize, const uint32_t a
                                      std::vector<UniformBufferObjectElement*> aBufferElements)
 	: mCreateInfo(aUboCreateInfo), mBufferElements(std::move(aBufferElements)), mCursor(0), mChunkSize(aChunkSize), mStride(aStride), mBindingPoint(aBindingPoint)
 {
-	PRIMAL_ASSERT(aChunkSize * aUboCreateInfo.size < UboSize, "Requested a UBO that is too large.");
+	PRIMAL_ASSERT(aUboCreateInfo.size <= UboSize, "Requested a UBO that is too large.");
 }
 
 UniformBufferPool::~UniformBufferPool()
@@ -111,4 +111,29 @@ void UniformBufferPool::release(UniformBufferObject* aObject)
 	PRIMAL_ASSERT(searchIt != mBuffers.end(), "Found invalid buffer upon release.  The pool does not own this buffer.");
 	PRIMAL_ASSERT(aObject->getPoolIndex() < mCursor, "Invalid pool index in uniform buffer object.");
 	mFreeSlots.insert(aObject->getPoolIndex());
+}
+
+uint32_t UniformBufferPool::getBindingPoint() const
+{
+	return mBindingPoint;
+}
+
+uint32_t UniformBufferPool::getStrideSize() const
+{
+	return mStride;
+}
+
+std::vector<UniformBufferObjectElement*> UniformBufferPool::getElements() const
+{
+	return mBufferElements;
+}
+
+std::vector<IUniformBuffer*> UniformBufferPool::getBuffers() const
+{
+	return mBuffers;
+}
+
+IUniformBuffer* UniformBufferPool::getBuffer(const size_t aIndex) const
+{
+	return mBuffers[aIndex];
 }

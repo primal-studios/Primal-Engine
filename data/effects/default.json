@@ -11,7 +11,7 @@
       "bindings" : [ 
         {
           "binding" : 0,
-          "descriptortype" : 6,
+          "descriptortype" : 8,
           "descriptorcount" : 1,
           "stageflags" : 1
         },

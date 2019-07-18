@@ -89,6 +89,11 @@ class UniformBufferPool
 		UniformBufferObject* acquire();
 		UniformBufferObject* acquire(uint32_t aIndex);
 		void release(UniformBufferObject* aObject);
+		[[nodiscard]] uint32_t getBindingPoint() const;
+		[[nodiscard]] uint32_t getStrideSize() const;
+		std::vector<UniformBufferObjectElement*> getElements() const;
+		std::vector<IUniformBuffer*> getBuffers() const;
+		IUniformBuffer* getBuffer(const size_t aIndex) const;
 
 	private:
 		std::vector<IUniformBuffer*> mBuffers;
