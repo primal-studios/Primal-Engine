@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "math/Vector3.h"
-#include "graphics/api/IIndexBuffer.h"
-#include "graphics/api/IVertexBuffer.h"
+#include "math/Vector4.h"
+#include "VertexArray.h"
 
 struct Vertex
 {
@@ -37,14 +37,14 @@ class Mesh
 		std::vector<Vector3f> binormals;
 		std::vector<Vector4f> colors;
 
-		std::vector<uint16_t> triangles;
+		std::vector<uint32_t> triangles;
 
-		IVertexBuffer* getVBO() const;
-		IIndexBuffer* getIBO() const;
+		[[nodiscard]] VertexArray* getVAO() const;
+		[[nodiscard]] IndexBuffer* getIBO() const;
 
 	private:
-		IVertexBuffer* mVertexBuffer;
-		IIndexBuffer* mIndexBuffer;
+		VertexArray* mVertexArray;
+		IndexBuffer* mIndexBuffer;
 
 		std::vector<Vertex> mVertices;
 };

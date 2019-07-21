@@ -162,7 +162,7 @@ void MeshAsset::_load()
 		std::vector<Vector3f> tangents;
 		std::vector<Vector3f> binormals;
 
-		std::vector<uint16_t> indices;
+		std::vector<uint32_t> indices;
 
 		for(const auto& primitive : mesh.primitives)
 		{
@@ -254,7 +254,7 @@ void MeshAsset::_load()
 			{
 				for (uint32_t i = 0; i < indexBuffer.totalSize / sizeof(uint16_t); i++)
 				{
-					uint16_t idx = ((uint16_t*)indexBuffer.data)[i];
+					uint32_t idx = ((uint32_t*)indexBuffer.data)[i];
 
 					indices.push_back({ idx });
 				}

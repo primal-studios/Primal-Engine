@@ -18,8 +18,8 @@ workspace "Primal"
     include "projects/Tests"
 
     -- Dependencies
+    include "dependencies/Glad"
     include "dependencies/GLFW"
-    include "dependencies/vma"
 
     -- Directories
     IncludeDir = {}
@@ -35,21 +35,17 @@ workspace "Primal"
     IncludeDir["spdlog"] = "%{sln.location}/dependencies/spdlog/include"
     IncludeDir["stb"] = "%{sln.location}/dependencies/stb/include"
     IncludeDir["tbb"] = "%{sln.location}/dependencies/tbb/include"
-    IncludeDir["vma"] = "%{sln.location}/dependencies/vma/include"
-    IncludeDir["vulkan"] = "%{sln.location}/dependencies/vulkan/include"
+    IncludeDir["Glad"] = "%{sln.location}/dependencies/Glad/include"
 
     LibDir = {}
     LibDir["phonon"] = "%{sln.location}/dependencies/phonon/lib"
     LibDir["physx"] = "%{sln.location}/dependencies/physx/lib"
     LibDir["tbb"] = "%{sln.location}/dependencies/tbb/lib"
-    LibDir["vulkan"] = "%{sln.location}/dependencies/vulkan/lib"
 
     BinDir = {}
     BinDir["phonon"] = "%{sln.location}/dependencies/phonon/bin"
     BinDir["physx"] = "%{sln.location}/dependencies/physx/bin"
     BinDir["tbb"] = "%{sln.location}/dependencies/tbb/bin"
-    BinDir["vulkan"] = "%{sln.location}/dependencies/vulkan/bin"
-
 
 -- Clean Function
 newaction {

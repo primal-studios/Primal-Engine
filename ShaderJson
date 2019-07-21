@@ -1,181 +1,24 @@
 {
-  "shaders" : {
-    "vertexPath" : "mycac/vert.spv",
-    "fragmentPath" : "mycac/frag.spv",
-    "geometryPath" : "mycac/geom.spv",
-    "tesPath" : "mycac/tes.spv",
-    "tcsPath" : "mycac/tcs.spv"
-  },
-  "pipelinelayout" : {
-    "flags" : 0,
-    "layouts" : [
-      {
-        "flags" : 0,
-        "bindings" : [ 
-          {
-            "binding" : 0,
-            "descriptortype" : 6,
-            "descriptorcount" : 1,
-            "stageflags" : 1,
-          },
-          {
-            "binding": 1,
-            "descriptortype": 1,
-            "descriptortype": 1,
-            "stageflags": 16
-          }
-        ]
-      }
-    ],
-    "pushconstants" : [
-    ]
-  },
-  "renderpass" : "passname",
-  "subpass" : 0,
-  "graphicspipeline" : {
-    "vertexstate" : {
-      "bindingdescriptions" : [
-        {
-          "binding" : 0,
-          "stride" : 72,
-          "rate" : 0
-        }
-      ],
-      "attributedescriptions" : [
-        {
-          "location" : 0,
-          "binding" : 0,
-          "format" : 106,
-          "offset" : 0
+    "shaders" : {
+        "vertex" : {
+            "text" : "path/to/text",
+            "spirv" : "path/to/spriv"
         },
-        {
-          "location" : 1,
-          "binding" : 0,
-          "format" : 103,
-          "offset" : 12
+        "geometry" : {
+            "text" : "path/to/text",
+            "spirv" : "path/to/spirv"
         },
-        {
-            "location": 2,
-            "binding": 0,
-            "format": 106,
-            "offset": 20
+        "tessellationControl" : {
+            "text" : "path/to/text",
+            "spirv" : "path/to/spirv"
         },
-        {
-            "location": 3,
-            "binding": 0,
-            "format": 106,
-            "offset": 32
+        "tessellationEvaluation" : {
+            "text" : "path/to/text",
+            "spirv" : "path/to/spirv"
         },
-        {
-            "location": 4,
-            "binding": 0,
-            "format": 106,
-            "offset": 44
-        },
-        {
-            "location": 5,
-            "binding": 0,
-            "format": 106,
-            "offset": 56
+        "fragment" : {
+            "text" : "path/to/text",
+            "spirv" : "path/to/spirv"
         }
-      ]
-    },
-    "assemblystate" : {
-      "topology" : 3,
-      "primitiverestartenable" : false
-    },
-    "viewportstate" : {
-      "viewports" : [
-        {
-          "x" : 0,
-          "y" : 0,
-          "width" : 1280,
-          "height" : 720,
-          "mindepth" : 0,
-          "maxdepth" : 1
-        }
-      ],
-      "rectangles" : [
-        {
-          "x" : 0,
-          "y" : 0,
-          "z" : 1280,
-          "w" : 720
-        }
-      ]
-    },
-    "rasterizationstate" : {
-      "depthclampenable" : false,
-      "rasterizerdiscardenable" : false,
-      "polygonmode" : 0,
-      "cullmode" : 2,
-      "frontface" : 1,
-      "depthbiasenable" : false,
-      "depthbiasconstantfactor" : 0,
-      "depthbiasclamp" : 0,
-      "depthbiasslopefactor" : 0,
-      "linewidth" : 1.0
-    },
-    "multisamplestate" : {
-      "rasterizationsamples": 1,
-      "sampleshadingenable" : false,
-      "minsampleshading" : 0.0,
-      "samplemask" : 0,
-      "alphatocoverageenable" : false,
-      "alphatooneenable" : false
-    },
-    "depthstencilstate" : {
-      "depthtestenable" : true,
-      "depthwriteenable" : true,
-      "depthcompareop" : 1,
-      "depthboundstestenable" : false,
-      "stenciltestenable" : false,
-      "front" : {
-        "failop" : 0,
-        "passop" : 0,
-        "depthfailop" : 0,
-        "compareop" : 0,
-        "comparemask" : 0,
-        "writemask" : 0,
-        "reference" : 0
-      },
-      "back" : {
-        "failop" : 0,
-        "passop" : 0,
-        "depthfailop" : 0,
-        "compareop" : 0,
-        "comparemask" : 0,
-        "writemask" : 0,
-        "reference" : 0
-      },
-      "mindepthbounds" : 0.0,
-      "maxdepthbounds": 1.0
-    },
-    "colorblendstate" : {
-      "logicopenable" : false,
-      "logicop" : 3,
-      "attachments" : [
-        {
-          "blendenable" : false,
-          "srccolorblendfactor" : 0,
-          "dstcolorblendfactor" : 0,
-          "colorblendop" : 0,
-          "srcalphablendfactor" : 0,
-          "dstalphablendfactor" : 0,
-          "alphablendop" : 0,
-          "colorwritemask" : 15
-        }
-      ],
-      "blendconstants" : [
-        0.0,
-        0.0,
-        0.0,
-        0.0
-      ]
-    },
-    "dynamicstate" : {
-      "states" : [
-      ]
     }
-  }
 }

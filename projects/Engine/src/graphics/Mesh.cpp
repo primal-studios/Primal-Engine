@@ -1,14 +1,16 @@
 #include "graphics/Mesh.h"
-#include "graphics/GraphicsFactory.h"
+
+#include "graphics/VertexBuffer.h"
+#include "graphics/IndexBuffer.h"
 
 Mesh::Mesh()
-	: mVertexBuffer(nullptr), mIndexBuffer(nullptr)
+	: mVertexArray(nullptr), mIndexBuffer(nullptr)
 {
 }
 
 Mesh::~Mesh()
 {
-	delete mVertexBuffer;
+	delete mVertexArray;
 	delete mIndexBuffer;
 }
 
@@ -69,13 +71,7 @@ void Mesh::build()
 		mVertices.push_back(v);
 	}
 
-	VertexBufferCreateInfo vBufferCreateInfo = {};
-	vBufferCreateInfo.flags = 0;
-	vBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
-	vBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_VERTEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST;
-
-	mVertexBuffer = GraphicsFactory::instance().createVertexBuffer();
-	mVertexBuffer->setData(mVertices.data(), mVertices.size() * sizeof(Vertex));
+	VertexBuffer* vBuffer = new VertexBuffer(mVertices.data(), mVertices.size() * sizeof(Vertex));
 
 	BufferLayout layout;
 	layout.push<Vector3f>("iPosition");
@@ -85,17 +81,11 @@ void Mesh::build()
 	layout.push<Vector3f>("iBinormal");
 	layout.push<Vector4f>("iColor");
 	
-	mVertexBuffer->setLayout(layout);
-	mVertexBuffer->construct(vBufferCreateInfo);
+	vBuffer->setLayout(layout);
+	
+	IndexBuffer* iBuffer = new IndexBuffer(triangles.data(), triangles.size());
 
-	IndexBufferCreateInfo iBufferCreateInfo = {};
-	iBufferCreateInfo.flags = 0;
-	iBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
-	iBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_INDEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST;
-
-	mIndexBuffer = GraphicsFactory::instance().createIndexBuffer();
-	mIndexBuffer->setData(triangles.data(), triangles.size() * sizeof(uint16_t));
-	mIndexBuffer->construct(iBufferCreateInfo);
+	mVertexArray = new VertexArray(vBuffer, iBuffer);
 }
 
 void Mesh::recalculateTangents()
@@ -122,12 +112,12 @@ void Mesh::triangulate()
 
 }
 
-IVertexBuffer* Mesh::getVBO() const
+VertexArray* Mesh::getVAO() const
 {
-	return mVertexBuffer;
+	return mVertexArray;
 }
 
-IIndexBuffer* Mesh::getIBO() const
+IndexBuffer* Mesh::getIBO() const
 {
 	return mIndexBuffer;
 }

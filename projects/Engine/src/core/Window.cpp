@@ -46,7 +46,6 @@ Window::Window(const WindowProperties& aProps)
 		sGlfwInitialized = true;
 	}
 
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, false);
 
 	if(mData.fullscreen)
@@ -58,7 +57,7 @@ Window::Window(const WindowProperties& aProps)
 		mWindow = glfwCreateWindow(mData.width, mData.height, mData.title.c_str(), nullptr, nullptr);
 	}
 
-	//glfwMakeContextCurrent(mWindow);
+	glfwMakeContextCurrent(mWindow);
 
 	setVSync(mData.vSync);
 
@@ -173,12 +172,12 @@ void Window::pollEvents() const
 
 void Window::refresh() const
 {
-//	glfwSwapBuffers(mWindow);
+	glfwSwapBuffers(mWindow);
 }
 
 void Window::setVSync(const bool aEnabled)
 {
-//	glfwSwapInterval(aEnabled);
+	glfwSwapInterval(aEnabled);
 
 	mData.vSync = aEnabled;
 }

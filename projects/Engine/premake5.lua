@@ -11,7 +11,7 @@ project "Engine"
 
     dependson {
         "GLFW",
-        "vma"
+        "Glad"
     }
 
     files {
@@ -33,24 +33,22 @@ project "Engine"
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.stb}",
         "%{IncludeDir.tbb}",
-        "%{IncludeDir.vma}",
-        "%{IncludeDir.vulkan}"
+        "%{IncludeDir.Glad}"
     }
 
     libdirs {
         "%{LibDir.phonon}",
         "%{LibDir.tbb}",
-        "%{LibDir.vulkan}"
     }
 
     bindirs {
         "%{BinDir.phonon}",
         "%{BinDir.tbb}",
-        "%{BinDir.vulkan}"
     }
 
     links {
         "GLFW",
+        "Glad",
         "phonon",
         "PhysXTask_static_64",
 		"PhysX_64",
@@ -62,8 +60,6 @@ project "Engine"
 		"SceneQuery_static_64",
 		"SimulationController_static_64",
 		"PhysXFoundation_64",
-        "vma",
-        "vulkan-1"
     }
 
     defines {

@@ -6,11 +6,9 @@
 #include <stb/stb_image.h>
 #include "core/Log.h"
 #include <json/json.hpp>
-#include "assets/SamplerAsset.h"
-#include "graphics/vk/VulkanTexture.h"
-#include "graphics/GraphicsFactory.h"
 
 TextureAsset::TextureAsset(const std::string& aPath, const uint32_t aDesiredChannels)
+	: mTexture(nullptr)
 {
 	mPath = aPath;
 	mDesiredChannels = aDesiredChannels;
@@ -27,14 +25,9 @@ ImageFile TextureAsset::getData() const
 	return mFile;
 }
 
-ITexture* TextureAsset::getTexture() const
+Texture* TextureAsset::getTexture() const
 {
 	return mTexture;
-}
-
-ISampler* TextureAsset::getSampler() const
-{
-	return mSampler;
 }
 
 void TextureAsset::_load()
@@ -45,14 +38,11 @@ void TextureAsset::_load()
 	const auto jsonValue = nlohmann::json::parse(jsonData);
 
 	const std::string samplerName = jsonValue["samplername"];
-	auto sampler = AssetManager::instance().load<SamplerAsset>(samplerName, samplerName);
-
-	mSampler = sampler->getSampler();
 
 	uint32_t bindingPoint = jsonValue["bindingpoint"];
 	uint32_t shaderStage = jsonValue["shaderstage"];
 
-	const std::string textureFileName = jsonValue["texturefile"];
+	const std::string textureFileName = jsonValue["texturefile"]; // cacs
 	loadPath += textureFileName;
 
 	int x, y, channels;
@@ -85,13 +75,4 @@ void TextureAsset::_load()
 	mFile.channels = mDesiredChannels;
 	mFile.width = x;
 	mFile.height = y;
-
-	TextureCreateInfo textureCreateInfo = {};
-	textureCreateInfo.sampler = mSampler;
-	textureCreateInfo.textureAsset = this;
-	textureCreateInfo.binding = bindingPoint;
-	textureCreateInfo.shaderStageAccess = shaderStage;
-
-	mTexture = GraphicsFactory::instance().createTexture();
-	mTexture->construct(textureCreateInfo);
 }
