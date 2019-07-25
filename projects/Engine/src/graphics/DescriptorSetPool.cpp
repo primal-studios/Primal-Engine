@@ -3,9 +3,14 @@
 
 #include "graphics/GraphicsFactory.h"
 
-DescriptorSetPool::DescriptorSetPool(DescriptorPoolCreateInfo aInfo)
-	: mCreateInfo(std::move(aInfo)), mCursor(0)
+DescriptorSetPool::DescriptorSetPool(const uint32_t aChunkSize, DescriptorPoolCreateInfo aInfo)
+	: mCreateInfo(std::move(aInfo)), mCursor(0), mChunkSize(aChunkSize)
 {
+	mCreateInfo.maxSets *= aChunkSize;
+	for (auto & size : mCreateInfo.poolSizes)
+	{
+		size.count *= aChunkSize;
+	}
 }
 
 DescriptorSetPool::~DescriptorSetPool()
@@ -46,9 +51,13 @@ DescriptorSet DescriptorSetPool::acquire(const uint32_t aIndex)
 		mFreeSlots.erase(aIndex);
 		return DescriptorSet{ mSets[aIndex], aIndex };
 	}
-	auto descPool = GraphicsFactory::instance().createDescriptorPool();
-	descPool->construct(mCreateInfo);
-	mPools.push_back(descPool);
+
+	if (aIndex % 2 == 0)
+	{
+		auto descPool = GraphicsFactory::instance().createDescriptorPool();
+		descPool->construct(mCreateInfo);
+		mPools.push_back(descPool);
+	}
 
 	IDescriptorSet* desc = GraphicsFactory::instance().createDescriptorSet();
 
@@ -72,7 +81,7 @@ IDescriptorPool* DescriptorSetPool::getPool(const DescriptorSet pSet)
 {
 	if (pSet.index < mCursor)
 	{
-		return mPools[pSet.index];
+		return mPools[pSet.index / mChunkSize];
 	}
 	return nullptr;
 }

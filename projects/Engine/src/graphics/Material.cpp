@@ -60,17 +60,18 @@ static constexpr size_t BufferSize = 65536;
 Material* Material::clone()
 {
 	const auto mat = new Material(mCreateInfo);
-	mat->mParent = this;
+	Material* m = this;
+	while (m->mParent != nullptr)
+	{
+		m = m->mParent;
+	}
+	mat->mParent = m;
 	return mat;
 }
 
 MaterialInstance* Material::createInstance()
 {
-	Material* mat = this;
-	while (mat->mParent != nullptr)
-	{
-		mat = mat->mParent;
-	}
+	Material* mat = mParent != nullptr ? mParent : this;
 
 	if (mat->mFreeSlots.empty())
 	{
@@ -151,11 +152,6 @@ Material* MaterialInstance::setTexture(std::string aName, ITexture* aTexture)
 std::pair<UniformBufferPool*, UniformBufferObjectElement*> MaterialInstance::_getElementFromName(const std::string& aName) const
 {
 	auto parent = mParent;
-
-	while (parent->mParent != nullptr)
-	{
-		parent = parent->mParent;
-	}
 
 	const auto it = parent->mElements.find(aName);
 	if (it == parent->mElements.end())

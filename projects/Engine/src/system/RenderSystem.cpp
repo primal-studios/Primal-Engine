@@ -61,7 +61,7 @@ RenderSystem::RenderSystem(Window* aWindow)
 	createInfo.maxSets = 2;
 	createInfo.poolSizes = poolSizes;
 
-	mDescPool = new DescriptorSetPool(createInfo);
+	mDescPool = new DescriptorSetPool(2, createInfo);
 }
 
 RenderSystem::~RenderSystem()

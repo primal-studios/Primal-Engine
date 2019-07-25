@@ -209,7 +209,7 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 	std::vector<VkWriteDescriptorSet> writeSets;
 
 	Material* parent = aMaterial;
-	while (parent->mParent != nullptr)
+	if (parent->mParent != nullptr)
 	{
 		parent = parent->mParent;
 	}
