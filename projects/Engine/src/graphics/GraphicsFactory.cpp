@@ -1,4 +1,5 @@
 #include "graphics/GraphicsFactory.h"
+#include "graphics/vk/VulkanDescriptorPool.h"
 #include "graphics/vk/VulkanDescriptorSetLayout.h"
 #include "graphics/vk/VulkanGraphicsPipeline.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
@@ -22,6 +23,23 @@ void GraphicsFactory::initialize(uint32_t aAPI, IGraphicsContext* aContext)
 {
 	mAPI = aAPI;
 	mContext = aContext;
+}
+
+IDescriptorPool* GraphicsFactory::createDescriptorPool() const
+{
+	switch (mAPI)
+	{
+		case RENDERAPI_VULKAN:
+		{
+			VulkanDescriptorPool* pool = new VulkanDescriptorPool(mContext);
+			return pool;
+		}
+		case RENDERAPI_NONE:
+		{
+			return nullptr;
+		}
+	}
+	return nullptr;
 }
 
 IShaderModule* GraphicsFactory::createShaderModule() const

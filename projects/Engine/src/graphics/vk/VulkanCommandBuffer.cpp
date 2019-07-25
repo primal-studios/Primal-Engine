@@ -204,11 +204,17 @@ void VulkanCommandBuffer::bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffse
 
 void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFrame)
 {
-	const VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aMaterial->mSet)->getHandle(aFrame);
+	const VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aMaterial->mSet.set)->getHandle(aFrame);
 	
 	std::vector<VkWriteDescriptorSet> writeSets;
 
-	for (UniformBufferPool* uboPool : aMaterial->mUboLayouts)
+	Material* parent = aMaterial;
+	while (parent->mParent != nullptr)
+	{
+		parent = parent->mParent;
+	}
+
+	for (UniformBufferPool* uboPool : parent->mUboLayouts)
 	{
 		for (IUniformBuffer* ubo : uboPool->getBuffers())
 		{
@@ -221,10 +227,10 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 		}
 	}
 
-	for (ITexture* tex : aMaterial->mTextures)
+	for (const auto& tex : aMaterial->mTextures)
 	{
-		VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex);
-		auto writeDesc = vtex->getWriteDescriptor(tex->getBindingPoint(), {});
+		VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex.second);
+		auto writeDesc = vtex->getWriteDescriptor(tex.second->getBindingPoint(), {});
 		auto writeDescSet = writeDesc.getWriteDescriptorSet();
 		writeDescSet.dstSet = set;
 		writeSets.push_back(writeDescSet);
@@ -233,7 +239,7 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkUpdateDescriptorSets(context->getDevice(), static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
 
-	for (const auto& ubo : aMaterial->mBackingBuffers)
+	for (const auto& ubo : parent->mBackingBuffers)
 	{
 		auto buffers = ubo.first->getBuffers();
 		for (size_t i = 0; i < buffers.size(); i++)
@@ -246,19 +252,25 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 
 void VulkanCommandBuffer::bindMaterialInstance(MaterialInstance* aInstance, uint32_t aFrame)
 {
-	VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aInstance->mParent->mSet)->getHandle(aFrame);
+	Material* parent = aInstance->mParent;
+	while (parent->mParent != nullptr)
+	{
+		parent = parent->mParent;
+	}
 
-	VulkanGraphicsPipeline* pipeline = primal_cast<VulkanGraphicsPipeline*>(aInstance->mParent->mPipeline);
+	VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aInstance->mParent->mSet.set)->getHandle(aFrame);
+
+	VulkanGraphicsPipeline* pipeline = primal_cast<VulkanGraphicsPipeline*>(parent->mPipeline);
 	VulkanPipelineLayout* layout = pipeline->getLayout();
 
 	std::vector<uint32_t> offsets;
-	for (const auto& pair : aInstance->mParent->mBackingBuffers)
+	for (const auto& pair : parent->mBackingBuffers)
 	{
 		const auto size = pair.second.elementSize;
 		const auto count = pair.second.elementCount;
 		const auto index = aInstance->mInstanceId / count;
 		const auto offset = (aInstance->mInstanceId - index * count) * size;
-		offsets.push_back(offset);
+		offsets.push_back(static_cast<uint32_t>(offset));
 	}
 
 	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), 0, 1, &set, static_cast<uint32_t>(offsets.size()), offsets.data());

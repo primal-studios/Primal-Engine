@@ -49,27 +49,27 @@ class RenderSystem final : public System
 		IRenderPass* mRenderPass;
 
 		IGraphicsPipeline* mGraphicsPipeline;
-		VulkanPipelineLayout* mLayout;
+		VulkanPipelineLayout* mLayout{};
 
 		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
 		VulkanFramebuffer** mFramebuffers = nullptr;
 
 		VulkanVertexBuffer* mVertexBuffer;
 		VulkanIndexBuffer* mIndexBuffer;
-		VulkanDescriptorPool* mDescriptorPool;
 
 		UniformBufferObject* mUboObject0;
 		UniformBufferPool* mUboPool;
 
-		VulkanDescriptorSet* mSet;
+		DescriptorSetPool* mDescPool;
 
 		VulkanTexture* mTexture;
 		VulkanTexture* mTexture2;
 		VulkanSampler* mSampler;
 
-		Material* mMaterial;
-		MaterialInstance* mMaterialInstance;
-		MaterialInstance* mMaterialInstance2;
+		Material* mMaterial{};
+		MaterialInstance* mMaterialInstance{};
+		Material* mMaterial2{};
+		MaterialInstance* mMaterialInstance2{};
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};

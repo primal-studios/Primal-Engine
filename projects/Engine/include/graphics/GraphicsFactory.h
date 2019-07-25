@@ -27,6 +27,7 @@ class GraphicsFactory
 		static GraphicsFactory& instance();
 		void initialize(uint32_t aAPI, IGraphicsContext* aContext);
 
+		[[nodiscard]] IDescriptorPool* createDescriptorPool() const;
 		[[nodiscard]] IDescriptorSet* createDescriptorSet() const;
 		[[nodiscard]] IDescriptorSetLayout* createDescriptorSetLayout() const;
 		[[nodiscard]] IFramebuffer* createFramebuffer() const;

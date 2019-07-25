@@ -1,8 +1,7 @@
 #ifndef material_h__
 #define material_h__
 
-#include "core/PrimalCast.h"
-
+#include "graphics/DescriptorSetPool.h"
 #include "graphics/UniformBufferPool.h"
 #include "graphics/api/IDescriptorSet.h"
 #include "graphics/api/IGraphicsPipeline.h"
@@ -10,10 +9,10 @@
 
 struct MaterialCreateInfo
 {
+	DescriptorSetPool* pool;
 	IGraphicsPipeline* pipeline;
-	IDescriptorPool* pool;
 	std::vector<UniformBufferPool*> layouts;
-	std::vector<ITexture*> textures;
+	std::unordered_map<std::string, ITexture*> textures;
 };
 
 class MaterialInstance;
@@ -23,6 +22,8 @@ class Material
 	friend class MaterialInstance;
 	friend class VulkanCommandBuffer;
 
+	uint32_t mChildInstances = 0;
+
 	struct BackingBufferInfo
 	{
 		std::vector<void*> blocks;
@@ -31,7 +32,7 @@ class Material
 	};
 
 	public:
-		Material(const MaterialCreateInfo& aCreateInfo);
+		explicit Material(const MaterialCreateInfo& aCreateInfo);
 		Material(const Material&) = delete;
 		Material(Material&&) noexcept = delete;
 		~Material();
@@ -42,11 +43,15 @@ class Material
 		MaterialInstance* createInstance();
 		void destroyInstance(MaterialInstance* aInstance);
 
+		[[nodiscard]] Material* clone();
+
 	private:
+		MaterialCreateInfo mCreateInfo;
 		IGraphicsPipeline* mPipeline;
-		IDescriptorSet* mSet = nullptr;
+		DescriptorSet mSet{};
+		DescriptorSetPool* mDescSetPool;
 		IDescriptorSetLayout* mLayout = nullptr;
-		std::vector<ITexture*> mTextures;
+		std::unordered_map<std::string, ITexture*> mTextures;
 		std::vector<UniformBufferPool*> mUboLayouts;
 
 		std::unordered_map<UniformBufferPool*, BackingBufferInfo> mBackingBuffers;
@@ -54,6 +59,7 @@ class Material
 		uint64_t mCursor = 0;
 
 		std::unordered_map<std::string, std::pair<UniformBufferPool*, UniformBufferObjectElement*>> mElements;
+		Material* mParent = nullptr;
 };
 
 class MaterialInstance
@@ -80,6 +86,8 @@ public:
 	template<typename T>
 	T* getVariable(const std::string& aName);
 
+	[[nodiscard]] Material* setTexture(std::string aName, ITexture* aTexture);
+
 private:
 	[[nodiscard]] std::pair<UniformBufferPool*, UniformBufferObjectElement*> _getElementFromName(const std::string& aName) const;
 };
@@ -93,9 +101,15 @@ void MaterialInstance::setVariable(const std::string& aName, T aValue)
 template <typename T>
 T* MaterialInstance::getVariable(const std::string& aName)
 {
+	auto parent = mParent;
+	while (parent->mParent != nullptr)
+	{
+		parent = parent->mParent;
+	}
+
 	const auto pair = _getElementFromName(aName);
 	PRIMAL_ASSERT(pair.first != nullptr && pair.second != nullptr, "Invalid variable");
-	const Material::BackingBufferInfo& buf = mParent->mBackingBuffers[pair.first];
+	const Material::BackingBufferInfo& buf = parent->mBackingBuffers[pair.first];
 	const size_t blockIndex = mInstanceId / buf.elementCount;
 	const size_t offset = ((mInstanceId - (blockIndex * buf.elementCount)) * buf.elementCount) + pair.second->offset;
 	char* block = reinterpret_cast<char*>(buf.blocks[blockIndex]);

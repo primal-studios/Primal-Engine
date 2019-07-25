@@ -16,7 +16,7 @@ struct DescriptorSet
 class DescriptorSetPool
 {
 	public:
-		DescriptorSetPool(uint32_t aChunkSize, const DescriptorPoolCreateInfo& aInfo, const std::vector<IDescriptorSetLayout*> aLayouts);
+		explicit DescriptorSetPool(DescriptorPoolCreateInfo aInfo);
 		DescriptorSetPool(const DescriptorSetPool&) = delete;
 		DescriptorSetPool(DescriptorSetPool&&) noexcept = delete;
 		~DescriptorSetPool();
@@ -28,14 +28,14 @@ class DescriptorSetPool
 		DescriptorSet acquire(uint32_t aIndex);
 		void release(DescriptorSet aObject);
 
+		IDescriptorPool* getPool(DescriptorSet pSet);
+
 	private:
 		std::vector<IDescriptorPool*> mPools;
 		std::vector<IDescriptorSet*> mSets;
 		std::unordered_map<uint32_t, IDescriptorSet*> mFreeSlots;
-		std::vector<IDescriptorSetLayout*> mLayouts;
 		DescriptorPoolCreateInfo mCreateInfo;
 		uint32_t mCursor;
-		uint32_t mChunkSize;
 };
 
 #endif // descriptorsetpool_h__

@@ -23,7 +23,7 @@
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
-	  mDescriptorPool(nullptr), mUboObject0(nullptr), mUboPool(nullptr), mSet(nullptr),
+	  mUboObject0(nullptr), mUboPool(nullptr),
 	  mTexture(nullptr), mTexture2(nullptr), mSampler(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
@@ -52,17 +52,16 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 	DescriptorPoolSize combinedSamplerSize{};
 	combinedSamplerSize.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
-	combinedSamplerSize.count = 4;
+	combinedSamplerSize.count = 2;
 
 	poolSizes.push_back(combinedSamplerSize);
 
 	DescriptorPoolCreateInfo createInfo;
 	createInfo.flags = 0;
-	createInfo.maxSets = 6;
+	createInfo.maxSets = 2;
 	createInfo.poolSizes = poolSizes;
 
-	mDescriptorPool = new VulkanDescriptorPool(mContext);
-	mDescriptorPool->construct(createInfo);
+	mDescPool = new DescriptorSetPool(createInfo);
 }
 
 RenderSystem::~RenderSystem()
@@ -70,8 +69,6 @@ RenderSystem::~RenderSystem()
 	vkDeviceWaitIdle(primal_cast<VulkanGraphicsContext*>(mContext)->getDevice());
 	
 	AssetManager::instance().unloadAll();
-
-	delete mSet;
 
 	delete mSwapChain;
 
@@ -89,8 +86,9 @@ RenderSystem::~RenderSystem()
 	delete mMaterialInstance;
 	delete mMaterialInstance2;
 	delete mMaterial;
+	delete mMaterial2;
 
-	delete mDescriptorPool;
+	delete mDescPool;
 
 	{
 		mShaderAsset = nullptr;
@@ -257,15 +255,18 @@ void RenderSystem::initialize()
 	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/Shawn.json", STBI_rgb_alpha);
 	mTexture = primal_cast<VulkanTexture*>(texAsset->getTexture());
 
+	auto tex2 = AssetManager::instance().load<TextureAsset>("test2", "data/textures/Test.json", STBI_rgb_alpha);
+
 	mGraphicsPipeline = mShaderAsset->getPipeline();
 	MaterialCreateInfo materialCreateInfo;
 	materialCreateInfo.layouts = { mUboPool };
 	materialCreateInfo.pipeline = mGraphicsPipeline;
-	materialCreateInfo.pool = mDescriptorPool;
-	materialCreateInfo.textures = { mTexture };
+	materialCreateInfo.pool = mDescPool;
+	materialCreateInfo.textures = { { "albedo", mTexture } };
 	mMaterial = new Material(materialCreateInfo);
 	mMaterialInstance = mMaterial->createInstance();
 	mMaterialInstance2 = mMaterial->createInstance();
+	mMaterial2 = mMaterialInstance2->setTexture("albedo", tex2->getTexture());
 }
 
 void RenderSystem::preRender()
@@ -337,6 +338,7 @@ void RenderSystem::render()
 	handle->bindMaterial(mMaterial, mCurrentFrame);
 	handle->bindMaterialInstance(mMaterialInstance, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+	handle->bindMaterial(mMaterial2, mCurrentFrame);
 	handle->bindMaterialInstance(mMaterialInstance2, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 

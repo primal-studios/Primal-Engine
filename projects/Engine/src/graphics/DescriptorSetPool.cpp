@@ -1,9 +1,10 @@
+#include <utility>
 #include "graphics/DescriptorSetPool.h"
 
 #include "graphics/GraphicsFactory.h"
 
-DescriptorSetPool::DescriptorSetPool(const uint32_t aChunkSize, const DescriptorPoolCreateInfo& aInfo, const std::vector<IDescriptorSetLayout*> aLayouts)
-	: mLayouts(aLayouts), mCreateInfo(aInfo), mCursor(0), mChunkSize(aChunkSize)
+DescriptorSetPool::DescriptorSetPool(DescriptorPoolCreateInfo aInfo)
+	: mCreateInfo(std::move(aInfo)), mCursor(0)
 {
 }
 
@@ -33,23 +34,23 @@ DescriptorSet DescriptorSetPool::acquire()
 		return DescriptorSet{ set, slot };
 	}
 
-	return acquire(mCursor++);
+	const auto res = acquire(mCursor);
+	++mCursor;
+	return res;
 }
 
 DescriptorSet DescriptorSetPool::acquire(const uint32_t aIndex)
 {
-	const uint32_t index = aIndex / mChunkSize;
-	const uint32_t offset = aIndex - (index * mChunkSize);
-	const DescriptorSetCreateInfo info = { mPools[index], mLayouts };
-
 	if (aIndex < mCursor)
 	{
 		mFreeSlots.erase(aIndex);
 		return DescriptorSet{ mSets[aIndex], aIndex };
 	}
+	auto descPool = GraphicsFactory::instance().createDescriptorPool();
+	descPool->construct(mCreateInfo);
+	mPools.push_back(descPool);
 
 	IDescriptorSet* desc = GraphicsFactory::instance().createDescriptorSet();
-	desc->construct(info);
 
 	if (mSets.size() <= aIndex)
 	{
@@ -65,4 +66,13 @@ DescriptorSet DescriptorSetPool::acquire(const uint32_t aIndex)
 void DescriptorSetPool::release(DescriptorSet aObject)
 {
 	mFreeSlots.insert({ aObject.index, aObject.set });
+}
+
+IDescriptorPool* DescriptorSetPool::getPool(const DescriptorSet pSet)
+{
+	if (pSet.index < mCursor)
+	{
+		return mPools[pSet.index];
+	}
+	return nullptr;
 }
