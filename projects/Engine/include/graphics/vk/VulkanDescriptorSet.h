@@ -10,22 +10,18 @@ class WriteDescriptorSet
 {
 	public:
 		WriteDescriptorSet(const VkWriteDescriptorSet& aWriteDescriptorSet, const VkDescriptorImageInfo& aImageInfo)
-			: mWriteDescriptorSet(aWriteDescriptorSet)
+			: mWriteDescriptorSet(aWriteDescriptorSet), mImageInfo(new VkDescriptorImageInfo(aImageInfo))
 		{
-			mWriteDescriptorSet.pImageInfo = new VkDescriptorImageInfo(aImageInfo);
+			mWriteDescriptorSet.pImageInfo = mImageInfo;
 		}
 
 		WriteDescriptorSet(const VkWriteDescriptorSet& aWriteDescriptorSet, const VkDescriptorBufferInfo& aImageInfo)
-			: mWriteDescriptorSet(aWriteDescriptorSet)
+			: mWriteDescriptorSet(aWriteDescriptorSet), mBufferInfo(new VkDescriptorBufferInfo(aImageInfo))
 		{
-			mWriteDescriptorSet.pBufferInfo = new VkDescriptorBufferInfo(aImageInfo);
+			mWriteDescriptorSet.pBufferInfo = mBufferInfo;
 		}
 
-		~WriteDescriptorSet()
-		{
-			delete mImageInfo;
-			delete mBufferInfo;
-		}
+		WriteDescriptorSet(const WriteDescriptorSet&) = delete;
 
 		const VkWriteDescriptorSet& getWriteDescriptorSet() const { return mWriteDescriptorSet; }
 

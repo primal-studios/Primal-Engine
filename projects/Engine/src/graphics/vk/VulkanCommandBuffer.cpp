@@ -239,7 +239,14 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkUpdateDescriptorSets(context->getDevice(), static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
 
-	for (const auto& ubo : parent->mBackingBuffers)
+	// TODO: Make UBO and Textures own buffer and image infos respectively
+	for (const auto& set : writeSets)
+	{
+		delete set.pBufferInfo;
+		delete set.pImageInfo;
+	}
+
+	for (const auto& ubo : aMaterial->mBackingBuffers)
 	{
 		auto buffers = ubo.first->getBuffers();
 		for (size_t i = 0; i < buffers.size(); i++)
