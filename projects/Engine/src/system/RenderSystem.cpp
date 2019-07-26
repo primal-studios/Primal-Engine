@@ -48,7 +48,7 @@ RenderSystem::RenderSystem(Window* aWindow)
 	std::vector<DescriptorPoolSize> poolSizes;
 	DescriptorPoolSize uniformBufferSize{};
 	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER_DYNAMIC;
-	uniformBufferSize.count = 2;
+	uniformBufferSize.count = 4;
 
 	DescriptorPoolSize combinedSamplerSize{};
 	combinedSamplerSize.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
@@ -58,7 +58,7 @@ RenderSystem::RenderSystem(Window* aWindow)
 
 	DescriptorPoolCreateInfo createInfo;
 	createInfo.flags = 0;
-	createInfo.maxSets = 2;
+	createInfo.maxSets = 4;
 	createInfo.poolSizes = poolSizes;
 
 	mDescPool = new DescriptorSetPool(2, createInfo);
@@ -81,6 +81,7 @@ RenderSystem::~RenderSystem()
 	delete[] mFramebuffers;
 	delete[] mPrimaryBuffer;
 
+	delete mSceneData;
 	delete mUboObject0;
 	delete mUboPool;
 	delete mMaterialInstance;
@@ -229,14 +230,14 @@ void RenderSystem::initialize()
 	UniformBufferObjectElement* view = new UniformBufferObjectElement{
 		"view",
 		EUniformBufferObjectElementType::UBO_TYPE_MAT4,
-		offsetof(UBO, view),
+		0,
 		sizeof(UBO::view)
 	};
 
 	UniformBufferObjectElement* proj = new UniformBufferObjectElement{
 		"proj",
 		EUniformBufferObjectElementType::UBO_TYPE_MAT4,
-		offsetof(UBO, proj),
+		64,
 		sizeof(UBO::proj)
 	};
 
@@ -247,7 +248,8 @@ void RenderSystem::initialize()
 		sizeof(UBO::mvp)
 	};
 
-	std::vector<UniformBufferObjectElement*> elements = { modl, view, proj, mvp };
+
+	std::vector<UniformBufferObjectElement*> elements = { modl };
 
 	mUboPool = new UniformBufferPool(65536 / sizeof(UBO), sizeof(UBO), 0, uniformBufferCreateInfo, elements);
 	mUboObject0 = mUboPool->acquire();
@@ -258,6 +260,7 @@ void RenderSystem::initialize()
 	auto tex2 = AssetManager::instance().load<TextureAsset>("test2", "data/textures/Test.json", STBI_rgb_alpha);
 
 	mGraphicsPipeline = mShaderAsset->getPipeline();
+	mSceneData = new SceneData({ {view, proj}, mShaderAsset->getLayout() });
 	MaterialCreateInfo materialCreateInfo;
 	materialCreateInfo.layouts = { mUboPool };
 	materialCreateInfo.pipeline = mGraphicsPipeline;
@@ -325,19 +328,21 @@ void RenderSystem::render()
 
 	angle += 0.0001f;
 
-	mMaterialInstance->setVariable<Matrix4f>("proj", u.proj);
-	mMaterialInstance->setVariable<Matrix4f>("view", u.view);
 	mMaterialInstance->setVariable<Matrix4f>("model", u.model);
 
 	u.model = Matrix4f::identity();
 	u.model = Matrix4f::translate(u.model, Vector3f(0, 20, 0));
-	mMaterialInstance2->setVariable<Matrix4f>("proj", u.proj);
-	mMaterialInstance2->setVariable<Matrix4f>("view", u.view);
 	mMaterialInstance2->setVariable<Matrix4f>("model", u.model);
+
+	mSceneData->setValue("proj", u.proj);
+	mSceneData->setValue("view", u.view);
+
+	handle->bindSceneData(mSceneData, mCurrentFrame); // bind once per pipeline layout. More than once is invalid
 
 	handle->bindMaterial(mMaterial, mCurrentFrame);
 	handle->bindMaterialInstance(mMaterialInstance, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+
 	handle->bindMaterial(mMaterial2, mCurrentFrame);
 	handle->bindMaterialInstance(mMaterialInstance2, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);

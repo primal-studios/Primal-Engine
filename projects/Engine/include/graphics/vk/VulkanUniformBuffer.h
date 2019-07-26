@@ -27,7 +27,7 @@ class VulkanUniformBuffer final : public IUniformBuffer
 
 		static DescriptorSetLayoutBinding getDescriptorSetLayout(const uint32_t aBinding, const VkShaderStageFlags aStage, const uint32_t aCount);
 
-		WriteDescriptorSet getWriteDescriptor(const uint32_t aBinding, const std::optional<OffsetSize>& aOffsetSize) const;
+		WriteDescriptorSet getWriteDescriptor(const uint32_t aBinding, const std::optional<OffsetSize>& aOffsetSize, bool aIsDynamic = true) const;
 
 	private:
 		void _destroy() const;

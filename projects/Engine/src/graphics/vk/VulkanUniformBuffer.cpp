@@ -74,7 +74,7 @@ DescriptorSetLayoutBinding VulkanUniformBuffer::getDescriptorSetLayout(const uin
 	return binding;
 }
 
-WriteDescriptorSet VulkanUniformBuffer::getWriteDescriptor(const uint32_t aBinding, const std::optional<OffsetSize>& aOffsetSize) const
+WriteDescriptorSet VulkanUniformBuffer::getWriteDescriptor(const uint32_t aBinding, const std::optional<OffsetSize>& aOffsetSize, bool aIsDynamic) const
 {
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = mBuffer;
@@ -93,7 +93,7 @@ WriteDescriptorSet VulkanUniformBuffer::getWriteDescriptor(const uint32_t aBindi
 	descriptorWrite.dstBinding = aBinding;
 	descriptorWrite.dstArrayElement = 0;
 	descriptorWrite.descriptorCount = 1;
-	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	descriptorWrite.descriptorType = aIsDynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorWrite.pBufferInfo = &bufferInfo;
 
 	return { descriptorWrite, bufferInfo };

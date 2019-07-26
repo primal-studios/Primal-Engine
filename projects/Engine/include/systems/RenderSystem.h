@@ -66,6 +66,7 @@ class RenderSystem final : public System
 		VulkanTexture* mTexture2;
 		VulkanSampler* mSampler;
 
+		SceneData* mSceneData = nullptr;
 		Material* mMaterial{};
 		MaterialInstance* mMaterialInstance{};
 		Material* mMaterial2{};

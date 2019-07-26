@@ -205,8 +205,23 @@ void VulkanCommandBuffer::bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffse
 void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFrame)
 {
 	const VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aMaterial->mSet.set)->getHandle(aFrame);
-	
+	VulkanDescriptorSet* sceneSet = nullptr;
+
 	std::vector<VkWriteDescriptorSet> writeSets;
+
+	bool setScene = false;
+	if (mData != nullptr) {
+		sceneSet = primal_cast<VulkanDescriptorSet*>(mData->mSet);
+		VulkanUniformBuffer* vubo = primal_cast<VulkanUniformBuffer*>(mData->mUboPool->getBuffer(0));
+		OffsetSize sz = { 0, mData->mUboPool->getStrideSize() };
+		const WriteDescriptorSet writeDesc = vubo->getWriteDescriptor(mData->mUboPool->getBindingPoint(), sz, false);
+		auto writeDescSet = writeDesc.getWriteDescriptorSet();
+		writeDescSet.dstSet = sceneSet->getHandle(aFrame);
+		writeSets.push_back(writeDescSet);
+		vubo->setData(mData->mCpuBacking, 0, mData->mBackingSz);
+		mData = nullptr;
+		setScene = true;
+	}
 
 	Material* parent = aMaterial;
 	if (parent->mParent != nullptr)
@@ -255,6 +270,20 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 			buffers[i]->setData(data, 0, 65536);
 		}
 	}
+
+	VkDescriptorSet sets[2];
+	if (setScene)
+	{
+		sets[0] = sceneSet->getHandle(aFrame);
+		sets[1] = set;
+	} else
+	{
+		sets[0] = set;
+	}
+
+	VulkanPipelineLayout* layout = primal_cast<VulkanGraphicsPipeline*>(aMaterial->mPipeline)->getLayout();
+	uint32_t offset = 0;
+	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), setScene ? 0 : 1, setScene ? 2 : 1, sets, 1, &offset);
 }
 
 void VulkanCommandBuffer::bindMaterialInstance(MaterialInstance* aInstance, uint32_t aFrame)
@@ -280,7 +309,12 @@ void VulkanCommandBuffer::bindMaterialInstance(MaterialInstance* aInstance, uint
 		offsets.push_back(static_cast<uint32_t>(offset));
 	}
 
-	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), 0, 1, &set, static_cast<uint32_t>(offsets.size()), offsets.data());
+	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), 1, 1, &set, static_cast<uint32_t>(offsets.size()), offsets.data());
+}
+
+void VulkanCommandBuffer::bindSceneData(SceneData* aData, const uint32_t aFrame)
+{
+	mData = aData;
 }
 
 void VulkanCommandBuffer::draw(const uint32_t aVertexCount, const uint32_t aInstanceCount, const uint32_t aFirstVertex,

@@ -8,6 +8,17 @@
    "layouts" : [
     {
       "flags" : 0,
+      "bindings" : [
+        {
+          "binding" : 0,
+          "descriptortype" : 6,
+          "descriptorcount" : 1,
+          "stageflags" : 31
+        }
+      ]
+    },
+    {
+      "flags" : 0,
       "bindings" : [ 
         {
           "binding" : 0,
