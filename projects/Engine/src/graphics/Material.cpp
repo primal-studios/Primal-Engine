@@ -136,7 +136,7 @@ MaterialInstance::~MaterialInstance()
 	--mParent->mChildInstances;
 }
 
-Material* MaterialInstance::setTexture(std::string aName, ITexture* aTexture)
+Material* MaterialInstance::setTexture(const std::string& aName, ITexture* aTexture)
 {
 	Material* mat = mParent;
 	if (mParent->mChildInstances > 1)

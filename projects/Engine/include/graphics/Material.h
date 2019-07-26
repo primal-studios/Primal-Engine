@@ -86,7 +86,7 @@ public:
 	template<typename T>
 	T* getVariable(const std::string& aName);
 
-	[[nodiscard]] Material* setTexture(std::string aName, ITexture* aTexture);
+	[[nodiscard]] Material* setTexture(const std::string& aName, ITexture* aTexture);
 
 private:
 	[[nodiscard]] std::pair<UniformBufferPool*, UniformBufferObjectElement*> _getElementFromName(const std::string& aName) const;
