@@ -95,7 +95,7 @@ MaterialInstance* Material::createInstance()
 			}
 
 			const size_t bufferCapacity = bufInfo.blocks.size() * bufInfo.elementCount;
-			if (mat->mCursor < bufferCapacity)
+			if (mat->mCursor >= bufferCapacity)
 			{
 				bufInfo.blocks.push_back(malloc(BufferSize));
 			}
@@ -105,7 +105,7 @@ MaterialInstance* Material::createInstance()
 				mat->mBackingBuffers.erase(ubo);
 			}
 
-			mat->mBackingBuffers.insert({ ubo, bufInfo });
+			mat->mBackingBuffers[ubo] = bufInfo;
 		}
 		return new MaterialInstance(this, ubos, mat->mCursor++);
 	}
@@ -146,6 +146,7 @@ Material* MaterialInstance::setTexture(const std::string& aName, ITexture* aText
 		mParent = mat;
 	}
 	mat->mTextures[aName] = aTexture;
+	mat->mDirtyBit = 2;
 	return mat;
 }
 

@@ -206,7 +206,6 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 {
 	const VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aMaterial->mSet.set)->getHandle(aFrame);
 	VulkanDescriptorSet* sceneSet = nullptr;
-
 	std::vector<VkWriteDescriptorSet> writeSets;
 
 	bool setScene = false;
@@ -223,43 +222,41 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 		setScene = true;
 	}
 
-	Material* parent = aMaterial;
-	if (parent->mParent != nullptr)
+	if (aMaterial->mDirtyBit)
 	{
-		parent = parent->mParent;
-	}
-
-	for (UniformBufferPool* uboPool : parent->mUboLayouts)
-	{
-		for (IUniformBuffer* ubo : uboPool->getBuffers())
+		Material* parent = aMaterial;
+		if (parent->mParent != nullptr)
 		{
-			VulkanUniformBuffer* vubo = primal_cast<VulkanUniformBuffer*>(ubo);
-			OffsetSize sz = { 0, uboPool->getStrideSize() };
-			WriteDescriptorSet writeDesc = vubo->getWriteDescriptor(uboPool->getBindingPoint(), sz);
+			parent = parent->mParent;
+		}
+
+		for (UniformBufferPool* uboPool : parent->mUboLayouts)
+		{
+			for (IUniformBuffer* ubo : uboPool->getBuffers())
+			{
+				VulkanUniformBuffer* vubo = primal_cast<VulkanUniformBuffer*>(ubo);
+				OffsetSize sz = { 0, uboPool->getStrideSize() };
+				WriteDescriptorSet writeDesc = vubo->getWriteDescriptor(uboPool->getBindingPoint(), sz);
+				auto writeDescSet = writeDesc.getWriteDescriptorSet();
+				writeDescSet.dstSet = set;
+				writeSets.push_back(writeDescSet);
+			}
+		}
+
+		for (const auto& tex : aMaterial->mTextures)
+		{
+			VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex.second);
+			auto writeDesc = vtex->getWriteDescriptor(tex.second->getBindingPoint(), {});
 			auto writeDescSet = writeDesc.getWriteDescriptorSet();
 			writeDescSet.dstSet = set;
 			writeSets.push_back(writeDescSet);
 		}
-	}
 
-	for (const auto& tex : aMaterial->mTextures)
-	{
-		VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex.second);
-		auto writeDesc = vtex->getWriteDescriptor(tex.second->getBindingPoint(), {});
-		auto writeDescSet = writeDesc.getWriteDescriptorSet();
-		writeDescSet.dstSet = set;
-		writeSets.push_back(writeDescSet);
+		--aMaterial->mDirtyBit;
 	}
 
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkUpdateDescriptorSets(context->getDevice(), static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
-
-	// TODO: Make UBO and Textures own buffer and image infos respectively
-	for (const auto& set : writeSets)
-	{
-		delete set.pBufferInfo;
-		delete set.pImageInfo;
-	}
 
 	for (const auto& ubo : aMaterial->mBackingBuffers)
 	{
@@ -271,19 +268,33 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 		}
 	}
 
+	for (const auto& writeSet : writeSets)
+	{
+		delete writeSet.pBufferInfo;
+		delete writeSet.pImageInfo;
+	}
+
 	VkDescriptorSet sets[2];
+	uint32_t offset = 0;
+	uint32_t count = 0;
+
 	if (setScene)
 	{
 		sets[0] = sceneSet->getHandle(aFrame);
 		sets[1] = set;
-	} else
+		count = 2;
+		offset = 0;
+	}
+	else
 	{
 		sets[0] = set;
+		count = 1;
+		offset = 1;
 	}
 
 	VulkanPipelineLayout* layout = primal_cast<VulkanGraphicsPipeline*>(aMaterial->mPipeline)->getLayout();
-	uint32_t offset = 0;
-	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), setScene ? 0 : 1, setScene ? 2 : 1, sets, 1, &offset);
+	uint32_t dynamicOffset = 0; // TODO : Calculate the number of dynamic buffers associated
+	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), offset, count, sets, 1, &dynamicOffset);
 }
 
 void VulkanCommandBuffer::bindMaterialInstance(MaterialInstance* aInstance, uint32_t aFrame)

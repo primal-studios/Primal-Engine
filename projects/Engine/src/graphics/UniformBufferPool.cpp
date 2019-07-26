@@ -96,9 +96,13 @@ UniformBufferObject* UniformBufferPool::acquire(const uint32_t aIndex)
 	}
 
 	mCursor = aIndex + 1;
-	IUniformBuffer* ubo = GraphicsFactory::instance().createUniformBuffer();
-	ubo->construct(mCreateInfo);
-	mBuffers.push_back(ubo);
+
+	if (mCursor >= mChunkSize * mBuffers.size())
+	{
+		IUniformBuffer* ubo = GraphicsFactory::instance().createUniformBuffer();
+		ubo->construct(mCreateInfo);
+		mBuffers.push_back(ubo);
+	}
 
 	const uint32_t index = aIndex / mChunkSize;
 	const uint32_t offset = aIndex - (index * mChunkSize);

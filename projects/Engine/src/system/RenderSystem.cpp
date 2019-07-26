@@ -81,6 +81,11 @@ RenderSystem::~RenderSystem()
 	delete[] mFramebuffers;
 	delete[] mPrimaryBuffer;
 
+	for (auto instance : mInstances)
+	{
+		delete instance;
+	}
+
 	delete mSceneData;
 	delete mUboObject0;
 	delete mUboPool;
@@ -223,7 +228,7 @@ void RenderSystem::initialize()
 	UniformBufferObjectElement* modl = new UniformBufferObjectElement{
 		"model",
 		EUniformBufferObjectElementType::UBO_TYPE_MAT4,
-		offsetof(UBO, model),
+		0,
 		sizeof(UBO::model)
 	};
 
@@ -240,14 +245,6 @@ void RenderSystem::initialize()
 		64,
 		sizeof(UBO::proj)
 	};
-
-	UniformBufferObjectElement* mvp = new UniformBufferObjectElement{
-		"mvp",
-		EUniformBufferObjectElementType::UBO_TYPE_MAT4,
-		offsetof(UBO, mvp),
-		sizeof(UBO::mvp)
-	};
-
 
 	std::vector<UniformBufferObjectElement*> elements = { modl };
 
@@ -270,6 +267,11 @@ void RenderSystem::initialize()
 	mMaterialInstance = mMaterial->createInstance();
 	mMaterialInstance2 = mMaterial->createInstance();
 	mMaterial2 = mMaterialInstance2->setTexture("albedo", tex2->getTexture());
+
+	for (uint32_t i = 0; i < 8; i++)
+	{
+		mInstances.push_back(mMaterial->createInstance());
+	}
 }
 
 void RenderSystem::preRender()
@@ -346,6 +348,16 @@ void RenderSystem::render()
 	handle->bindMaterial(mMaterial2, mCurrentFrame);
 	handle->bindMaterialInstance(mMaterialInstance2, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+
+	for (uint32_t i = 0; i < mInstances.size(); i++)
+	{
+		uint32_t x = i - mInstances.size() / 2;
+		Matrix4f modl = Matrix4f::identity();
+		modl = Matrix4f::translate(modl, Vector3f(-5, i * 10, 5));
+		mInstances[i]->setVariable("model", modl);
+		handle->bindMaterialInstance(mInstances[i], mCurrentFrame);
+		handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+	}
 
 	handle->endRenderPass();
 

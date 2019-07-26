@@ -22,8 +22,6 @@ class Material
 	friend class MaterialInstance;
 	friend class VulkanCommandBuffer;
 
-	uint32_t mChildInstances = 0;
-
 	struct BackingBufferInfo
 	{
 		std::vector<void*> blocks;
@@ -60,6 +58,10 @@ class Material
 
 		std::unordered_map<std::string, std::pair<UniformBufferPool*, UniformBufferObjectElement*>> mElements;
 		Material* mParent = nullptr;
+
+		uint32_t mChildInstances = 0;
+
+		uint8_t mDirtyBit = 2;
 };
 
 class MaterialInstance

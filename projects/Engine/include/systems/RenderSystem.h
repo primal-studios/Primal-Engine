@@ -71,6 +71,7 @@ class RenderSystem final : public System
 		MaterialInstance* mMaterialInstance{};
 		Material* mMaterial2{};
 		MaterialInstance* mMaterialInstance2{};
+		std::vector<MaterialInstance*> mInstances;
 
 		CommandBufferInheritanceInfo mPrimaryInheritance = {};
 		CommandBufferRecordInfo mPrimaryRecordInfo = {};
