@@ -16,9 +16,12 @@ struct MaterialCreateInfo
 };
 
 class MaterialInstance;
+class Material;
+struct MaterialGraphNode;
 
 class Material
 {
+	friend class MaterialGraphNode;
 	friend class MaterialInstance;
 	friend class VulkanCommandBuffer;
 
@@ -62,6 +65,10 @@ class Material
 		uint32_t mChildInstances = 0;
 
 		uint8_t mDirtyBit = 2;
+
+		MaterialGraphNode* mGraphNode = nullptr;
+
+		void _markDirty();
 };
 
 class MaterialInstance

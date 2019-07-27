@@ -1,7 +1,5 @@
 #include "systems/RenderSystem.h"
 
-#include <cstddef>
-
 #include "core/PrimalCast.h"
 #include "ecs/EntityManager.h"
 #include "filesystem/FileSystem.h"

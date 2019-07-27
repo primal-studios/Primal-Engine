@@ -1,9 +1,68 @@
-#include <utility>
 #include "graphics/Material.h"
 
 #include "graphics/vk/VulkanCommandBuffer.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanTexture.h"
+
+#include <algorithm>
+#include <utility>
+#include <vector>
+
+struct MaterialGraphNode
+{
+	Material* materialHandle;
+	std::vector<MaterialGraphNode*> children;
+	MaterialGraphNode* parent = nullptr;
+
+	void markMaterialDirty() const
+	{
+		parent->markMaterialDirty();
+	}
+};
+
+namespace detail
+{
+	static void SanitizeMaterialNode(MaterialGraphNode* aNode)
+	{
+		if (aNode->parent)
+		{
+			const auto it = std::find(aNode->children.begin(), aNode->children.end(), aNode);
+			aNode->children.erase(it);
+			aNode->parent = nullptr;
+		}
+	}
+
+	static void AddMaterialChild(MaterialGraphNode* aParent, MaterialGraphNode* aChild)
+	{
+		SanitizeMaterialNode(aChild);
+		aParent->children.push_back(aChild);
+		aChild->parent = aParent;
+	}
+
+	static Material* GetParent(MaterialGraphNode* aNode)
+	{
+		return aNode->parent->materialHandle;
+	}
+
+	static Material* GetFirstAncestor(MaterialGraphNode* aNode)
+	{
+		auto node = aNode;
+		while (node->parent != nullptr)
+		{
+			node = node->parent;
+		}
+		return node->materialHandle;
+	}
+
+	static void MarkMaterialAsDirty(MaterialGraphNode* aNode)
+	{
+		for (const auto & node : aNode->children)
+		{
+			MarkMaterialAsDirty(node);
+		}
+		aNode->markMaterialDirty();
+	}
+}
 
 Material::Material(const MaterialCreateInfo& aCreateInfo)
 	: mCreateInfo(aCreateInfo), mPipeline(aCreateInfo.pipeline), mTextures(aCreateInfo.textures), mUboLayouts(aCreateInfo.layouts)
@@ -15,7 +74,7 @@ Material::Material(const MaterialCreateInfo& aCreateInfo)
 	for (const auto& ubo : aCreateInfo.layouts)
 	{
 		// TODO: add mechanism to set shader stage mask
-		auto descSetLayout = VulkanUniformBuffer::getDescriptorSetLayout(ubo->getBindingPoint(), VK_SHADER_STAGE_VERTEX_BIT, 1);
+		auto descSetLayout = VulkanUniformBuffer::getDescriptorSetLayout(ubo->getBindingPoint(), VK_SHADER_STAGE_ALL_GRAPHICS, 1);
 		bindings.push_back(descSetLayout);
 
 		for (const auto& element : ubo->getElements())
@@ -122,6 +181,11 @@ MaterialInstance* Material::createInstance()
 void Material::destroyInstance(MaterialInstance* aInstance)
 {
 	delete aInstance;
+}
+
+void Material::_markDirty()
+{
+	mDirtyBit = 2;
 }
 
 MaterialInstance::MaterialInstance(Material* aMaterial, std::vector<UniformBufferObject*> aUbos, size_t aInstanceId)
