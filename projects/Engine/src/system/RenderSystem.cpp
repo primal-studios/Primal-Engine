@@ -121,6 +121,12 @@ void RenderSystem::initialize()
 		true
 	};
 
+	const CommandBufferCreateInfo transferBufferInfo =
+	{
+		mContext->getTransferCommandPool(),
+		true
+	};
+
 	const AttachmentDescription colorAttachment{
 		mSwapChain->getSwapchainFormat(),
 		IMAGE_SAMPLE_1,
@@ -219,7 +225,7 @@ void RenderSystem::initialize()
 	mIndexBuffer = primal_cast<VulkanIndexBuffer*>(mesh->getIBO());
 
 	mCpyBuffer = new VulkanCommandBuffer(mContext);
-	mCpyBuffer->construct(commandBufferInfo);
+	mCpyBuffer->construct(transferBufferInfo);
 	mCpyReady = 2;
 
 	CommandBufferRecordInfo recordInfo = {};
@@ -308,7 +314,7 @@ void RenderSystem::render()
 
 	if (mCpyReady == 2) {
 		handle->addDependency(mCpyBuffer);
-		mSwapChain->submit(mCpyBuffer, false);
+		mSwapChain->submitToTransferQueue(mCpyBuffer);
 		mCpyReady = 1;
 	}
 	else if (mCpyReady == 1) {

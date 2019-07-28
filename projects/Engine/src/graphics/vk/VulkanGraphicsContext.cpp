@@ -121,6 +121,14 @@ VulkanGraphicsContext::VulkanGraphicsContext(const GraphicsContextCreateInfo& aC
 	mPool = new VulkanCommandPool(this);
 	mPool->construct(commandPoolInfo);
 
+	const CommandPoolCreateInfo transferCommandPoolInfo = {
+		COMMAND_POOL_RESET_COMMAND_BUFFER,
+		getTransferQueueIndex()
+	};
+
+	mTransferPool = new VulkanCommandPool(this);
+	mTransferPool->construct(transferCommandPoolInfo);
+
 	GraphicsFactory::instance().initialize(ERenderAPI::RENDERAPI_VULKAN, this);
 }
 
@@ -143,6 +151,7 @@ VulkanGraphicsContext::~VulkanGraphicsContext()
 	})
 
 	delete mPool;
+	delete mTransferPool;
 
 	vkDestroyDevice(mDevice, nullptr);
 	vkDestroyInstance(mInstance, nullptr);
@@ -205,6 +214,11 @@ VmaAllocator VulkanGraphicsContext::getBufferAllocator() const
 VulkanCommandPool* VulkanGraphicsContext::getCommandPool() const
 {
 	return mPool;
+}
+
+VulkanCommandPool* VulkanGraphicsContext::getTransferCommandPool() const
+{
+	return mTransferPool;
 }
 
 void VulkanGraphicsContext::_initializeVulkan()

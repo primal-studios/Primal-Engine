@@ -39,6 +39,7 @@ class VulkanSwapChain final : public ISwapChain
 		VkFormat getDepthFormat() const;
 
 		void beginFrame();
+		void submitToTransferQueue(ICommandBuffer* aBuffer, bool aWaitForFinish = false) const;
 		void submit(ICommandBuffer* aBuffer, bool aIsLastSubmission = true) const;
 		bool swap();
 
