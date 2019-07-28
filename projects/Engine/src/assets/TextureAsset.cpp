@@ -52,6 +52,7 @@ void TextureAsset::_load()
 	uint32_t bindingPoint = jsonValue["bindingpoint"];
 	uint32_t shaderStage = jsonValue["shaderstage"];
 
+	// TODO: Cache texture file as image asset
 	const std::string textureFileName = jsonValue["texturefile"];
 	loadPath += textureFileName;
 

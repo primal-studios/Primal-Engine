@@ -15,7 +15,6 @@
 #include "graphics/vk/VulkanPipelineLayout.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
-#include "graphics/vk/VulkanDescriptorPool.h"
 #include "graphics/vk/VulkanTexture.h"
 
 #include "graphics/UniformBufferPool.h"
@@ -67,9 +66,7 @@ class RenderSystem final : public System
 		VulkanSampler* mSampler;
 
 		SceneData* mSceneData = nullptr;
-		Material* mMaterial{};
 		MaterialInstance* mMaterialInstance{};
-		Material* mMaterial2{};
 		MaterialInstance* mMaterialInstance2{};
 		std::vector<MaterialInstance*> mInstances;
 
@@ -78,7 +75,7 @@ class RenderSystem final : public System
 
 		Window* mWindow;
 
-		bool _onResize(WindowResizeEvent& aEvent);
+		bool _onResize(WindowResizeEvent& aEvent) const;
 
 		std::shared_ptr<ShaderAsset> mShaderAsset;
 		std::shared_ptr<RenderPassAsset> mRenderPassAsset;

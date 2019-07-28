@@ -8,17 +8,22 @@
 
 class MaterialManager
 {
-	public:
-		MaterialManager();
-		~MaterialManager();
+	friend class Material;
+	friend void detail::PruneNode(MaterialGraphNode* aNode);
 
-		Material* get(const std::string& aShader);
-		Material* create(const std::string& aShader);
+	MaterialManager() = default;
+public:
+	static MaterialManager& instance();
 
-		bool hasMaterial(const std::string& aShader);
+	void prune(Material* aMaterial);
+	void pruneAll();
+	void reset();
 
-	private:
-		std::unordered_map<std::string, Material*> mMaterials;
+	Material* createMaterial(const MaterialCreateInfo& aInfo);
+private:
+	static MaterialManager sManager;
+
+	std::vector<Material*> mRootMaterials;
 };
 
 #endif // materialmanager_h__

@@ -75,6 +75,10 @@ project "Engine"
 		"4005"
     }
 
+    flags {
+        "MultiProcessorCompile"
+    }
+
     filter "system:windows"
         cppdialect "C++17"
         systemversion "latest"

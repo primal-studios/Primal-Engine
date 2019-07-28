@@ -10,5 +10,5 @@ IIndexBuffer::IIndexBuffer(IGraphicsContext* aContext)
 uint32_t IIndexBuffer::getCount() const
 {
 	// TODO: Take the actual type of the buffer
-	return mSize / sizeof(uint16_t);
+	return static_cast<uint32_t>(mSize / sizeof(uint16_t));
 }

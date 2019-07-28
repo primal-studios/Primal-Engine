@@ -3,8 +3,8 @@
 #include "core/PrimalCast.h"
 #include "ecs/EntityManager.h"
 #include "filesystem/FileSystem.h"
+#include "graphics/MaterialManager.h"
 #include "graphics/vk/VulkanShaderModule.h"
-#include "graphics/vk/VulkanShaderStage.h"
 #include "graphics/vk/VulkanGraphicsPipeline.h"
 #include "graphics/vk/VulkanPipelineLayout.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
@@ -89,8 +89,8 @@ RenderSystem::~RenderSystem()
 	delete mUboPool;
 	delete mMaterialInstance;
 	delete mMaterialInstance2;
-	delete mMaterial;
-	delete mMaterial2;
+
+	MaterialManager::instance().reset();
 
 	delete mDescPool;
 
@@ -261,14 +261,13 @@ void RenderSystem::initialize()
 	materialCreateInfo.pipeline = mGraphicsPipeline;
 	materialCreateInfo.pool = mDescPool;
 	materialCreateInfo.textures = { { "albedo", mTexture } };
-	mMaterial = new Material(materialCreateInfo);
-	mMaterialInstance = mMaterial->createInstance();
-	mMaterialInstance2 = mMaterial->createInstance();
-	mMaterial2 = mMaterialInstance2->setTexture("albedo", tex2->getTexture());
+	mMaterialInstance = MaterialManager::instance().createMaterial(materialCreateInfo)->createInstance();
+	mMaterialInstance2 = mMaterialInstance->getParentMaterial()->createInstance();
+	mMaterialInstance2->setTexture("albedo", tex2->getTexture());
 
 	for (uint32_t i = 0; i < 8; i++)
 	{
-		mInstances.push_back(mMaterial->createInstance());
+		mInstances.push_back(mMaterialInstance->getParentMaterial()->createInstance());
 	}
 }
 
@@ -339,19 +338,19 @@ void RenderSystem::render()
 
 	handle->bindSceneData(mSceneData, mCurrentFrame); // bind once per pipeline layout. More than once is invalid
 
-	handle->bindMaterial(mMaterial, mCurrentFrame);
+	handle->bindMaterial(mMaterialInstance->getParentMaterial(), mCurrentFrame);
 	handle->bindMaterialInstance(mMaterialInstance, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
-	handle->bindMaterial(mMaterial2, mCurrentFrame);
+	handle->bindMaterial(mMaterialInstance2->getParentMaterial(), mCurrentFrame);
 	handle->bindMaterialInstance(mMaterialInstance2, mCurrentFrame);
 	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
 
 	for (uint32_t i = 0; i < mInstances.size(); i++)
 	{
-		uint32_t x = i - mInstances.size() / 2;
+		uint32_t x = i - static_cast<float>(mInstances.size()) / 2.0f;
 		Matrix4f modl = Matrix4f::identity();
-		modl = Matrix4f::translate(modl, Vector3f(-5, i * 10, 5));
+		modl = Matrix4f::translate(modl, Vector3f(-5, static_cast<float>(i) * 10, 5));
 		mInstances[i]->setVariable("model", modl);
 		handle->bindMaterialInstance(mInstances[i], mCurrentFrame);
 		handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
@@ -378,229 +377,15 @@ void RenderSystem::onEvent(Event& aEvent)
 	dispatcher.dispatch<WindowResizeEvent>(BIND_EVENT_FUNCTION(RenderSystem::_onResize));
 }
 
-bool RenderSystem::_onResize(WindowResizeEvent& aEvent)
+bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 {
-	VulkanGraphicsContext* vkContext = primal_cast<VulkanGraphicsContext*>(mContext);
-	vkContext->idle();
+	int32_t width = 0, height = 0;
 
-	for (uint32_t fbc = 0; fbc < mSwapChain->getImageViews().size(); fbc++)
+	while (width == 0 || height == 0)
 	{
-		VulkanFramebuffer* fb = mFramebuffers[fbc];
-		fb->destroy();
+		glfwGetFramebufferSize(mWindow->getNativeWindow(), &width, &height);
+		glfwWaitEvents();
 	}
-
-	mGraphicsPipeline->destroy();
-	mLayout->destroy();
-	mRenderPass->destroy();
-
-//	mSwapChain->destroy();
-
-	const uint32_t newWidth = aEvent.width();
-	const uint32_t newHeight = aEvent.height();
-
-	SwapChainCreateInfo swapChainInfo = {};
-	swapChainInfo.surfaceHandle = reinterpret_cast<uint64_t>(mContext->getSurfaceHandle());
-	swapChainInfo.width = newWidth;
-	swapChainInfo.height = newHeight;
-	swapChainInfo.maxImageCount = mFlightSize;
-	swapChainInfo.windowHandle = reinterpret_cast<uint64_t>(mWindow->getNativeWindow());
-	swapChainInfo.oldSwapchain = mSwapChain;
-	auto swapChain = new VulkanSwapChain(mContext);
-	swapChain->construct(swapChainInfo);
-	delete mSwapChain;
-	mSwapChain = swapChain;
-
-	const CommandBufferCreateInfo commandBufferInfo =
-	{
-		vkContext->getCommandPool(),
-		true
-	};
-
-	const AttachmentDescription colorAttachment{
-		mSwapChain->getSwapchainFormat(),
-		IMAGE_SAMPLE_1,
-		EAttachmentLoadOperation::CLEAR,
-		EAttachmentStoreOperation::STORE,
-		EAttachmentLoadOperation::DONT_CARE,
-		EAttachmentStoreOperation::DONT_CARE,
-		IMAGE_LAYOUT_UNDEFINED,
-		IMAGE_LAYOUT_PRESENT_SRC_KHR,
-	};
-
-	const AttachmentDescription depthAttachment{
-		static_cast<EDataFormat>(mSwapChain->getDepthFormat()),
-		IMAGE_SAMPLE_1,
-		EAttachmentLoadOperation::CLEAR,
-		EAttachmentStoreOperation::DONT_CARE,
-		EAttachmentLoadOperation::DONT_CARE,
-		EAttachmentStoreOperation::DONT_CARE,
-		IMAGE_LAYOUT_UNDEFINED,
-		IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-	};
-
-	const AttachmentReference colorRef = {
-		0,
-		EImageLayout::IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-	};
-
-	const AttachmentReference depthRef = {
-		1,
-		EImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-	};
-
-
-	SubPassDescription desc = {};
-	desc.colors.push_back(colorRef);
-	desc.depthStencil = depthRef;
-
-	SubPassDependency dep = {};
-	dep.dependencyFlags = 0;
-	dep.srcSubPass = VK_SUBPASS_EXTERNAL;
-	dep.dstSubPass = 0;
-	dep.srcStages = PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT;
-	dep.srcAccess = 0;
-	dep.dstStages = PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT;
-	dep.dstAccess = ACCESS_COLOR_ATTACHMENT_READ | ACCESS_COLOR_ATTACHMENT_WRITE;
-
-	mRenderPass->construct(mRenderPass->getCreateInfo());
-
-	const auto vertSource = FileSystem::instance().getBytes("data/effects/vert.spv");
-	const auto fragSource = FileSystem::instance().getBytes("data/effects/frag.spv");
-
-	IShaderModule* vertModule = new VulkanShaderModule(mContext);
-	vertModule->construct({ 0, vertSource });
-
-	IShaderModule* fragModule = new VulkanShaderModule(mContext);
-	fragModule->construct({ 0, fragSource });
-
-	IShaderStage* vertStage = new VulkanShaderStage(mContext);
-	vertStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_VERTEX, vertModule, "main" });
-
-	IShaderStage* fragStage = new VulkanShaderStage(mContext);
-	fragStage->construct({ 0, EShaderStageFlagBits::SHADER_STAGE_FRAGMENT, fragModule, "main" });
-
-	PipelineVertexStateCreateInfo vertexState = {};
-	vertexState.flags = 0;
-	vertexState.bindingDescriptions = { mVertexBuffer->getBinding() };
-	vertexState.attributeDescriptions = mVertexBuffer->getAttributes();
-
-	PipelineInputAssemblyStateCreateInfo assemblyState = {};
-	assemblyState.topology = PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	assemblyState.primitiveRestartEnable = false;
-
-	Viewport viewport = {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(mWindow->width());
-	viewport.height = static_cast<float>(mWindow->height());
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	Vector4i rect = {};
-	rect.x = 0;
-	rect.y = 0;
-	rect.z = static_cast<int32_t>(mWindow->width());
-	rect.w = static_cast<int32_t>(mWindow->height());
-
-	PipelineViewportStateCreateInfo viewportState = {};
-	viewportState.flags = 0;
-	viewportState.viewports = { viewport };
-	viewportState.rectangles = { rect };
-
-	PipelineRasterizationStateCreateInfo rasterizationState = {};
-	rasterizationState.flags = 0;
-	rasterizationState.depthClampEnable = false;
-	rasterizationState.rasterizerDiscardEnable = false;
-	rasterizationState.polygonMode = EPolygonMode::FILL;
-	rasterizationState.lineWidth = 1.0f;
-	rasterizationState.cullMode = ECullMode::BACK;
-	rasterizationState.frontFace = EFrontFace::CLOCKWISE;
-	rasterizationState.depthBiasEnable = false;
-
-	PipelineMultisampleStateCreateInfo multisampleState = {};
-	multisampleState.sampleShadingEnable = false;
-	multisampleState.rasterizationSamples = SAMPLE_COUNT_1;
-
-	PipelineColorBlendAttachmentState colorBlendStateAttachement = {};
-	colorBlendStateAttachement.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlendStateAttachement.blendEnable = false;
-
-	PipelineColorBlendStateCreateInfo colorBlendState = {};
-	colorBlendState.flags = 0;
-	colorBlendState.attachments = { colorBlendStateAttachement };
-	colorBlendState.logicOpEnable = false;
-	colorBlendState.logicOp = ELogicOp::LOGIC_OP_COPY;
-	colorBlendState.blendConstants[0] = 0.0f;
-	colorBlendState.blendConstants[1] = 0.0f;
-	colorBlendState.blendConstants[2] = 0.0f;
-	colorBlendState.blendConstants[3] = 0.0f;
-
-	PipelineDepthStencilStateCreateInfo depthState = {};
-	depthState.flags = 0;
-	depthState.depthTestEnable = true;
-	depthState.depthWriteEnable = true;
-	depthState.depthCompareOp = ECompareOp::COMPARE_OP_LESS;
-	depthState.depthBoundsTestEnable = false;
-	depthState.minDepthBounds = 0.0f;
-	depthState.maxDepthBounds = 1.0f;
-	depthState.stencilTestEnable = false;
-	depthState.front = {};
-	depthState.back = {};
-
-	GraphicsPipelineCreateInfo createInfo = {};
-	createInfo.flags = 0;
-	createInfo.stages = { vertStage, fragStage };
-
-	createInfo.vertexState = &vertexState;
-	createInfo.assemblyState = &assemblyState;
-	createInfo.viewportState = &viewportState;
-	createInfo.rasterizationState = &rasterizationState;
-	createInfo.multisampleState = &multisampleState;
-	createInfo.colorBlendState = &colorBlendState;
-	createInfo.layout = mLayout;
-	createInfo.basePipelineHandle = nullptr;
-	createInfo.basePipelineIndex = -1;
-	createInfo.renderPass = mRenderPass;
-	createInfo.subPass = 0;
-	createInfo.depthStencilState = &depthState;
-
-	mGraphicsPipeline->construct(createInfo);
-
-	auto views = mSwapChain->getImageViews();
-
-	uint32_t fbc = 0;
-
-	for (const auto view : views)
-	{
-		FramebufferCreateInfo frameBufferInfo = {};
-		frameBufferInfo.attachments.push_back(view);
-		frameBufferInfo.attachments.push_back(mSwapChain->getDepthView());
-		frameBufferInfo.renderPass = mRenderPass;
-		frameBufferInfo.height = mWindow->height();
-		frameBufferInfo.width = mWindow->width();
-		frameBufferInfo.layers = 1;
-
-		VulkanFramebuffer* fb = mFramebuffers[fbc];
-		fb->construct(frameBufferInfo);
-
-		fbc++;
-	}
-
-	UniformBufferCreateInfo uniformBufferCreateInfo = {};
-	uniformBufferCreateInfo.flags = 0;
-	uniformBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
-	uniformBufferCreateInfo.size = sizeof(UBO);
-	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
-
-	primal_cast<VulkanUniformBuffer*>(mUboObject0->getBuffer())->reconstruct(uniformBufferCreateInfo);
-
-	delete vertStage;
-	delete fragStage;
-
-	delete vertModule;
-	delete fragModule;
-
-	vkContext->idle();
 
 	return false;
 }

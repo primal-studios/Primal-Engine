@@ -18,7 +18,7 @@ SceneData::SceneData(const SceneDataCreateInfo& aInfo)
 	createInfo.size = sz;
 	createInfo.usage = BUFFER_USAGE_UNIFORM_BUFFER;
 
-	mUboPool = new UniformBufferPool(1, sz, 0, createInfo, aInfo.elements);
+	mUboPool = new UniformBufferPool(1, static_cast<uint32_t>(sz), 0, createInfo, aInfo.elements);
 	mObj = mUboPool->acquire();
 
 	mDescSetPool = GraphicsFactory::instance().createDescriptorPool();

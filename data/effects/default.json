@@ -24,7 +24,7 @@
           "binding" : 0,
           "descriptortype" : 8,
           "descriptorcount" : 1,
-          "stageflags" : 1
+          "stageflags" : 31
         },
         {
           "binding": 1,

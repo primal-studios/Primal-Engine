@@ -19,10 +19,18 @@ class MaterialInstance;
 class Material;
 struct MaterialGraphNode;
 
+namespace detail {
+	void PruneNode(MaterialGraphNode* aNode);
+	void ResetNode(MaterialGraphNode* aNode);
+}
+
 class Material
 {
-	friend class MaterialGraphNode;
+	friend void detail::PruneNode(MaterialGraphNode* aNode);
+
+	friend struct MaterialGraphNode;
 	friend class MaterialInstance;
+	friend class MaterialManager;
 	friend class VulkanCommandBuffer;
 
 	struct BackingBufferInfo
@@ -31,9 +39,9 @@ class Material
 		size_t elementCount;
 		size_t elementSize;
 	};
-
-	public:
 		explicit Material(const MaterialCreateInfo& aCreateInfo);
+		explicit Material(const MaterialCreateInfo& aCreateInfo, bool aIsRoot);
+	public:
 		Material(const Material&) = delete;
 		Material(Material&&) noexcept = delete;
 		~Material();
@@ -44,8 +52,10 @@ class Material
 		MaterialInstance* createInstance();
 		void destroyInstance(MaterialInstance* aInstance);
 
-		[[nodiscard]] Material* clone();
+		[[nodiscard]] Material* clone() const;
+		void setDirtyFlag(bool aIsDirty);
 
+		void setTexture(const std::string& aName, ITexture* aTexture);
 	private:
 		MaterialCreateInfo mCreateInfo;
 		IGraphicsPipeline* mPipeline;
@@ -60,15 +70,16 @@ class Material
 		uint64_t mCursor = 0;
 
 		std::unordered_map<std::string, std::pair<UniformBufferPool*, UniformBufferObjectElement*>> mElements;
-		Material* mParent = nullptr;
-
-		uint32_t mChildInstances = 0;
 
 		uint8_t mDirtyBit = 2;
 
 		MaterialGraphNode* mGraphNode = nullptr;
 
-		void _markDirty();
+		void _markDirty() const;
+
+		std::vector<ITexture*> _getActiveTextures() const;
+		Material* _getRootAncestor() const;
+		Material* _getParent() const;
 };
 
 class MaterialInstance
@@ -95,7 +106,8 @@ public:
 	template<typename T>
 	T* getVariable(const std::string& aName);
 
-	[[nodiscard]] Material* setTexture(const std::string& aName, ITexture* aTexture);
+	Material* setTexture(const std::string& aName, ITexture* aTexture);
+	Material* getParentMaterial() const;
 
 private:
 	[[nodiscard]] std::pair<UniformBufferPool*, UniformBufferObjectElement*> _getElementFromName(const std::string& aName) const;
@@ -110,11 +122,7 @@ void MaterialInstance::setVariable(const std::string& aName, T aValue)
 template <typename T>
 T* MaterialInstance::getVariable(const std::string& aName)
 {
-	auto parent = mParent;
-	while (parent->mParent != nullptr)
-	{
-		parent = parent->mParent;
-	}
+	auto parent = mParent->_getRootAncestor();
 
 	const auto pair = _getElementFromName(aName);
 	PRIMAL_ASSERT(pair.first != nullptr && pair.second != nullptr, "Invalid variable");

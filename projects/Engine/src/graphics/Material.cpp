@@ -1,5 +1,6 @@
 #include "graphics/Material.h"
 
+#include "graphics/MaterialManager.h"
 #include "graphics/vk/VulkanCommandBuffer.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanTexture.h"
@@ -8,15 +9,33 @@
 #include <utility>
 #include <vector>
 
+namespace detail
+{
+	static void SanitizeMaterialNode(MaterialGraphNode* aNode);
+	static void MarkMaterialAsDirty(MaterialGraphNode* aNode);
+}
+
 struct MaterialGraphNode
 {
-	Material* materialHandle;
+	Material* materialHandle = nullptr;
 	std::vector<MaterialGraphNode*> children;
 	MaterialGraphNode* parent = nullptr;
+	uint32_t instances = 0;
 
-	void markMaterialDirty() const
+	MaterialGraphNode() = default;
+	MaterialGraphNode(const MaterialGraphNode&) = delete;
+	MaterialGraphNode(MaterialGraphNode&&) noexcept = delete;
+	MaterialGraphNode& operator=(const MaterialGraphNode&) = delete;
+	MaterialGraphNode& operator=(MaterialGraphNode&&) noexcept = delete;
+
+	~MaterialGraphNode()
 	{
-		parent->markMaterialDirty();
+		detail::SanitizeMaterialNode(this);
+	}
+
+	void markMaterialDirty()
+	{
+		detail::MarkMaterialAsDirty(this);
 	}
 };
 
@@ -24,11 +43,18 @@ namespace detail
 {
 	static void SanitizeMaterialNode(MaterialGraphNode* aNode)
 	{
+		for (const auto & child : aNode->children)
+		{
+			child->parent = nullptr;
+		}
+
 		if (aNode->parent)
 		{
-			const auto it = std::find(aNode->children.begin(), aNode->children.end(), aNode);
-			aNode->children.erase(it);
-			aNode->parent = nullptr;
+			const auto it = std::find(aNode->parent->children.begin(), aNode->parent->children.end(), aNode);
+			if (it != aNode->parent->children.end())
+			{
+				aNode->parent->children.erase(it);
+			}
 		}
 	}
 
@@ -41,7 +67,11 @@ namespace detail
 
 	static Material* GetParent(MaterialGraphNode* aNode)
 	{
-		return aNode->parent->materialHandle;
+		if (aNode->parent)
+		{
+			return aNode->parent->materialHandle;
+		}
+		return nullptr;
 	}
 
 	static Material* GetFirstAncestor(MaterialGraphNode* aNode)
@@ -60,11 +90,77 @@ namespace detail
 		{
 			MarkMaterialAsDirty(node);
 		}
-		aNode->markMaterialDirty();
+		aNode->materialHandle->setDirtyFlag(true);
+	}
+
+	void PruneNode(MaterialGraphNode* aNode)
+	{
+		// PRUNE IF HAS SINGLE CHILD OR NO CHILDREN
+
+		// ON PRUNE
+		// - Distribute the state information to child
+		// - Remove node from tree
+		// - Move children to parent
+
+
+		if (aNode->instances != 0)
+		{
+			return;
+		}
+
+		if (aNode->children.size() == 1)
+		{
+			auto child = aNode->children[0];
+			// Distribute to child
+			if (!aNode->parent)
+			{
+				// Root node. Move UBO information to child
+				child->materialHandle->mUboLayouts = aNode->materialHandle->mUboLayouts;
+				aNode->materialHandle->mUboLayouts.clear();
+
+				auto& instance = MaterialManager::instance();
+				instance.mRootMaterials.erase(std::find(instance.mRootMaterials.begin(), instance.mRootMaterials.end(), aNode->materialHandle));
+				instance.mRootMaterials.push_back(child->materialHandle);
+			}
+
+			for (const auto& textureIt : aNode->materialHandle->mTextures)
+			{
+				auto mat = child->materialHandle;
+				if (mat->mTextures.find(textureIt.first) == mat->mTextures.end())
+				{
+					mat->mTextures.insert({ textureIt.first, textureIt.second });
+				}
+			}
+
+			aNode->materialHandle->mTextures.clear();
+
+			delete aNode->materialHandle;
+		}
+		else if (aNode->children.empty())
+		{
+			delete aNode->materialHandle;
+		}
+		else
+		{
+			for (auto child : aNode->children)
+			{
+				PruneNode(child);
+			}
+		}
+	}
+
+	void ResetNode(MaterialGraphNode* aNode)
+	{
+		auto children = aNode->children;
+		for (auto child : children)
+		{
+			ResetNode(child);
+		}
+		delete aNode->materialHandle;
 	}
 }
 
-Material::Material(const MaterialCreateInfo& aCreateInfo)
+Material::Material(const MaterialCreateInfo& aCreateInfo, bool aIsRoot)
 	: mCreateInfo(aCreateInfo), mPipeline(aCreateInfo.pipeline), mTextures(aCreateInfo.textures), mUboLayouts(aCreateInfo.layouts)
 {
 	mSet = aCreateInfo.pool->acquire();
@@ -98,10 +194,25 @@ Material::Material(const MaterialCreateInfo& aCreateInfo)
 
 	mSet.set->construct(setCreateInfo);
 	mDescSetPool = aCreateInfo.pool;
+
+	mGraphNode = new MaterialGraphNode;
+	mGraphNode->materialHandle = this;
+	this->setDirtyFlag(true);
+
+	if (aIsRoot)
+	{
+		MaterialManager::instance().mRootMaterials.push_back(this);
+	}
+}
+
+Material::Material(const MaterialCreateInfo& aCreateInfo)
+	: Material(aCreateInfo, true)
+{
 }
 
 Material::~Material()
 {
+	delete mGraphNode;
 	mDescSetPool->release(mSet);
 	delete mLayout;
 
@@ -116,28 +227,42 @@ Material::~Material()
 
 static constexpr size_t BufferSize = 65536;
 
-Material* Material::clone()
+Material* Material::clone() const
 {
-	const auto mat = new Material(mCreateInfo);
-	Material* m = this;
-	while (m->mParent != nullptr)
-	{
-		m = m->mParent;
-	}
-	mat->mParent = m;
+	const auto mat = new Material(mCreateInfo, false);
+
+	mat->mTextures.clear();
+	mat->mUboLayouts.clear();
+
+	detail::AddMaterialChild(this->mGraphNode, mat->mGraphNode);
 	return mat;
+}
+
+void Material::setDirtyFlag(const bool aIsDirty)
+{
+	mDirtyBit = aIsDirty ? 2 : 0;
+}
+
+void Material::setTexture(const std::string& aName, ITexture* aTexture)
+{
+	mTextures[aName] = aTexture;
+	detail::MarkMaterialAsDirty(mGraphNode);
 }
 
 MaterialInstance* Material::createInstance()
 {
-	Material* mat = mParent != nullptr ? mParent : this;
+	Material* mat = detail::GetParent(mGraphNode);
+	if (mat == nullptr)
+	{
+		mat = mGraphNode->materialHandle;
+	}
 
 	if (mat->mFreeSlots.empty())
 	{
 		std::vector<UniformBufferObject*> ubos;
 		for (const auto& ubo : mat->mUboLayouts)
 		{
-			UniformBufferObject* obj = ubo->acquire(mat->mCursor);
+			UniformBufferObject* obj = ubo->acquire(static_cast<uint32_t>(mat->mCursor));
 			ubos.push_back(obj);
 
 			const auto backingBuffer = mat->mBackingBuffers.find(ubo);
@@ -173,7 +298,7 @@ MaterialInstance* Material::createInstance()
 	std::vector<UniformBufferObject*> ubos;
 	for (const auto& ubo : mat->mUboLayouts)
 	{
-		ubos.push_back(ubo->acquire(idx));
+		ubos.push_back(ubo->acquire(static_cast<uint32_t>(idx)));
 	}
 	return new MaterialInstance(this, ubos, idx);
 }
@@ -183,40 +308,84 @@ void Material::destroyInstance(MaterialInstance* aInstance)
 	delete aInstance;
 }
 
-void Material::_markDirty()
+void Material::_markDirty() const
 {
-	mDirtyBit = 2;
+	this->mGraphNode->markMaterialDirty();
+}
+
+std::vector<ITexture*> Material::_getActiveTextures() const
+{
+	std::unordered_map<uint32_t, ITexture*> textures;
+	const Material* mat = this;
+	while (mat != nullptr)
+	{
+		for (auto & tex : mat->mTextures)
+		{
+			if (textures.find(tex.second->getBindingPoint()) == textures.end())
+			{
+				textures.insert({ tex.second->getBindingPoint(), tex.second });
+			}
+		}
+		mat = detail::GetParent(mat->mGraphNode);
+	}
+
+	std::vector<ITexture*> res;
+	for (const auto & it : textures)
+	{
+		res.push_back(it.second);
+	}
+
+	return res;
+}
+
+Material* Material::_getRootAncestor() const
+{
+	return detail::GetFirstAncestor(mGraphNode);
+}
+
+Material* Material::_getParent() const
+{
+	return detail::GetParent(mGraphNode);
 }
 
 MaterialInstance::MaterialInstance(Material* aMaterial, std::vector<UniformBufferObject*> aUbos, size_t aInstanceId)
 	: mParent(aMaterial), mUbos(std::move(aUbos)), mInstanceId(aInstanceId)
 {
-	++mParent->mChildInstances;
+	++mParent->mGraphNode->instances;
 }
 
 MaterialInstance::~MaterialInstance()
 {
 	mParent->mFreeSlots.push_back(mInstanceId);
-	--mParent->mChildInstances;
+	--mParent->mGraphNode->instances;
 }
 
 Material* MaterialInstance::setTexture(const std::string& aName, ITexture* aTexture)
 {
 	Material* mat = mParent;
-	if (mParent->mChildInstances > 1)
+	if (mParent->mGraphNode->instances > 1)
 	{
-		mat = new Material(mParent->mCreateInfo);
-		mat->mParent = mParent;
+		--mParent->mGraphNode->instances;
+		mat = mParent->clone();
+		mat->mTextures.insert({ aName, aTexture });
 		mParent = mat;
 	}
-	mat->mTextures[aName] = aTexture;
-	mat->mDirtyBit = 2;
+	else
+	{
+		mat->mTextures[aName] = aTexture;
+		mat->setDirtyFlag(true);
+	}
 	return mat;
+}
+
+Material* MaterialInstance::getParentMaterial() const
+{
+	return mParent;
 }
 
 std::pair<UniformBufferPool*, UniformBufferObjectElement*> MaterialInstance::_getElementFromName(const std::string& aName) const
 {
-	auto parent = mParent;
+	auto parent = detail::GetFirstAncestor(mParent->mGraphNode);
 
 	const auto it = parent->mElements.find(aName);
 	if (it == parent->mElements.end())

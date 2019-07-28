@@ -224,11 +224,7 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 
 	if (aMaterial->mDirtyBit)
 	{
-		Material* parent = aMaterial;
-		if (parent->mParent != nullptr)
-		{
-			parent = parent->mParent;
-		}
+		Material* parent = aMaterial->_getRootAncestor();
 
 		for (UniformBufferPool* uboPool : parent->mUboLayouts)
 		{
@@ -243,10 +239,10 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 			}
 		}
 
-		for (const auto& tex : aMaterial->mTextures)
+		for (const auto& tex : aMaterial->_getActiveTextures())
 		{
-			VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex.second);
-			auto writeDesc = vtex->getWriteDescriptor(tex.second->getBindingPoint(), {});
+			VulkanTexture* vtex = primal_cast<VulkanTexture*>(tex);
+			auto writeDesc = vtex->getWriteDescriptor(tex->getBindingPoint(), {});
 			auto writeDescSet = writeDesc.getWriteDescriptorSet();
 			writeDescSet.dstSet = set;
 			writeSets.push_back(writeDescSet);
@@ -299,11 +295,7 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 
 void VulkanCommandBuffer::bindMaterialInstance(MaterialInstance* aInstance, uint32_t aFrame)
 {
-	Material* parent = aInstance->mParent;
-	while (parent->mParent != nullptr)
-	{
-		parent = parent->mParent;
-	}
+	Material* parent = aInstance->mParent->_getRootAncestor();
 
 	VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aInstance->mParent->mSet.set)->getHandle(aFrame);
 

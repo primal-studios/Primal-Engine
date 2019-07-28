@@ -49,6 +49,8 @@
 
 *.sln.DotSettings.user
 
+# Graphics Debugger Settings
+renderdoc/
 
 
 # libraries ignores
