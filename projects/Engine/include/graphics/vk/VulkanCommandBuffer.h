@@ -6,9 +6,16 @@
 #include <vector>
 
 #include <vulkan/vulkan.h>
+#include <vma/vma.h>
 
 class VulkanCommandBuffer final : public ICommandBuffer
 {
+		struct BufferAllocation 
+		{
+			VmaAllocator allocator;
+			VmaAllocation allocation;
+			VkBuffer buffer;
+		};
 	public:
 		explicit VulkanCommandBuffer(IGraphicsContext* aContext);
 		VulkanCommandBuffer(const VulkanCommandBuffer& aCommandBuffer) = delete;
@@ -31,6 +38,7 @@ class VulkanCommandBuffer final : public ICommandBuffer
 		void recordRenderPass(const RenderPassRecordInfo& aInfo) override;
 		void endRenderPass() override;
 
+		void copyBuffers(ISwapChain* aSwapchain, IVertexBuffer* aBuffer, void* aData, const size_t aSize) override;
 		void bindGraphicsPipeline(IGraphicsPipeline* aPipeline) override;
 		void bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount, std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets) override;
 		void bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType) override;
@@ -60,10 +68,14 @@ class VulkanCommandBuffer final : public ICommandBuffer
 		std::vector<VulkanCommandBuffer*> mDependsOnThis;
 		std::vector<VulkanCommandBuffer*> mThisDependsOn;
 
-		std::vector<VkSemaphore> mSemDependsOnThis;
-		std::vector<VkSemaphore> mSemThisDependsOn;
+		std::vector<VkSemaphore> mSemsToWaitOn;
+		std::vector<VkSemaphore> mSemsToSignal;
+
+		std::vector<BufferAllocation> mBuffersToFree;
 
 		SceneData* mData = nullptr;
+
+		// Inherited via ICommandBuffer
 };
 
 #endif // vulkancommandbuffer_h__

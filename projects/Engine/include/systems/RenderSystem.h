@@ -1,6 +1,8 @@
 #ifndef rendersystem_h__
 #define rendersystem_h__
 
+#include <vma/vma.h>
+
 #include "core/Window.h"
 #include "ecs/System.h"
 
@@ -16,8 +18,8 @@
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanTexture.h"
-
 #include "graphics/UniformBufferPool.h"
+
 #include "assets/ShaderAsset.h"
 #include "assets/RenderPassAsset.h"
 
@@ -53,6 +55,8 @@ class RenderSystem final : public System
 		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
 		VulkanFramebuffer** mFramebuffers = nullptr;
 
+		VulkanCommandBuffer* mCpyBuffer = nullptr;
+
 		VulkanVertexBuffer* mVertexBuffer;
 		VulkanIndexBuffer* mIndexBuffer;
 
@@ -79,6 +83,8 @@ class RenderSystem final : public System
 
 		std::shared_ptr<ShaderAsset> mShaderAsset;
 		std::shared_ptr<RenderPassAsset> mRenderPassAsset;
+
+		uint8_t mCpyReady = 2;
 };
 
 #endif // rendersystem_h__

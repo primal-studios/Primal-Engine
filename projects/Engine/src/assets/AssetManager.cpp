@@ -16,7 +16,7 @@ void AssetManager::_loadAssetAsync(std::list<std::string>::iterator& aIter, cons
 	{
 		mAsyncTaskGroup.run([=] 
 		{
-				asset->second->_load();
+			asset->second->_load();
 		});
 	}
 

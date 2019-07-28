@@ -2,18 +2,19 @@
 #include "core/PrimalCast.h"
 #include "graphics/vk/VulkanCommandBuffer.h"
 #include "graphics/vk/VulkanCommandPool.h"
+#include "graphics/vk/VulkanDescriptorSet.h"
 #include "graphics/vk/VulkanFramebuffer.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanGraphicsPipeline.h"
+#include "graphics/vk/VulkanIndexBuffer.h"
+#include "graphics/vk/VulkanPipelineLayout.h"
 #include "graphics/vk/VulkanRenderPass.h"
+#include "graphics/vk/VulkanSwapChain.h"
+#include "graphics/vk/VulkanTexture.h"
+#include "graphics/vk/VulkanUniformBuffer.h"
+#include "graphics/vk/VulkanVertexBuffer.h"
 
 #include <algorithm>
-#include "graphics/vk/VulkanVertexBuffer.h"
-#include "graphics/vk/VulkanIndexBuffer.h"
-#include "graphics/vk/VulkanDescriptorSet.h"
-#include "graphics/vk/VulkanUniformBuffer.h"
-#include "graphics/vk/VulkanTexture.h"
-#include "graphics/vk/VulkanPipelineLayout.h"
 
 VulkanCommandBuffer::VulkanCommandBuffer(IGraphicsContext* aContext)
 	: ICommandBuffer(aContext), mContext(aContext)
@@ -65,17 +66,26 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
 
 void VulkanCommandBuffer::addDependency(ICommandBuffer* aDependsOn)
 {
+	VulkanCommandBuffer* other = primal_cast<VulkanCommandBuffer*>(aDependsOn);
+
+	VkSemaphore thisSem = getSemaphore();
+
+	other->mSemsToSignal.push_back(thisSem);
+	mSemsToWaitOn.push_back(thisSem);
+
 	mThisDependsOn.push_back(primal_cast<VulkanCommandBuffer*>(aDependsOn));
-	primal_cast<VulkanCommandBuffer*>(aDependsOn)->mDependsOnThis.push_back(this);
+	other->mDependsOnThis.push_back(this);
 }
 
 void VulkanCommandBuffer::removeDependency(ICommandBuffer* aDependsOn)
 {
-	const auto it = std::find(mThisDependsOn.begin(), mThisDependsOn.end(), primal_cast<VulkanCommandBuffer*>(aDependsOn));
-	mThisDependsOn.erase(it);
+	VulkanCommandBuffer* other = primal_cast<VulkanCommandBuffer*>(aDependsOn);
 
-	const auto otherIt = std::find(primal_cast<VulkanCommandBuffer*>(aDependsOn)->mDependsOnThis.begin(), primal_cast<VulkanCommandBuffer*>(aDependsOn)->mDependsOnThis.end(), this);
-	primal_cast<VulkanCommandBuffer*>(aDependsOn)->mDependsOnThis.erase(otherIt);
+	mThisDependsOn.erase(std::find(mThisDependsOn.begin(), mThisDependsOn.end(), aDependsOn));
+	other->mDependsOnThis.erase(std::find(other->mDependsOnThis.begin(), other->mDependsOnThis.end(), this));
+
+	other->mSemsToSignal.erase(std::find(other->mSemsToSignal.begin(), other->mSemsToSignal.end(), getSemaphore()));
+	mSemsToWaitOn.erase(std::find(mSemsToWaitOn.begin(), mSemsToWaitOn.end(), getSemaphore()));
 }
 
 void VulkanCommandBuffer::construct(const CommandBufferCreateInfo& aInfo)
@@ -102,12 +112,12 @@ void VulkanCommandBuffer::construct(const CommandBufferCreateInfo& aInfo)
 
 	for (auto dependsOnThis : mDependsOnThis)
 	{
-		mSemDependsOnThis.push_back(dependsOnThis->getSemaphore());
+		mSemsToWaitOn.push_back(dependsOnThis->getSemaphore());
 	}
 
 	for (auto thisDependsOn : mThisDependsOn)
 	{
-		mSemThisDependsOn.push_back(thisDependsOn->getSemaphore());
+		mSemsToSignal.push_back(thisDependsOn->getSemaphore());
 	}
 
 	mPool = pool->getPool();
@@ -126,19 +136,29 @@ void VulkanCommandBuffer::destroy()
 
 void VulkanCommandBuffer::record(const CommandBufferRecordInfo& aInfo)
 {
+	for (BufferAllocation allocation : mBuffersToFree)
+	{
+		vmaDestroyBuffer(allocation.allocator, allocation.buffer, allocation.allocation);
+	}
+	mBuffersToFree.clear();
+
 	VkCommandBufferInheritanceInfo inheritanceInfo = {};
-	inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-	inheritanceInfo.framebuffer = primal_cast<VulkanFramebuffer*>(aInfo.inheritance->frameBuffer)->getHandle();
-	inheritanceInfo.occlusionQueryEnable = aInfo.inheritance->occlusionQueryEnable;
-	inheritanceInfo.pipelineStatistics = aInfo.inheritance->pipelineStatistics;
-	inheritanceInfo.renderPass = primal_cast<VulkanRenderPass*>(aInfo.inheritance->renderPass)->getHandle();
-	inheritanceInfo.subpass = aInfo.inheritance->subPass;
-	inheritanceInfo.queryFlags = aInfo.inheritance->queryPrecsise ? VK_QUERY_CONTROL_PRECISE_BIT : 0;
+	if (aInfo.inheritance != nullptr) {
+		inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+		inheritanceInfo.framebuffer = primal_cast<VulkanFramebuffer*>(aInfo.inheritance->frameBuffer)->getHandle();
+		inheritanceInfo.occlusionQueryEnable = aInfo.inheritance->occlusionQueryEnable;
+		inheritanceInfo.pipelineStatistics = aInfo.inheritance->pipelineStatistics;
+		inheritanceInfo.renderPass = primal_cast<VulkanRenderPass*>(aInfo.inheritance->renderPass)->getHandle();
+		inheritanceInfo.subpass = aInfo.inheritance->subPass;
+		inheritanceInfo.queryFlags = aInfo.inheritance->queryPrecsise ? VK_QUERY_CONTROL_PRECISE_BIT : 0;
+	}
 
 	VkCommandBufferBeginInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	info.flags = aInfo.flags;
-	info.pInheritanceInfo = &inheritanceInfo;
+	if (aInfo.inheritance != nullptr) {
+		info.pInheritanceInfo = &inheritanceInfo;
+	}
 
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkBeginCommandBuffer(mBuffer, &info);
@@ -176,6 +196,55 @@ void VulkanCommandBuffer::recordRenderPass(const RenderPassRecordInfo& aInfo)
 void VulkanCommandBuffer::endRenderPass()
 {
 	vkCmdEndRenderPass(mBuffer);
+}
+
+void VulkanCommandBuffer::copyBuffers(ISwapChain* aSwapchain, IVertexBuffer* aBuffer, void* aData, const size_t aSize)
+{
+	VulkanVertexBuffer* vb = primal_cast<VulkanVertexBuffer*>(aBuffer);
+	VulkanSwapChain* sc = primal_cast<VulkanSwapChain*>(aSwapchain);
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+
+	const bool usesStaging = (vb->mInfo.usage & BUFFER_USAGE_TRANSFER_DST) != 0;
+	const bool isExclusive = (vb->mInfo.sharingMode == SHARING_MODE_EXCLUSIVE);
+
+	if (usesStaging) 
+	{
+		if (vb->mStagingBuffer != VK_NULL_HANDLE)
+		{
+			vmaDestroyBuffer(context->getBufferAllocator(), vb->mStagingBuffer, vb->mStagingAllocation);
+			vb->mStagingBuffer = VK_NULL_HANDLE;
+		}
+
+		VkBufferCreateInfo stagingBufferInfo = {};
+		stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		stagingBufferInfo.size = aSize;
+		stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		stagingBufferInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+		VmaAllocationCreateInfo stagingAllocInfo = {};
+		stagingAllocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+		vmaCreateBuffer(context->getBufferAllocator(), &stagingBufferInfo, &stagingAllocInfo, &vb->mStagingBuffer, &vb->mStagingAllocation, nullptr);
+	
+		void* data;
+		vmaMapMemory(context->getBufferAllocator(), vb->mStagingAllocation, &data);
+		memcpy(data, aData, aSize);
+		vmaUnmapMemory(context->getBufferAllocator(), vb->mStagingAllocation);
+
+		VkBufferCopy copyRegion = {};
+		copyRegion.size = aSize;
+		vkCmdCopyBuffer(mBuffer, vb->mStagingBuffer, vb->mBuffer, 1, &copyRegion);
+
+		mBuffersToFree.push_back(VulkanCommandBuffer::BufferAllocation{ context->getBufferAllocator(), vb->mStagingAllocation, vb->mStagingBuffer });
+	}
+	else
+	{
+		void* data;
+		vmaMapMemory(context->getBufferAllocator(), vb->mAllocation, &data);
+		memcpy(data, mData, aSize);
+		vmaUnmapMemory(context->getBufferAllocator(), vb->mAllocation);
+	}
 }
 
 void VulkanCommandBuffer::bindGraphicsPipeline(IGraphicsPipeline* aPipeline)
@@ -344,12 +413,12 @@ VkSemaphore VulkanCommandBuffer::getSemaphore() const
 
 std::vector<VkSemaphore>& VulkanCommandBuffer::getSemaphoresToSignal()
 {
-	return mSemDependsOnThis;
+	return mSemsToSignal;
 }
 
 std::vector<VkSemaphore>& VulkanCommandBuffer::getSemaphoresToWaitOn()
 {
-	return mSemThisDependsOn;
+	return mSemsToWaitOn;
 }
 
 VkFence& VulkanCommandBuffer::getFence()
@@ -359,10 +428,16 @@ VkFence& VulkanCommandBuffer::getFence()
 
 void VulkanCommandBuffer::_destroy() 
 {
+	for (const auto& allocation : mBuffersToFree)
+	{
+		vmaDestroyBuffer(allocation.allocator, allocation.buffer, allocation.allocation);
+	}
+	mBuffersToFree.clear();
+
 	mDependsOnThis.clear();
 	mThisDependsOn.clear();
-	mSemDependsOnThis.clear();
-	mSemThisDependsOn.clear();
+	mSemsToWaitOn.clear();
+	mSemsToSignal.clear();
 
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	vkFreeCommandBuffers(context->getDevice(), mPool, 1, &mBuffer);

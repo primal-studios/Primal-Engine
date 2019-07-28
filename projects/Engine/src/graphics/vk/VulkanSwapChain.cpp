@@ -253,6 +253,7 @@ void VulkanSwapChain::construct(const SwapChainCreateInfo& aInfo)
 
 	vkGetDeviceQueue(context->getDevice(), context->getPresentQueueIndex(), 0, &mPresentQueue);
 	vkGetDeviceQueue(context->getDevice(), context->getGraphicsQueueIndex(), 0, &mGraphicsQueue);
+	vkGetDeviceQueue(context->getDevice(), context->getTransferQueueIndex(), 0, &mTransferQueue);
 
 	vkWaitForFences(context->getDevice(), 1, &mFences[mCurrentImage], VK_TRUE, 0xFFFFFFFFFFFFFFFF);
 	vkResetFences(context->getDevice(), 1, &mFences[mCurrentImage]);
@@ -302,7 +303,7 @@ void VulkanSwapChain::beginFrame()
 	const auto result = vkAcquireNextImageKHR(device, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailable[mCurrentImage], nullptr, &mCurrentImageInChain);
 }
 
-void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
+void VulkanSwapChain::submit(ICommandBuffer* aBuffer, bool aIsLastSubmission) const
 {
 	VulkanCommandBuffer* buffer = primal_cast<VulkanCommandBuffer*>(aBuffer);
 
@@ -341,7 +342,7 @@ void VulkanSwapChain::submit(ICommandBuffer* aBuffer) const
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &buf;
 
-	vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mFences[mCurrentImage]);
+	vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, aIsLastSubmission ? mFences[mCurrentImage] : VK_NULL_HANDLE);
 }
 
 bool VulkanSwapChain::swap()
@@ -374,6 +375,21 @@ bool VulkanSwapChain::swap()
 EDataFormat VulkanSwapChain::getSwapchainFormat() const
 {
 	return mSwapchainImageFormat;
+}
+
+VkQueue VulkanSwapChain::getGraphicsQueue() const
+{
+	return mGraphicsQueue;
+}
+
+VkQueue VulkanSwapChain::getPresentQueue() const
+{
+	return mPresentQueue;
+}
+
+VkQueue VulkanSwapChain::getTransferQueue() const
+{
+	return mTransferQueue;
 }
 
 void VulkanSwapChain::_createImageViews()

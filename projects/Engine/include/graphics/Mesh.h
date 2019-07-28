@@ -42,6 +42,9 @@ class Mesh
 		IVertexBuffer* getVBO() const;
 		IIndexBuffer* getIBO() const;
 
+		void* getData() const;
+		size_t getSize() const;
+
 	private:
 		IVertexBuffer* mVertexBuffer;
 		IIndexBuffer* mIndexBuffer;

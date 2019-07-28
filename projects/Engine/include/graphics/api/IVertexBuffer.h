@@ -16,6 +16,7 @@ struct VertexBufferCreateInfo
 	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
+	size_t size;
 };
 
 class IVertexBuffer
@@ -31,7 +32,6 @@ class IVertexBuffer
 
 		virtual void construct(const VertexBufferCreateInfo& aInfo) = 0;
 
-		virtual void setData(void* aData, const size_t aSize) = 0;
 		virtual void setLayout(const BufferLayout& aLayout) = 0;
 
 		virtual void bind() = 0;

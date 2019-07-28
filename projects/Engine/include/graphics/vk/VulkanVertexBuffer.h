@@ -9,6 +9,7 @@
 
 class VulkanVertexBuffer final : public IVertexBuffer
 {
+		friend class VulkanCommandBuffer;
 	public:
 		explicit VulkanVertexBuffer(IGraphicsContext* aContext);
 		VulkanVertexBuffer(const VulkanVertexBuffer& aOther) = delete;
@@ -20,7 +21,6 @@ class VulkanVertexBuffer final : public IVertexBuffer
 
 		void construct(const VertexBufferCreateInfo& aInfo) override;
 
-		void setData(void* aData, const size_t aSize) override;
 		void setLayout(const BufferLayout& aLayout) override;
 
 		void bind() override;
@@ -32,11 +32,12 @@ class VulkanVertexBuffer final : public IVertexBuffer
 		std::vector<VertexInputAttributeDescription> getAttributes() const;
 
 	private:
-		VkBuffer mBuffer{};
-		VkBuffer mStagingBuffer{};
+		VkBuffer mBuffer = VK_NULL_HANDLE;
+		VkBuffer mStagingBuffer = VK_NULL_HANDLE;
 		VmaAllocation mStagingAllocation{};
 		VmaAllocation mAllocation{};
 
+		VertexBufferCreateInfo mInfo;
 		VkVertexInputBindingDescription mBindingDescription{};
 		std::vector<VkVertexInputAttributeDescription> mAttributeDescriptions;
 };

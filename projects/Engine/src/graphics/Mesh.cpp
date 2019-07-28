@@ -73,9 +73,9 @@ void Mesh::build()
 	vBufferCreateInfo.flags = 0;
 	vBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
 	vBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_VERTEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST;
+	vBufferCreateInfo.size = mVertices.size() * sizeof(Vertex);
 
 	mVertexBuffer = GraphicsFactory::instance().createVertexBuffer();
-	mVertexBuffer->setData(mVertices.data(), mVertices.size() * sizeof(Vertex));
 
 	BufferLayout layout;
 	layout.push<Vector3f>("iPosition");
@@ -130,4 +130,14 @@ IVertexBuffer* Mesh::getVBO() const
 IIndexBuffer* Mesh::getIBO() const
 {
 	return mIndexBuffer;
+}
+
+void* Mesh::getData() const
+{
+	return (void*) mVertices.data();
+}
+
+size_t Mesh::getSize() const
+{
+	return mVertices.size() * sizeof(Vertex);
 }

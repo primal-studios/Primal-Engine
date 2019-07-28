@@ -10,6 +10,7 @@
 #include "graphics/api/IGraphicsPipeline.h"
 #include "graphics/api/IIndexBuffer.h"
 #include "graphics/api/IRenderPass.h"
+#include "graphics/api/ISwapChain.h"
 #include "graphics/api/IVertexBuffer.h"
 #include "math/Vector4.h"
 
@@ -101,6 +102,8 @@ class ICommandBuffer
 
 		virtual void recordRenderPass(const RenderPassRecordInfo&) = 0;
 		virtual void endRenderPass() = 0;
+
+		virtual void copyBuffers(ISwapChain* aSwapchain, IVertexBuffer* aBuffer, void* aData, const size_t aSize) = 0;
 
 		virtual void bindGraphicsPipeline(IGraphicsPipeline*) = 0;
 		virtual void bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount, std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets) = 0;

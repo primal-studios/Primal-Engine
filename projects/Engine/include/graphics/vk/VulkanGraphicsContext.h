@@ -14,6 +14,7 @@ struct DeviceQueueFamilyIndices
 {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
+	std::optional<uint32_t> transferFamily;
 };
 
 class VulkanGraphicsContext final : public IGraphicsContext
@@ -35,6 +36,7 @@ class VulkanGraphicsContext final : public IGraphicsContext
 
 		uint32_t getGraphicsQueueIndex() const;
 		uint32_t getPresentQueueIndex() const;
+		uint32_t getTransferQueueIndex() const;
 
 		VmaAllocator getImageAllocator() const;
 		VmaAllocator getBufferAllocator() const;
@@ -54,6 +56,7 @@ class VulkanGraphicsContext final : public IGraphicsContext
 
 		uint32_t mGraphicsQueueFamily = 0;
 		uint32_t mPresentQueueFamily = 0;
+		uint32_t mTransferQueueFamily = 0;
 
 		VkInstance mInstance{};
 		VkDevice mDevice{};

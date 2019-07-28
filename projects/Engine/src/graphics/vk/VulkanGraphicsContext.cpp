@@ -187,6 +187,11 @@ uint32_t VulkanGraphicsContext::getPresentQueueIndex() const
 	return mPresentQueueFamily;
 }
 
+uint32_t VulkanGraphicsContext::getTransferQueueIndex() const
+{
+	return mTransferQueueFamily;
+}
+
 VmaAllocator VulkanGraphicsContext::getImageAllocator() const
 {
 	return mImageAllocator;
@@ -400,6 +405,10 @@ void VulkanGraphicsContext::_createLogicalDevice()
 		{
 			indices.graphicsFamily = i;
 		}
+		else if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			indices.transferFamily = i;
+		}
 
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, i, mSurface, &presentSupport);
@@ -409,7 +418,7 @@ void VulkanGraphicsContext::_createLogicalDevice()
 			indices.presentFamily = i;
 		}
 
-		if (indices.graphicsFamily.has_value() && indices.presentFamily.has_value())
+		if (indices.graphicsFamily.has_value() && indices.presentFamily.has_value() && indices.transferFamily.has_value())
 		{
 			break;
 		}
@@ -419,11 +428,13 @@ void VulkanGraphicsContext::_createLogicalDevice()
 
 	mGraphicsQueueFamily = indices.graphicsFamily.value();
 	mPresentQueueFamily = indices.presentFamily.value();
+	mTransferQueueFamily = indices.transferFamily.value();
 
 	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	unordered_set<uint32_t> uniqueFamilies;
 	uniqueFamilies.insert(indices.graphicsFamily.value());
 	uniqueFamilies.insert(indices.presentFamily.value());
+	uniqueFamilies.insert(indices.transferFamily.value());
 
 	float queuePriority = 0.0f;
 

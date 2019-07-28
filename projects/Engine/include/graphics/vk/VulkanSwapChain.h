@@ -39,10 +39,14 @@ class VulkanSwapChain final : public ISwapChain
 		VkFormat getDepthFormat() const;
 
 		void beginFrame();
-		void submit(ICommandBuffer* aBuffer) const;
+		void submit(ICommandBuffer* aBuffer, bool aIsLastSubmission = true) const;
 		bool swap();
 
 		EDataFormat getSwapchainFormat() const;
+
+		VkQueue getGraphicsQueue() const;
+		VkQueue getPresentQueue() const;
+		VkQueue getTransferQueue() const;
 	private:
 		void _createImageViews();
 		void _createDepthResources();
@@ -70,9 +74,9 @@ class VulkanSwapChain final : public ISwapChain
 		std::vector<VkSemaphore> mImageAvailable;
 		std::vector<VkSemaphore> mRenderFinished;
 		std::vector<VkFence> mFences;
-
 		VkQueue mPresentQueue{};
 		VkQueue mGraphicsQueue{};
+		VkQueue mTransferQueue{};
 
 		uint32_t mCurrentImageInChain = 0;
 };

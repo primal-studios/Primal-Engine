@@ -84,6 +84,7 @@ RenderSystem::~RenderSystem()
 		delete instance;
 	}
 
+	delete mCpyBuffer;
 	delete mSceneData;
 	delete mUboObject0;
 	delete mUboPool;
@@ -217,6 +218,16 @@ void RenderSystem::initialize()
 	mVertexBuffer = primal_cast<VulkanVertexBuffer*>(mesh->getVBO());
 	mIndexBuffer = primal_cast<VulkanIndexBuffer*>(mesh->getIBO());
 
+	mCpyBuffer = new VulkanCommandBuffer(mContext);
+	mCpyBuffer->construct(commandBufferInfo);
+	mCpyReady = 2;
+
+	CommandBufferRecordInfo recordInfo = {};
+	recordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
+	mCpyBuffer->record(recordInfo);
+	mCpyBuffer->copyBuffers(mSwapChain, mVertexBuffer, mesh->getData(), mesh->getSize());
+	mCpyBuffer->end();
+
 	UniformBufferCreateInfo uniformBufferCreateInfo = {};
 	uniformBufferCreateInfo.flags = 0;
 	uniformBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
@@ -281,6 +292,7 @@ float angle = 0.0f;
 void RenderSystem::render()
 {
 	const auto handle = *(mPrimaryBuffer + mCurrentFrame);
+	const auto prevHandle = *(mPrimaryBuffer + ((mCurrentFrame - 1) % mFlightSize));
 
 	mPrimaryInheritance.renderPass = mRenderPass;
 	mPrimaryInheritance.frameBuffer = mFramebuffers[mCurrentFrame];
@@ -293,6 +305,16 @@ void RenderSystem::render()
 	mPrimaryRecordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
 
 	mSwapChain->beginFrame();
+
+	if (mCpyReady == 2) {
+		handle->addDependency(mCpyBuffer);
+		mSwapChain->submit(mCpyBuffer, false);
+		mCpyReady = 1;
+	}
+	else if (mCpyReady == 1) {
+		prevHandle->removeDependency(mCpyBuffer);
+		mCpyReady = 0;
+	}
 	
 	handle->record(mPrimaryRecordInfo);
 
