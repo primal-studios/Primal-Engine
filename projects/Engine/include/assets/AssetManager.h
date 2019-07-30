@@ -1,18 +1,20 @@
 #ifndef assetmanager_h__
 #define assetmanager_h__
 
-#include <utility>
-#include <unordered_map>
+#include <condition_variable>
+#include <functional>
+#include <list>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <type_traits>
-#include <memory>
-#include <list>
+#include <typeindex>
+#include <unordered_map>
+#include <utility>
 
 #include <tbb/task_group.h>
 
 #include "assets/Asset.h"
-#include <typeindex>
-#include <functional>
 
 constexpr uint8_t assetLoadLowPrio = 0;
 constexpr uint8_t assetLoadMedPrio = 1;
@@ -54,6 +56,11 @@ class AssetManager
 		AssetManager();
 
 		std::unordered_map<std::string, std::shared_ptr<Asset>> mAssets;
+
+		uint32_t mWaitingAssets = 0;
+		std::condition_variable mCv;
+		std::mutex mCvMutex;
+		std::mutex mQueueMutex;
 };
 
 template<typename T, typename ... Arguments>
@@ -90,15 +97,21 @@ std::shared_ptr<T> AssetManager::loadAsync(const std::string& aName,
 	switch (aPrio)
 	{
 		case assetLoadHighPrio:
+			mQueueMutex.lock();
 			mAsyncAssetQueueHigh.push_back(aName);
+			mQueueMutex.unlock();
 			break;
 
 		case assetLoadMedPrio:
+			mQueueMutex.lock();
 			mAsyncAssetQueueMedium.push_back(aName);
+			mQueueMutex.unlock();
 			break;
 
 		case assetLoadLowPrio:
+			mQueueMutex.lock();
 			mAsyncAssetQueueLow.push_back(aName);
+			mQueueMutex.unlock();
 			break;
 
 		default:
@@ -106,6 +119,10 @@ std::shared_ptr<T> AssetManager::loadAsync(const std::string& aName,
 	}
 
 	mAssets[aName] = asset;
+
+	std::lock_guard<std::mutex> lock(mCvMutex);
+	++mWaitingAssets;
+	mCv.notify_one();
 
 	return asset;
 }

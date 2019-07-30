@@ -11,13 +11,13 @@
 #include "graphics/vk/VulkanIndexBuffer.h"
 #include "graphics/vk/VulkanUniformBuffer.h"
 #include "graphics/vk/VulkanDescriptorPool.h"
-#include "assets/TextureAsset.h"
 
 #include <stb/stb_image.h>
 
 #include "assets/AssetManager.h"
 #include "assets/MeshAsset.h"
 #include "assets/ShaderAsset.h"
+#include "assets/TextureAsset.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
