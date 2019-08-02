@@ -9,6 +9,7 @@ AssetManager& AssetManager::instance()
 	return *instance;
 }
 
+// NOT THREAD SAFE
 void AssetManager::_loadAssetAsync(std::list<std::string>::iterator& aIter, const uint8_t aPrio)
 {
 	const auto asset = mAssets.find(*aIter);
@@ -54,25 +55,44 @@ AssetManager::AssetManager()
 	{
 		while (true)
 		{
+			mQueueMutex.lock();
 			auto it = mAsyncAssetQueueHigh.begin();
 			while (it != mAsyncAssetQueueHigh.end())
 				_loadAssetAsync(it, assetLoadHighPrio);
+			mQueueMutex.unlock();
 
+			mQueueMutex.lock();
 			it = mAsyncAssetQueueMedium.begin();
 			while (it != mAsyncAssetQueueMedium.end())
 			{
 				if (mAsyncAssetQueueHigh.size() > 0)
+				{
+					mQueueMutex.unlock();
 					break;
+				}
 				_loadAssetAsync(it, assetLoadMedPrio);
 			}
+			mQueueMutex.unlock();
 
+			mQueueMutex.lock();
 			it = mAsyncAssetQueueLow.begin();
 			while (it != mAsyncAssetQueueLow.end())
 			{
 				if (mAsyncAssetQueueMedium.size() > 0 || mAsyncAssetQueueHigh.size() > 0)
+				{
+					mQueueMutex.unlock();
 					break;
+				}
 				_loadAssetAsync(it, assetLoadLowPrio);
 			}
+			mQueueMutex.unlock();
+
+			std::unique_lock<std::mutex> lock(mCvMutex);
+			while (!mWaitingAssets)
+			{
+				mCv.wait(lock);
+			}
+			--mWaitingAssets;
 		}
 	});
 }

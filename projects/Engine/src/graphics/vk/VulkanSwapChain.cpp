@@ -303,6 +303,59 @@ void VulkanSwapChain::beginFrame()
 	const auto result = vkAcquireNextImageKHR(device, mSwapchain, std::numeric_limits<uint64_t>::max(), mImageAvailable[mCurrentImage], nullptr, &mCurrentImageInChain);
 }
 
+void VulkanSwapChain::submitToTransferQueue(ICommandBuffer* aBuffer, bool aWaitForFinish) const
+{
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+	const VkDevice device = context->getDevice();
+
+	VkFence fence = VK_NULL_HANDLE;
+	if (aWaitForFinish) 
+	{
+		VkFenceCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		createInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		
+		vkCreateFence(device, &createInfo, nullptr, &fence);
+	}
+
+	VulkanCommandBuffer* buffer = primal_cast<VulkanCommandBuffer*>(aBuffer);
+
+	auto& toWaitOn = buffer->getSemaphoresToWaitOn();
+	auto& toSignal = buffer->getSemaphoresToSignal();
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	PipelineStageFlags flags[] = { PIPELINE_STAGE_DRAW_INDIRECT };
+	submitInfo.pWaitDstStageMask = flags;
+
+	if (!toWaitOn.empty()) 
+	{
+		submitInfo.waitSemaphoreCount = static_cast<uint32_t>(toWaitOn.size());
+		submitInfo.pWaitSemaphores = toWaitOn.data();
+	}
+	else
+	{
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &mImageAvailable[mCurrentImage];
+	}
+	if (!toSignal.empty())
+	{
+		submitInfo.signalSemaphoreCount = static_cast<uint32_t>(toSignal.size());
+		submitInfo.pSignalSemaphores = toSignal.data();
+	}
+
+	VkCommandBuffer buf = buffer->getHandle();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &buf;
+	
+	vkQueueSubmit(mTransferQueue, 1, &submitInfo, fence);
+
+	if (aWaitForFinish)
+	{
+		vkDestroyFence(device, fence, nullptr);
+	}
+}
+
 void VulkanSwapChain::submit(ICommandBuffer* aBuffer, bool aIsLastSubmission) const
 {
 	VulkanCommandBuffer* buffer = primal_cast<VulkanCommandBuffer*>(aBuffer);
