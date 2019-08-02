@@ -84,10 +84,7 @@ class TransformComponent final : public Component
 			});
 		}
 
-		~TransformComponent()
-		{
-			
-		}
+		~TransformComponent();
 
 		Property<Vector3f> position = Vector3f(0, 0, 0);
 		Property<Quaternionf> rotation = Quaternionf::euler(Vector3f(0, 0, 0));

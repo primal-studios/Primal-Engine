@@ -1,6 +1,8 @@
 #include "ecs/Entity.h"
 #include "ecs/EntityManager.h"
 
+#include "components/TransformComponent.h"
+
 Entity::Entity(const std::string& aName)
 {
 	mParent = nullptr;
@@ -13,7 +15,7 @@ Entity::~Entity()
 {
 	for(const auto& comp : mComponents)
 	{
-		Component::destroy(comp, false);
+		delete comp;
 	}
 	
 	mComponents.clear();

@@ -2,6 +2,39 @@
 #define property_h__
 
 #include <functional>
+#include "application/Application.h"
+
+template<typename T>
+class Property;
+
+template<typename T>
+class PropertyUpdatedEvent : public Event
+{
+public:
+	explicit PropertyUpdatedEvent(Property<T>& aProperty, T aOldValue, T& aNewValue)
+		: mProperty(aProperty), mNewValue(aNewValue)
+	{
+		mOldValue = aOldValue;
+	}
+
+	std::string toString() const override
+	{
+		return std::to_string(*mProperty);
+	}
+
+	T getOldValue() const { return mOldValue; }
+	T& getNewValue() const { return mNewValue; }
+
+	Property<T>& getProperty() const { return mProperty; }
+
+	EVENT_CLASS_TYPE(PropertyUpdatedEvent)
+
+private:
+	Property<T>& mProperty;
+
+	T mOldValue;
+	T& mNewValue;
+};
 
 namespace detail
 {
@@ -136,6 +169,7 @@ class Property
 
 		T operator = (const T& aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue = aValue;
 
 			if(mSetCallback)
@@ -148,6 +182,7 @@ class Property
 		template<typename = std::enable_if_t<detail::plus_equals_exists_v<T> || detail::is_base_type_v<T>>>
 		T operator+=(const T & aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue += aValue;
 
 			if (mSetCallback)
@@ -159,6 +194,7 @@ class Property
 		template<typename = std::enable_if_t<detail::minus_equals_exists_v<T> || detail::is_base_type_v<T>>>
 		T operator-=(const T & aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue -= aValue;
 
 			if (mSetCallback)
@@ -170,6 +206,7 @@ class Property
 		template<typename = std::enable_if_t<detail::times_equals_exists_v<T> || detail::is_base_type_v<T>>>
 		T operator*=(const T & aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue *= aValue;
 
 			if (mSetCallback)
@@ -181,6 +218,7 @@ class Property
 		template<typename = std::enable_if_t<detail::divide_equals_exists_v<T> || detail::is_base_type_v<T>>>
 		T operator/=(const T & aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue /= aValue;
 
 			if (mSetCallback)
@@ -192,6 +230,7 @@ class Property
 		template<typename Other, typename = std::enable_if_t<detail::plus_equals_exists_v<T, Other> || detail::is_base_type_v<T>>>
 		T operator+=(const Other& aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue += aValue;
 
 			if (mSetCallback)
@@ -203,6 +242,7 @@ class Property
 		template<typename Other, typename = std::enable_if_t<detail::minus_equals_exists_v<T, Other> || detail::is_base_type_v<T>>>
 		T operator-=(const Other& aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue -= aValue;
 
 			if (mSetCallback)
@@ -214,6 +254,7 @@ class Property
 		template<typename Other, typename = std::enable_if_t<detail::times_equals_exists_v<T, Other> || detail::is_base_type_v<T>>>
 		T operator*=(const Other& aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue *= aValue;
 
 			if (mSetCallback)
@@ -225,6 +266,7 @@ class Property
 		template<typename Other, typename = std::enable_if_t<detail::divide_equals_exists_v<T, Other> || detail::is_base_type_v<T>>>
 		T operator/=(const Other& aValue)
 		{
+			_callUpdateEvent(aValue);
 			mValue /= aValue;
 
 			if (mSetCallback)
@@ -286,6 +328,12 @@ class Property
 
 		std::function<T(T)> mSetCallback;
 		std::function<T(T&)> mGetCallback;
+
+		void _callUpdateEvent(const T& aValue)
+		{
+			PropertyUpdatedEvent<T> e(this, mValue, aValue);
+			Application::get().onEvent(e);
+		}
 };
 
 #endif // property_h__

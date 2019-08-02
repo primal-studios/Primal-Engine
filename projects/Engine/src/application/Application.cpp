@@ -8,6 +8,7 @@
 #include "physics/PhysicsSystem.h"
 #include "application/ApplicationLayer.h"
 #include "systems/VulkanRenderSystem.h"
+#include "ecs/EntityManager.h"
 
 Application* Application::sInstance;
 
@@ -19,6 +20,8 @@ Application::Application()
 
 	mWindow = Window::create();
 	mWindow->setEventCallback(BIND_EVENT_FUNCTION(Application::onEvent));
+
+	EntityManager::instance().setEventCallback(BIND_EVENT_FUNCTION(Application::onEvent));
 
 	SystemManager::instance().addSystem<RenderSystem>(mWindow);
 	SystemManager::instance().addSystem<PhysicsSystem>();

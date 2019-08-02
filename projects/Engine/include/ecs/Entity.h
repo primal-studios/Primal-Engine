@@ -6,9 +6,10 @@
 #include <typeindex>
 
 #include "ecs/Component.h"
-#include "components/TransformComponent.h"
+#include "events/ComponentEvent.h"
 
 class EntityManager;
+class TransformComponent;
 class Entity
 {
 	friend class EntityManager;
@@ -70,6 +71,8 @@ T* Entity::addComponent(Arguments&&... aArgs)
 	component->onConstruct();
 
 	mComponents.push_back(component);
+
+	EntityManager::instance().mCallback(ComponentAddedEvent<T>(component));
 	_addComponent(std::type_index(typeid(T)), component);
 
 	return component;

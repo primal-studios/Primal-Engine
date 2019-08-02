@@ -3,17 +3,19 @@
 
 #include <string>
 #include <unordered_map>
+#include <typeindex>
 
 #include "Entity.h"
+#include "events/Event.h"
 #include "core/PoolAllocator.h"
 #include "ecs/ComponentView.h"
-#include <typeindex>
 
 class EntityManager
 {
 	friend class Entity;
 	friend class Component;
 	public:
+		using EventCallbackFunction = std::function<void(Event&)>;
 		static EntityManager& instance();
 		
 		Entity* create(const std::string& aName = "Entity");
@@ -25,6 +27,9 @@ class EntityManager
 		void destroy(Entity* aEntity);
 		void destroyAll() const;
 
+		void setEventCallback(const EventCallbackFunction& aCallback);
+		EventCallbackFunction getEventCallback() const { return mCallback; }
+
 	private:
 		EntityManager();
 
@@ -35,6 +40,8 @@ class EntityManager
 		PoolAllocator* mComponentPool;
 
 		std::vector<Component*> mEmptyVector;
+
+		EventCallbackFunction mCallback;
 };
 
 template <typename T>

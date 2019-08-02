@@ -6,7 +6,7 @@ class Component
 {
 	public:
 		Component() = default;
-		virtual ~Component() = default;
+		virtual ~Component();
 
 		virtual void onEnable() {};
 		virtual void onConstruct() {};
@@ -20,8 +20,6 @@ class Component
 		virtual void onPostRender() {};
 
 		virtual void onDestroy() {};
-
-		static void destroy(Component* aComponent, const bool aRemoveFromEntity = true);
 
 		Entity* entity = nullptr;
 };

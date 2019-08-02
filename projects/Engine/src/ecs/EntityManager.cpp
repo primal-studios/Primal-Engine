@@ -66,6 +66,11 @@ void EntityManager::destroyAll() const
 	delete mComponentPool;
 }
 
+void EntityManager::setEventCallback(const EventCallbackFunction& aCallback)
+{
+	mCallback = aCallback;
+}
+
 EntityManager::EntityManager()
 {
 	mEntityPool = new PoolAllocator(64, 1000000, 512);

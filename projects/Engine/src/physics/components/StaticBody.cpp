@@ -3,6 +3,8 @@
 #include "ecs/Entity.h"
 #include "ecs/SystemManager.h"
 #include "physics/PhysicsSystem.h"
+#include "math/Vector3.h"
+#include "components/TransformComponent.h"
 
 StaticBody::StaticBody()
 {

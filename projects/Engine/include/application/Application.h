@@ -26,7 +26,7 @@ class Application
 		void pushOverlay(ApplicationLayer* aOverlay);
 		void popOverlay(ApplicationLayer* aOverlay);
 
-		Window& getWindoe() const { return *mWindow; }
+		Window& getWindow() const { return *mWindow; }
 		static Application& get() { return *sInstance; }
 
 	private:
