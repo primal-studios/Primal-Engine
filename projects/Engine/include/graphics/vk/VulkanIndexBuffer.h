@@ -8,6 +8,7 @@
 
 class VulkanIndexBuffer final : public IIndexBuffer
 {
+		friend class VulkanCommandBuffer;
 	public:
 		explicit VulkanIndexBuffer(IGraphicsContext* aContext);
 		VulkanIndexBuffer(const VulkanIndexBuffer& aOther) = delete;
@@ -19,18 +20,14 @@ class VulkanIndexBuffer final : public IIndexBuffer
 
 		void construct(const IndexBufferCreateInfo& aInfo) override;
 
-		void setData(void* aData, const size_t aSize) override;
-
-		void bind() override;
-		void unbind() override;
-
-		VkBuffer getHandle() const;
-
+		[[nodiscard]] uint32_t getCount() const override;
 	private:
-		VkBuffer mBuffer{};
-		VkBuffer mStagingBuffer{};
+		VkBuffer mBuffer = VK_NULL_HANDLE;
+		VkBuffer mStagingBuffer = VK_NULL_HANDLE;
 		VmaAllocation mStagingAllocation{};
 		VmaAllocation mAllocation{};
+
+		IndexBufferCreateInfo mInfo;
 };
 
 #endif // vulkanindexbuffer_h__

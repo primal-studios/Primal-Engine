@@ -242,7 +242,56 @@ void VulkanCommandBuffer::copyBuffers(ISwapChain* aSwapchain, IVertexBuffer* aBu
 	{
 		void* data;
 		vmaMapMemory(context->getBufferAllocator(), vb->mAllocation, &data);
-		memcpy(data, mData, aSize);
+		memcpy(data, mData, aSize);  // NOLINT(bugprone-undefined-memory-manipulation)
+		vmaUnmapMemory(context->getBufferAllocator(), vb->mAllocation);
+	}
+}
+
+void VulkanCommandBuffer::copyBuffers(ISwapChain* aSwapchain, IIndexBuffer* aBuffer, void* aData, const size_t aSize)
+{
+	VulkanIndexBuffer* vb = primal_cast<VulkanIndexBuffer*>(aBuffer);
+	VulkanSwapChain* sc = primal_cast<VulkanSwapChain*>(aSwapchain);
+	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
+
+	const bool usesStaging = (vb->mInfo.usage & BUFFER_USAGE_TRANSFER_DST) != 0;
+	const bool isExclusive = (vb->mInfo.sharingMode == SHARING_MODE_EXCLUSIVE);
+
+	if (usesStaging)
+	{
+		if (vb->mStagingBuffer != VK_NULL_HANDLE)
+		{
+			vmaDestroyBuffer(context->getBufferAllocator(), vb->mStagingBuffer, vb->mStagingAllocation);
+			vb->mStagingBuffer = VK_NULL_HANDLE;
+		}
+
+		VkBufferCreateInfo stagingBufferInfo = {};
+		stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		stagingBufferInfo.size = aSize;
+		stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		stagingBufferInfo.sharingMode = isExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+		VmaAllocationCreateInfo stagingAllocInfo = {};
+		stagingAllocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+		vmaCreateBuffer(context->getBufferAllocator(), &stagingBufferInfo, &stagingAllocInfo, &vb->mStagingBuffer, &vb->mStagingAllocation, nullptr);
+
+		void* data;
+		vmaMapMemory(context->getBufferAllocator(), vb->mStagingAllocation, &data);
+		memcpy(data, aData, aSize);
+		vmaUnmapMemory(context->getBufferAllocator(), vb->mStagingAllocation);
+
+		VkBufferCopy copyRegion = {};
+		copyRegion.size = aSize;
+		vkCmdCopyBuffer(mBuffer, vb->mStagingBuffer, vb->mBuffer, 1, &copyRegion);
+
+		mBuffersToFree.push_back(VulkanCommandBuffer::BufferAllocation{ context->getBufferAllocator(), vb->mStagingAllocation, vb->mStagingBuffer });
+	}
+	else
+	{
+		void* data;
+		vmaMapMemory(context->getBufferAllocator(), vb->mAllocation, &data);
+		memcpy(data, mData, aSize);  // NOLINT(bugprone-undefined-memory-manipulation)
 		vmaUnmapMemory(context->getBufferAllocator(), vb->mAllocation);
 	}
 }
@@ -260,7 +309,7 @@ void VulkanCommandBuffer::bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBi
 	for(const auto& b : aBuffers)
 	{
 		VulkanVertexBuffer* vkBuffer = primal_cast<VulkanVertexBuffer*>(b);
-		buffers.push_back(vkBuffer->getHandle());
+		buffers.push_back(vkBuffer->mBuffer);
 	}
 	vkCmdBindVertexBuffers(mBuffer, aFirstBinding, aBindingCount, buffers.data(), aOffsets.data());
 }
@@ -268,7 +317,7 @@ void VulkanCommandBuffer::bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBi
 void VulkanCommandBuffer::bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType)
 {
 	VulkanIndexBuffer* iBuffer = primal_cast<VulkanIndexBuffer*>(aBuffer);
-	vkCmdBindIndexBuffer(mBuffer, iBuffer->getHandle(), aOffset, static_cast<VkIndexType>(aType));
+	vkCmdBindIndexBuffer(mBuffer, iBuffer->mBuffer, aOffset, static_cast<VkIndexType>(aType));
 }
 
 void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFrame)

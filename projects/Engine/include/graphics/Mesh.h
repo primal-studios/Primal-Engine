@@ -43,6 +43,8 @@ class Mesh
 		IIndexBuffer* getIBO() const;
 
 		void* getData() const;
+		void* getIndices() const;
+		size_t getIndicesSize() const;
 		size_t getSize() const;
 
 	private:

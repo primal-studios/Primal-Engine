@@ -5,7 +5,6 @@
 #include "graphics/BufferFlags.h"
 #include "graphics/SharingMode.h"
 #include "graphics/api/IGraphicsContext.h"
-#include "graphics/api/ICommandPool.h"
 
 #include <cstdint>
 #include <vector>
@@ -33,9 +32,6 @@ class IVertexBuffer
 		virtual void construct(const VertexBufferCreateInfo& aInfo) = 0;
 
 		virtual void setLayout(const BufferLayout& aLayout) = 0;
-
-		virtual void bind() = 0;
-		virtual void unbind() = 0;
 
 	protected:
 		IGraphicsContext* mContext;

@@ -232,6 +232,7 @@ void RenderSystem::initialize()
 	recordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
 	mCpyBuffer->record(recordInfo);
 	mCpyBuffer->copyBuffers(mSwapChain, mVertexBuffer, mesh->getData(), mesh->getSize());
+	mCpyBuffer->copyBuffers(mSwapChain, mIndexBuffer, mesh->getIndices(), mesh->getIndicesSize());
 	mCpyBuffer->end();
 
 	UniformBufferCreateInfo uniformBufferCreateInfo = {};

@@ -3,7 +3,6 @@
 
 #include "graphics/BufferFlags.h"
 #include "graphics/SharingMode.h"
-#include "graphics/api/ICommandPool.h"
 #include "graphics/api/IGraphicsContext.h"
 
 #include <cstdint>
@@ -21,6 +20,7 @@ struct IndexBufferCreateInfo
 	BufferUsageFlags usage;
 	ESharingMode sharingMode;
 	std::vector<uint32_t> queueFamilyIndices;
+	size_t size;
 };
 
 class IIndexBuffer
@@ -36,18 +36,10 @@ class IIndexBuffer
 
 		virtual void construct(const IndexBufferCreateInfo& aInfo) = 0;
 
-		virtual void setData(void* aData, const size_t aSize) = 0;
-
-		virtual void bind() = 0;
-		virtual void unbind() = 0;
-
-		uint32_t getCount() const;
+		[[nodiscard]] virtual uint32_t getCount() const = 0;
 
 	protected:
 		IGraphicsContext* mContext;
-
-		size_t mSize;
-		void* mData;
 };
 
 #endif // iindexbuffer_h__

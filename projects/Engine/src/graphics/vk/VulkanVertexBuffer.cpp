@@ -1,4 +1,3 @@
-#include "graphics/vk/VulkanCommandPool.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanVertexBuffer.h"
 #include "core/PrimalCast.h"
@@ -28,7 +27,7 @@ static constexpr VkFormat sVertexAttributeFormat(const EBufferLayoutElementTypes
 }
 
 VulkanVertexBuffer::VulkanVertexBuffer(IGraphicsContext* aContext) 
-	: IVertexBuffer(aContext)
+	: IVertexBuffer(aContext), mInfo({})
 {
 }
 
@@ -98,27 +97,13 @@ void VulkanVertexBuffer::setLayout(const BufferLayout& aLayout)
 	}
 }
 
-void VulkanVertexBuffer::bind()
-{
-	// TODO: Implement
-}
-
-void VulkanVertexBuffer::unbind()
-{
-	// TODO: Implement
-}
-
-VkBuffer VulkanVertexBuffer::getHandle() const
-{
-	return mBuffer;
-}
-
 VertexInputBindingDescription VulkanVertexBuffer::getBinding() const
 {
-	VertexInputBindingDescription desc = {};
-	desc.binding = mBindingDescription.binding;
-	desc.rate = static_cast<EVertexInputRate>(mBindingDescription.inputRate);
-	desc.stride = mBindingDescription.stride;
+	const VertexInputBindingDescription desc = {
+		mBindingDescription.binding,
+		mBindingDescription.stride,
+		static_cast<EVertexInputRate>(mBindingDescription.inputRate)
+	};
 
 	return desc;
 }

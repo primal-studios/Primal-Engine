@@ -39,6 +39,7 @@ class VulkanCommandBuffer final : public ICommandBuffer
 		void endRenderPass() override;
 
 		void copyBuffers(ISwapChain* aSwapchain, IVertexBuffer* aBuffer, void* aData, const size_t aSize) override;
+		void copyBuffers(ISwapChain* aSwapchain, IIndexBuffer* aBuffer, void* aData, const size_t aSize) override;
 		void bindGraphicsPipeline(IGraphicsPipeline* aPipeline) override;
 		void bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount, std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets) override;
 		void bindIndexBuffer(IIndexBuffer* aBuffer, uint64_t aOffset, EIndexType aType) override;
@@ -58,6 +59,7 @@ class VulkanCommandBuffer final : public ICommandBuffer
 
 	private:
 		void _destroy();
+
 		IGraphicsContext* mContext;
 		VkCommandBuffer mBuffer{};
 		VkCommandPool mPool{};

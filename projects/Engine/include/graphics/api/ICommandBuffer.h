@@ -104,6 +104,7 @@ class ICommandBuffer
 		virtual void endRenderPass() = 0;
 
 		virtual void copyBuffers(ISwapChain* aSwapchain, IVertexBuffer* aBuffer, void* aData, const size_t aSize) = 0;
+		virtual void copyBuffers(ISwapChain* aSwapchain, IIndexBuffer* aBuffer, void* aData, const size_t aSize) = 0;
 
 		virtual void bindGraphicsPipeline(IGraphicsPipeline*) = 0;
 		virtual void bindVertexBuffers(uint32_t aFirstBinding, uint32_t aBindingCount, std::vector<IVertexBuffer*> aBuffers, std::vector<uint64_t> aOffsets) = 0;

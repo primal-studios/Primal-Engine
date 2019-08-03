@@ -92,9 +92,9 @@ void Mesh::build()
 	iBufferCreateInfo.flags = 0;
 	iBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
 	iBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_INDEX_BUFFER | EBufferUsageFlagBits::BUFFER_USAGE_TRANSFER_DST;
+	iBufferCreateInfo.size = triangles.size() * sizeof(uint16_t);
 
 	mIndexBuffer = GraphicsFactory::instance().createIndexBuffer();
-	mIndexBuffer->setData(triangles.data(), triangles.size() * sizeof(uint16_t));
 	mIndexBuffer->construct(iBufferCreateInfo);
 }
 
@@ -134,7 +134,17 @@ IIndexBuffer* Mesh::getIBO() const
 
 void* Mesh::getData() const
 {
-	return (void*) mVertices.data();
+	return const_cast<Vertex*>(mVertices.data());
+}
+
+void* Mesh::getIndices() const
+{
+	return const_cast<uint16_t*>(triangles.data());
+}
+
+size_t Mesh::getIndicesSize() const
+{
+	return triangles.size() * sizeof(uint16_t);
 }
 
 size_t Mesh::getSize() const

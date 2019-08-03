@@ -23,13 +23,8 @@ class VulkanVertexBuffer final : public IVertexBuffer
 
 		void setLayout(const BufferLayout& aLayout) override;
 
-		void bind() override;
-		void unbind() override;
-
-		VkBuffer getHandle() const;
-
-		VertexInputBindingDescription getBinding() const;
-		std::vector<VertexInputAttributeDescription> getAttributes() const;
+		[[nodiscard]] VertexInputBindingDescription getBinding() const;
+		[[nodiscard]] std::vector<VertexInputAttributeDescription> getAttributes() const;
 
 	private:
 		VkBuffer mBuffer = VK_NULL_HANDLE;
