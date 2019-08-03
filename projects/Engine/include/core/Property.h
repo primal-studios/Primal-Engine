@@ -2,6 +2,8 @@
 #define property_h__
 
 #include <functional>
+#include <string>
+
 #include "application/Application.h"
 
 template<typename T>
@@ -19,7 +21,7 @@ public:
 
 	std::string toString() const override
 	{
-		return std::to_string(*mProperty);
+		return "Property Updated Event";
 	}
 
 	T getOldValue() const { return mOldValue; }
@@ -331,7 +333,7 @@ class Property
 
 		void _callUpdateEvent(const T& aValue)
 		{
-			PropertyUpdatedEvent<T> e(this, mValue, aValue);
+			PropertyUpdatedEvent<T> e(*this, mValue, const_cast<T&>(aValue));
 			Application::get().onEvent(e);
 		}
 };

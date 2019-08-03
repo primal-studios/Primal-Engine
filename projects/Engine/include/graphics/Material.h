@@ -56,6 +56,8 @@ class Material
 		void setDirtyFlag(bool aIsDirty);
 
 		void setTexture(const std::string& aName, ITexture* aTexture);
+
+		[[nodiscard]] IGraphicsPipeline* getPipeline() const;
 	private:
 		MaterialCreateInfo mCreateInfo;
 		IGraphicsPipeline* mPipeline;

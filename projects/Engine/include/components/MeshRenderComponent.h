@@ -3,11 +3,14 @@
 
 #include "ecs/Component.h"
 
+#include "graphics/Material.h"
+
 class MeshContainerComponent;
 class MeshRenderComponent final : public Component
 {
+		friend class RenderSystem;
 	public:
-		MeshRenderComponent();
+		MeshRenderComponent(MaterialInstance* aMaterialInstance);
 		~MeshRenderComponent();
 
 		void onConstruct() override;
@@ -16,6 +19,7 @@ class MeshRenderComponent final : public Component
 
 	private:
 		MeshContainerComponent* mContainer;
+		MaterialInstance* mMaterialInstance;
 };
 
 #endif // meshrendercomponent_h__

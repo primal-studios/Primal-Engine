@@ -29,7 +29,7 @@ class ComponentAddedEvent final : public Event
 
 		std::type_index getComponentType() const { return mType; }
 
-		EVENT_CLASS_TYPE(ComponentAddedEvent)
+		EVENT_CLASS_TYPE(ComponentAddedEvent<T>)
 
 	private:
 		std::type_index mType;
@@ -58,7 +58,7 @@ class ComponentRemovedEvent final : public Event
 
 		std::type_index getComponentType() const { return mType; }
 
-		EVENT_CLASS_TYPE(ComponentRemovedEvent)
+		EVENT_CLASS_TYPE(ComponentRemovedEvent<T>)
 
 	private:
 		std::type_index mType;

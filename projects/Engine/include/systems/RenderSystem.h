@@ -1,8 +1,6 @@
 #ifndef rendersystem_h__
 #define rendersystem_h__
 
-#include <vma/vma.h>
-
 #include "core/Window.h"
 #include "ecs/System.h"
 
@@ -22,6 +20,9 @@
 
 #include "assets/ShaderAsset.h"
 #include "assets/RenderPassAsset.h"
+#include "components/MeshRenderComponent.h"
+#include "events/ComponentEvent.h"
+#include "graphics/Mesh.h"
 
 class RenderSystem final : public System
 {
@@ -52,7 +53,7 @@ class RenderSystem final : public System
 		IGraphicsPipeline* mGraphicsPipeline;
 		VulkanPipelineLayout* mLayout{};
 
-		VulkanCommandBuffer** mPrimaryBuffer = nullptr;
+		std::vector<std::unordered_map<IRenderPass*, ICommandBuffer*>> mPrimaryBuffers;
 		VulkanFramebuffer** mFramebuffers = nullptr;
 
 		VulkanCommandBuffer* mCpyBuffer = nullptr;
@@ -80,11 +81,14 @@ class RenderSystem final : public System
 		Window* mWindow;
 
 		bool _onResize(WindowResizeEvent& aEvent) const;
+		bool _onMeshRenderComponentAdded(ComponentAddedEvent<MeshRenderComponent>& aEvent);
 
 		std::shared_ptr<ShaderAsset> mShaderAsset;
 		std::shared_ptr<RenderPassAsset> mRenderPassAsset;
 
 		uint8_t mCpyReady = 2;
+
+		std::unordered_map<IRenderPass*, std::unordered_map<IGraphicsPipeline*, std::unordered_map<const Mesh*, std::unordered_map<Material*, std::vector<MeshRenderComponent*>>>>> mRenderMap;
 };
 
 #endif // rendersystem_h__

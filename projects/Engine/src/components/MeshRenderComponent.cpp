@@ -5,9 +5,10 @@
 
 #include "core/PrimalAssert.h"
 
-MeshRenderComponent::MeshRenderComponent()
+MeshRenderComponent::MeshRenderComponent(MaterialInstance* aMaterialInstance)
 {
 	mContainer = nullptr;
+	mMaterialInstance = aMaterialInstance;
 }
 
 MeshRenderComponent::~MeshRenderComponent()

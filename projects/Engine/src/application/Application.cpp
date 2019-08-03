@@ -30,6 +30,14 @@ Application::Application()
 
 Application::~Application()
 {
+	while (mLayerStack.begin() != mLayerStack.end())
+	{
+		auto begin = mLayerStack.begin();
+		const auto layer = *begin;
+		popLayer(layer);
+		delete layer;
+	}
+
 	SystemManager::instance().removeSystem<RenderSystem>();
 	SystemManager::instance().removeSystem<PhysicsSystem>();
 	delete mWindow;

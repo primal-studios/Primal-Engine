@@ -26,7 +26,7 @@ Entity* EntityManager::create(const std::string& aName)
 	::new(entity) Entity(aName);
 
 	entity->mManager = this;
-	entity->addComponent<TransformComponent>();
+	entity->transform = entity->addComponent<TransformComponent>();
 
 	return entity;
 }

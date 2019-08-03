@@ -18,6 +18,8 @@
 #include "assets/MeshAsset.h"
 #include "assets/ShaderAsset.h"
 #include "assets/TextureAsset.h"
+#include "components/MeshRenderComponent.h"
+#include "components/MeshContainerComponent.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
@@ -73,23 +75,20 @@ RenderSystem::~RenderSystem()
 	for (uint32_t i = 0; i < mFlightSize; i++)
 	{
 		delete mFramebuffers[i];
-		delete mPrimaryBuffer[i];
+	}
+
+	for (auto& frame : mPrimaryBuffers)
+	{
+		for (auto& buf : frame)
+		{
+			delete buf.second;
+		}
 	}
 
 	delete[] mFramebuffers;
-	delete[] mPrimaryBuffer;
-
-	for (auto instance : mInstances)
-	{
-		delete instance;
-	}
 
 	delete mCpyBuffer;
 	delete mSceneData;
-	delete mUboObject0;
-	delete mUboPool;
-	delete mMaterialInstance;
-	delete mMaterialInstance2;
 
 	MaterialManager::instance().reset();
 
@@ -113,7 +112,7 @@ struct UBO
 
 void RenderSystem::initialize()
 {
-	mPrimaryBuffer = new VulkanCommandBuffer * [mFlightSize];
+	mPrimaryBuffers.resize(mFlightSize);
 
 	const CommandBufferCreateInfo commandBufferInfo =
 	{
@@ -204,16 +203,6 @@ void RenderSystem::initialize()
 		fbc++;
 	}
 
-	for (uint32_t i = 0; i < mFlightSize; i++)
-	{
-		mPrimaryBuffer[i] = new VulkanCommandBuffer(mContext);
-	}
-
-	for (uint32_t i = 0; i < mFlightSize; i++)
-	{
-		mPrimaryBuffer[i]->construct(commandBufferInfo);
-	}
-
 	mShaderAsset = AssetManager::instance().load<ShaderAsset>("testShader", "data/effects/default.json");
 	mGraphicsPipeline = mShaderAsset->getPipeline();
 	mLayout = primal_cast<VulkanPipelineLayout*>(mGraphicsPipeline->getCreateInfo().layout);
@@ -265,7 +254,6 @@ void RenderSystem::initialize()
 	std::vector<UniformBufferObjectElement*> elements = { modl };
 
 	mUboPool = new UniformBufferPool(65536 / sizeof(UBO), sizeof(UBO), 0, uniformBufferCreateInfo, elements);
-	mUboObject0 = mUboPool->acquire();
 
 	auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/Shawn.json", STBI_rgb_alpha);
 	mTexture = primal_cast<VulkanTexture*>(texAsset->getTexture());
@@ -274,123 +262,119 @@ void RenderSystem::initialize()
 
 	mGraphicsPipeline = mShaderAsset->getPipeline();
 	mSceneData = new SceneData({ {view, proj}, mShaderAsset->getLayout() });
-	MaterialCreateInfo materialCreateInfo;
-	materialCreateInfo.layouts = { mUboPool };
-	materialCreateInfo.pipeline = mGraphicsPipeline;
-	materialCreateInfo.pool = mDescPool;
-	materialCreateInfo.textures = { { "albedo", mTexture } };
-	mMaterialInstance = MaterialManager::instance().createMaterial(materialCreateInfo)->createInstance();
-	mMaterialInstance2 = mMaterialInstance->getParentMaterial()->createInstance();
-	mMaterialInstance2->setTexture("albedo", tex2->getTexture());
-
-	for (uint32_t i = 0; i < 8; i++)
-	{
-		mInstances.push_back(mMaterialInstance->getParentMaterial()->createInstance());
-	}
 }
 
 void RenderSystem::preRender()
 {
-
+	// DO ALL COPIES
 }
 
 float angle = 0.0f;
 
 void RenderSystem::render()
 {
-	const auto handle = *(mPrimaryBuffer + mCurrentFrame);
-	const auto prevHandle = *(mPrimaryBuffer + ((mCurrentFrame - 1) % mFlightSize));
-
-	mPrimaryInheritance.renderPass = mRenderPass;
-	mPrimaryInheritance.frameBuffer = mFramebuffers[mCurrentFrame];
-	mPrimaryInheritance.occlusionQueryEnable = false;
-	mPrimaryInheritance.queryPrecsise = false;
-	mPrimaryInheritance.subPass = 0;
-	mPrimaryInheritance.pipelineStatistics = 0;
-
-	mPrimaryRecordInfo.inheritance = &mPrimaryInheritance;
-	mPrimaryRecordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
-
-	mSwapChain->beginFrame();
-
-	if (mCpyReady == 2) {
-		handle->addDependency(mCpyBuffer);
-		mSwapChain->submitToTransferQueue(mCpyBuffer);
-		mCpyReady = 1;
-	}
-	else if (mCpyReady == 1) {
-		prevHandle->removeDependency(mCpyBuffer);
-		mCpyReady = 0;
-	}
-	
-	handle->record(mPrimaryRecordInfo);
-
-	RenderPassRecordInfo recordInfo = {};
-	recordInfo.renderPass = mRenderPass;
-	recordInfo.frameBuffer = mFramebuffers[mCurrentFrame];
-	recordInfo.renderArea = { 0, 0, static_cast<int32_t>(mWindow->width()), static_cast<int32_t>(mWindow->height()) };
-	
-	ClearValue clear = {};
-	clear.color.float32[0] = 0.0f;
-	clear.color.float32[1] = 0.0f;
-	clear.color.float32[2] = 0.0f;
-	clear.color.float32[3] = 0.0f;
-
-	ClearValue depth = {};
-	depth.depthStencil = { 1.0f, 0 };
-	recordInfo.clearValues.push_back(clear);
-	recordInfo.clearValues.push_back(depth);
-
-	handle->recordRenderPass(recordInfo);
-
-	handle->bindGraphicsPipeline(mGraphicsPipeline);
-
-	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
-	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT16);
-
-	UBO u = {};
-	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
-	u.view = Matrix4f::lookAt(Vector3f(40, 0, 40), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
-	u.model = Matrix4f::identity();
-	u.model = Matrix4f::rotate(u.model, Vector3f(1, 1, 0), angle);
-
-	angle += 0.0001f;
-
-	mMaterialInstance->setVariable<Matrix4f>("model", u.model);
-
-	u.model = Matrix4f::identity();
-	u.model = Matrix4f::translate(u.model, Vector3f(0, 20, 0));
-	mMaterialInstance2->setVariable<Matrix4f>("model", u.model);
-
-	mSceneData->setValue("proj", u.proj);
-	mSceneData->setValue("view", u.view);
-
-	handle->bindSceneData(mSceneData, mCurrentFrame); // bind once per pipeline layout. More than once is invalid
-
-	handle->bindMaterial(mMaterialInstance->getParentMaterial(), mCurrentFrame);
-	handle->bindMaterialInstance(mMaterialInstance, mCurrentFrame);
-	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
-
-	handle->bindMaterial(mMaterialInstance2->getParentMaterial(), mCurrentFrame);
-	handle->bindMaterialInstance(mMaterialInstance2, mCurrentFrame);
-	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
-
-	for (uint32_t i = 0; i < mInstances.size(); i++)
+	for (const auto& renderPass : mRenderMap)
 	{
-		uint32_t x = i - static_cast<float>(mInstances.size()) / 2.0f;
-		Matrix4f modl = Matrix4f::identity();
-		modl = Matrix4f::translate(modl, Vector3f(-5, static_cast<float>(i) * 10, 5));
-		mInstances[i]->setVariable("model", modl);
-		handle->bindMaterialInstance(mInstances[i], mCurrentFrame);
-		handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+		const auto handle = mPrimaryBuffers[mCurrentFrame];
+		const auto prevHandle = mPrimaryBuffers[(mCurrentFrame - 1) % mFlightSize];
+
+		CommandBufferInheritanceInfo inheritanceInfo = {};
+		inheritanceInfo.renderPass = renderPass.first;
 	}
 
-	handle->endRenderPass();
-
-	handle->end();
-
-	mSwapChain->submit(handle);
-	mSwapChain->swap();
+//	const auto handle = *(mPrimaryBuffer + mCurrentFrame);
+//	const auto prevHandle = *(mPrimaryBuffer + ((mCurrentFrame - 1) % mFlightSize));
+//
+//	mPrimaryInheritance.renderPass = mRenderPass;
+//	mPrimaryInheritance.frameBuffer = mFramebuffers[mCurrentFrame];
+//	mPrimaryInheritance.occlusionQueryEnable = false;
+//	mPrimaryInheritance.queryPrecsise = false;
+//	mPrimaryInheritance.subPass = 0;
+//	mPrimaryInheritance.pipelineStatistics = 0;
+//
+//	mPrimaryRecordInfo.inheritance = &mPrimaryInheritance;
+//	mPrimaryRecordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
+//
+//	mSwapChain->beginFrame();
+//
+//	if (mCpyReady == 2) {
+//		handle->addDependency(mCpyBuffer);
+//		mSwapChain->submitToTransferQueue(mCpyBuffer);
+//		mCpyReady = 1;
+//	}
+//	else if (mCpyReady == 1) {
+//		prevHandle->removeDependency(mCpyBuffer);
+//		mCpyReady = 0;
+//	}
+//	
+//	handle->record(mPrimaryRecordInfo);
+//
+//	RenderPassRecordInfo recordInfo = {};
+//	recordInfo.renderPass = mRenderPass;
+//	recordInfo.frameBuffer = mFramebuffers[mCurrentFrame];
+//	recordInfo.renderArea = { 0, 0, static_cast<int32_t>(mWindow->width()), static_cast<int32_t>(mWindow->height()) };
+//	
+//	ClearValue clear = {};
+//	clear.color.float32[0] = 0.0f;
+//	clear.color.float32[1] = 0.0f;
+//	clear.color.float32[2] = 0.0f;
+//	clear.color.float32[3] = 0.0f;
+//
+//	ClearValue depth = {};
+//	depth.depthStencil = { 1.0f, 0 };
+//	recordInfo.clearValues.push_back(clear);
+//	recordInfo.clearValues.push_back(depth);
+//
+//	handle->recordRenderPass(recordInfo);
+//
+//	handle->bindGraphicsPipeline(mGraphicsPipeline);
+//
+//	handle->bindVertexBuffers(0, 1, { mVertexBuffer }, { 0 });
+//	handle->bindIndexBuffer(mIndexBuffer, 0, INDEX_TYPE_UINT16);
+//
+//	UBO u = {};
+//	u.proj = Matrix4f::perspective(glm::radians(60.0f), (static_cast<float>(mWindow->width()) / static_cast<float>(mWindow->height())), 0.001f, 1000.0f);
+//	u.view = Matrix4f::lookAt(Vector3f(40, 0, 40), Vector3f(0, 0, 0), Vector3f(0, 0, -1));
+//	u.model = Matrix4f::identity();
+//	u.model = Matrix4f::rotate(u.model, Vector3f(1, 1, 0), angle);
+//
+//	angle += 0.0001f;
+//
+//	mMaterialInstance->setVariable<Matrix4f>("model", u.model);
+//
+//	u.model = Matrix4f::identity();
+//	u.model = Matrix4f::translate(u.model, Vector3f(0, 20, 0));
+//	mMaterialInstance2->setVariable<Matrix4f>("model", u.model);
+//
+//	mSceneData->setValue("proj", u.proj);
+//	mSceneData->setValue("view", u.view);
+//
+//	handle->bindSceneData(mSceneData, mCurrentFrame); // bind once per pipeline layout. More than once is invalid
+//
+//	handle->bindMaterial(mMaterialInstance->getParentMaterial(), mCurrentFrame);
+//	handle->bindMaterialInstance(mMaterialInstance, mCurrentFrame);
+//	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+//
+//	handle->bindMaterial(mMaterialInstance2->getParentMaterial(), mCurrentFrame);
+//	handle->bindMaterialInstance(mMaterialInstance2, mCurrentFrame);
+//	handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+//
+//	for (uint32_t i = 0; i < mInstances.size(); i++)
+//	{
+//		uint32_t x = i - static_cast<float>(mInstances.size()) / 2.0f;
+//		Matrix4f modl = Matrix4f::identity();
+//		modl = Matrix4f::translate(modl, Vector3f(-5, static_cast<float>(i) * 10, 5));
+//		mInstances[i]->setVariable("model", modl);
+//		handle->bindMaterialInstance(mInstances[i], mCurrentFrame);
+//		handle->drawIndexed(mIndexBuffer->getCount(), 1, 0, 0, 0);
+//	}
+//
+//	handle->endRenderPass();
+//
+//	handle->end();
+//
+//	mSwapChain->submit(handle);
+//	mSwapChain->swap();
 
 	mCurrentFrame = (mCurrentFrame + 1) % mFlightSize;
 }
@@ -404,6 +388,7 @@ void RenderSystem::onEvent(Event& aEvent)
 {
 	EventDispatcher dispatcher(aEvent);
 	dispatcher.dispatch<WindowResizeEvent>(BIND_EVENT_FUNCTION(RenderSystem::_onResize));
+	dispatcher.dispatch<ComponentAddedEvent<MeshRenderComponent>>(BIND_EVENT_FUNCTION(RenderSystem::_onMeshRenderComponentAdded));
 }
 
 bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
@@ -415,6 +400,54 @@ bool RenderSystem::_onResize(WindowResizeEvent& aEvent) const
 		glfwGetFramebufferSize(mWindow->getNativeWindow(), &width, &height);
 		glfwWaitEvents();
 	}
+
+	return false;
+}
+
+bool RenderSystem::_onMeshRenderComponentAdded(ComponentAddedEvent<MeshRenderComponent>& aEvent)
+{
+	MeshRenderComponent* renderComponent = primal_cast<MeshRenderComponent*>(aEvent.getComponent());
+	MeshContainerComponent* meshComponent = renderComponent->mContainer;
+
+	DEBUG_ONLY_BLOCK({
+		PRIMAL_ASSERT(renderComponent->entity == meshComponent->entity, "Entity of components does not match.");
+	});
+
+	MaterialInstance* matInstance = renderComponent->mMaterialInstance;
+	Material* material = matInstance->getParentMaterial();
+	IGraphicsPipeline* pipeline = material->getPipeline();
+	IRenderPass* renderPass = pipeline->getRenderPass();
+	const Mesh* mesh = meshComponent->getMesh();
+
+	if (mRenderMap.find(renderPass) == mRenderMap.end())
+	{
+		for (size_t i = 0; i < mFlightSize; i++)
+		{
+			auto& renderPasses = mPrimaryBuffers[i];
+			ICommandBuffer* buf = new VulkanCommandBuffer(mContext);
+			
+			const CommandBufferCreateInfo commandBufferInfo =
+			{
+				mContext->getCommandPool(),
+				true
+			};
+
+			buf->construct(commandBufferInfo);
+
+			renderPasses[renderPass] = buf;
+		}
+	}
+
+	auto& graphicsPipeline = mRenderMap[renderPass];
+	auto& meshes = graphicsPipeline[pipeline];
+	auto& materials = meshes[mesh];
+	auto& materialInstances = materials[material];
+
+	DEBUG_ONLY_BLOCK({
+		PRIMAL_ASSERT(std::find(materialInstances.begin(), materialInstances.end(), renderComponent) == materialInstances.end(), "Render map already contains MeshRenderComponent provided.")
+	});
+
+	materialInstances.push_back(renderComponent);
 
 	return false;
 }

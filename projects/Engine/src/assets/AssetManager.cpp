@@ -58,7 +58,9 @@ AssetManager::AssetManager()
 			mQueueMutex.lock();
 			auto it = mAsyncAssetQueueHigh.begin();
 			while (it != mAsyncAssetQueueHigh.end())
+			{
 				_loadAssetAsync(it, assetLoadHighPrio);
+			}
 			mQueueMutex.unlock();
 
 			mQueueMutex.lock();

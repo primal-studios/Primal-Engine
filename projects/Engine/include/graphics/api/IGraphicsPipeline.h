@@ -387,9 +387,13 @@ class IGraphicsPipeline
 		virtual void reconstruct(const GraphicsPipelineCreateInfo& aInfo) = 0;
 		virtual void destroy() = 0;
 
+		[[nodiscard]] IRenderPass* getRenderPass() const;
+
 		virtual GraphicsPipelineCreateInfo& getCreateInfo() = 0;
 	protected:
 		IGraphicsContext* mContext;
+		GraphicsPipelineCreateInfo mCreateInfo;
+
 };
 
 #endif // igraphicspipeline_h__

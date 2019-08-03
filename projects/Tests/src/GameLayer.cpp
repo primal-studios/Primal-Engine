@@ -1,19 +1,23 @@
 #include "GameLayer.h"
 
+#include <assets/ShaderAsset.h>
+#include <assets/TextureAsset.h>
 #include <core/PrimalCast.h>
+#include <ecs/EntityManager.h>
+#include <components/MeshContainerComponent.h>
+#include <components/MeshRenderComponent.h>
+#include <graphics/Material.h>
+#include <graphics/MaterialManager.h>
+#include <graphics/vk/VulkanPipelineLayout.h>
 
-#include <math/Quaternion.h>
+#include <stb/stb_image.h>
 
-#include <glm/glm.hpp>
-
-class A
+struct UBO
 {
-	
-};
-
-class B : public A
-{
-	
+	Matrix4f model;
+	Matrix4f view;
+	Matrix4f proj;
+	Matrix4f mvp;
 };
 
 GameLayer::GameLayer()
@@ -28,82 +32,94 @@ GameLayer::~GameLayer()
 
 void GameLayer::onAttach()
 {
-	//AssetManager::instance().load<MeshAsset>("building", "data/models/building.glb");
+	Entity* entity = EntityManager::instance().create("CacEntity");
 
-	//SystemManager::instance().addSystem<RenderSystem>();
+	entity->transform->position = Vector3f(20, 10, 20);
 
-	//SystemManager::instance().configure();
+	auto meshAsset = AssetManager::instance().load<MeshAsset>("MeshName", "data/models/cube.glb");
+	MeshContainerComponent* comp = entity->addComponent<MeshContainerComponent>(meshAsset->getMesh());
 
-	//const float data[] = 
-	//{
-	//	-1.0f, -1.0f, 0.0f,
-	//	1.0f, -1.0f, 0.0f,
-	//	0.0f,  1.0f, 0.0f
-	//};
+	mShaderAsset = AssetManager::instance().load<ShaderAsset>("testShader", "data/effects/default.json");
+	mGraphicsPipeline = mShaderAsset->getPipeline();
+	mLayout = primal_cast<VulkanPipelineLayout*>(mGraphicsPipeline->getCreateInfo().layout);
 
-	//uint32_t indices[] =
-	//{
-	//	0, 1, 2 // 0
-	//};
+	std::vector<DescriptorPoolSize> poolSizes;
+	DescriptorPoolSize uniformBufferSize{};
+	uniformBufferSize.type = EDescriptorType::UNIFORM_BUFFER_DYNAMIC;
+	uniformBufferSize.count = 4;
 
-	//VertexBuffer* vbo = new VertexBuffer(data, sizeof(data));
+	DescriptorPoolSize combinedSamplerSize{};
+	combinedSamplerSize.type = EDescriptorType::COMBINED_IMAGE_SAMPLER;
+	combinedSamplerSize.count = 2;
 
-	//VertexBufferLayout layout;
-	//layout.push<Eigen::Vector3f>("iPosition");
-	//vbo->setLayout(layout);
+	poolSizes.push_back(combinedSamplerSize);
 
-	//IndexBuffer* ibo = new IndexBuffer(indices, sizeof(indices));
+	DescriptorPoolCreateInfo createInfo;
+	createInfo.flags = 0;
+	createInfo.maxSets = 4;
+	createInfo.poolSizes = poolSizes;
 
-	//vao = new VertexArray(vbo, ibo);
+	mDescPool = new DescriptorSetPool(2, createInfo);
 
-	//Mesh* mesh = new Mesh(vao);
+	UniformBufferObjectElement* modl = new UniformBufferObjectElement{
+		"model",
+		EUniformBufferObjectElementType::UBO_TYPE_MAT4,
+		0,
+		sizeof(UBO::model)
+	};
 
-	//Entity* entity = EntityManager::instance().create("Cac");
-	//entity->addComponent<MeshContainerComponent>(mesh);
+	UniformBufferObjectElement* view = new UniformBufferObjectElement{
+		"view",
+		EUniformBufferObjectElementType::UBO_TYPE_MAT4,
+		0,
+		sizeof(UBO::view)
+	};
 
-	//entity->addComponent<MeshRenderComponent>();
+	UniformBufferObjectElement* proj = new UniformBufferObjectElement{
+		"proj",
+		EUniformBufferObjectElementType::UBO_TYPE_MAT4,
+		64,
+		sizeof(UBO::proj)
+	};
 
-	//FileSystem::instance().mount("dependencies");
-	//auto list = FileSystem::instance().getFilesInPath("assimp", true);
+	std::vector<UniformBufferObjectElement*> elements = { modl };
 
-	//Property<float> prop = 5.0f;
+	UniformBufferCreateInfo uniformBufferCreateInfo = {};
+	uniformBufferCreateInfo.flags = 0;
+	uniformBufferCreateInfo.sharingMode = SHARING_MODE_EXCLUSIVE;
+	uniformBufferCreateInfo.size = 65536;
+	uniformBufferCreateInfo.usage = EBufferUsageFlagBits::BUFFER_USAGE_UNIFORM_BUFFER;
 
-	//prop.getCallback([=](float& aValue)
-	//{
-	//	return aValue;
-	//});
+	mUboPool = new UniformBufferPool(65536 / sizeof(UBO), sizeof(UBO), 0, uniformBufferCreateInfo, elements);
 
-	//prop.setCallback([=](const float aValue)
-	//{
-	//	return aValue;
-	//});
+	const auto texAsset = AssetManager::instance().load<TextureAsset>("test", "data/textures/Shawn.json", STBI_rgb_alpha);
 
-	//prop = 20.0f;
+	MaterialCreateInfo materialCreateInfo;
+	materialCreateInfo.layouts = { mUboPool };
+	materialCreateInfo.pipeline = mGraphicsPipeline;
+	materialCreateInfo.pool = mDescPool;
+	materialCreateInfo.textures = { { "albedo", texAsset->getTexture() } };
+	MaterialInstance* materialInstance = MaterialManager::instance().createMaterial(materialCreateInfo)->createInstance();
 
-	//prop *= 5.0f;
-
-	//PRIMAL_TRACE(*prop);
-
-	//int jonathan = 0;
+	MeshRenderComponent* renderComp = entity->addComponent<MeshRenderComponent>(materialInstance);
 }
 
 void GameLayer::onUpdate()
 {
-	//SystemManager::instance().update();
+
 }
 
 void GameLayer::onRender()
 {
-	//SystemManager::instance().render();
 
-	//vao->bind();
-	//glDrawElements(GL_TRIANGLES, vao->getIndexBuffer()->count(), GL_UNSIGNED_INT, nullptr);
-	//vao->unbind();
 }
 
 void GameLayer::onDetach()
 {
-
+	MaterialManager::instance().reset();
+	delete mUboPool;
+	delete mDescPool;
+	AssetManager::instance().unloadAll();
 }
 
 void GameLayer::onEvent(Event& aEvent)

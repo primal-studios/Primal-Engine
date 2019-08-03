@@ -249,6 +249,11 @@ void Material::setTexture(const std::string& aName, ITexture* aTexture)
 	detail::MarkMaterialAsDirty(mGraphNode);
 }
 
+IGraphicsPipeline* Material::getPipeline() const
+{
+	return mPipeline;
+}
+
 MaterialInstance* Material::createInstance()
 {
 	Material* mat = detail::GetParent(mGraphNode);

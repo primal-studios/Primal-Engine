@@ -24,10 +24,10 @@ class VulkanGraphicsPipeline final : public IGraphicsPipeline
 		GraphicsPipelineCreateInfo& getCreateInfo() override;
 		VkPipeline getHandle() const;
 		VulkanPipelineLayout* getLayout() const;
+
 	private:
 		void _destroy() const;
 
-		GraphicsPipelineCreateInfo mCreateInfo;
 		VkPipeline mPipeline{};
 };
 
