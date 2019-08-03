@@ -8,7 +8,7 @@
 #include "core/Property.h"
 
 template<typename T>
-class ComponentAddedEvent : public Event
+class ComponentAddedEvent final : public Event
 {
 	public:
 		explicit ComponentAddedEvent(Component* aComponent)
@@ -37,7 +37,7 @@ class ComponentAddedEvent : public Event
 };
 
 template<typename T>
-class ComponentRemovedEvent : public Event
+class ComponentRemovedEvent final : public Event
 {
 	public:
 		explicit ComponentRemovedEvent(Component* aComponent)

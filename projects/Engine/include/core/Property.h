@@ -8,7 +8,7 @@ template<typename T>
 class Property;
 
 template<typename T>
-class PropertyUpdatedEvent : public Event
+class PropertyUpdatedEvent final : public Event
 {
 public:
 	explicit PropertyUpdatedEvent(Property<T>& aProperty, T aOldValue, T& aNewValue)
