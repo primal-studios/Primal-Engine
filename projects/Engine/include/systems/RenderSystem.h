@@ -61,22 +61,14 @@ class RenderSystem final : public System
 		VulkanVertexBuffer* mVertexBuffer;
 		VulkanIndexBuffer* mIndexBuffer;
 
-		UniformBufferObject* mUboObject0;
 		UniformBufferPool* mUboPool;
 
 		DescriptorSetPool* mDescPool;
 
 		VulkanTexture* mTexture;
-		VulkanTexture* mTexture2;
-		VulkanSampler* mSampler;
 
 		SceneData* mSceneData = nullptr;
-		MaterialInstance* mMaterialInstance{};
-		MaterialInstance* mMaterialInstance2{};
 		std::vector<MaterialInstance*> mInstances;
-
-		CommandBufferInheritanceInfo mPrimaryInheritance = {};
-		CommandBufferRecordInfo mPrimaryRecordInfo = {};
 
 		Window* mWindow;
 
