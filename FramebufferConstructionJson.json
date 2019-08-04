@@ -1,0 +1,73 @@
+{
+  "images": [
+    {
+      "flags" : 0,
+      "type" : 0,
+      "format" : 0,
+      "extent" : [0,0,0],
+      "mipLevels" : 1,
+      "arrayLayers" : 1,
+      "samples" : 0,
+      "tiling" : 0,
+      "usage" : 0,
+      "sharingMode" : 0,
+      "queueFamilyIndexCount" : 2,
+      "queueFamilyIndices" : [0, 2],
+      "initialLayout" : 0
+    },
+    {
+      "flags" : 0,
+      "type" : 0,
+      "format" : 0,
+      "extent" : [0,0,0],
+      "mipLevels" : 1,
+      "arrayLayers" : 1,
+      "samples" : 0,
+      "tiling" : 0,
+      "usage" : 0,
+      "sharingMode" : 0,
+      "queueFamilyIndexCount" : 2,
+      "queueFamilyIndices" : [0, 2],
+      "initialLayout" : 0
+    }
+  ],
+  "imageViews" : [
+    {
+      "flags" : 0,
+      "image" : 0,
+      "viewType" : 0,
+      "format" : 0,
+      "components" : [0, 0, 0, 0],
+      "subresourceRange" : {
+        "aspectMask" : 0,
+        "baseMipLevel" : 0,
+        "levelCount" : 0,
+        "baseArrayLayer" : 0,
+        "layerCount" : 0
+      }
+    },
+    {
+      "flags" : 0,
+      "image" : 1,
+      "viewType" : 0,
+      "format" : 0,
+      "components" : [0, 0, 0, 0],
+      "subresourceRange" : {
+        "aspectMask" : 0,
+        "baseMipLevel" : 0,
+        "levelCount" : 0,
+        "baseArrayLayer" : 0,
+        "layerCount" : 0
+      }
+    }
+  ],
+  "frameBuffer" : {
+    "flags" : 0,
+    "renderPass" : "passName",
+    "attachmentCount" : 2,
+    "attachments" : [0, 1],
+    "width" : 1280,
+    "height" : 720,
+    "layers" : 1
+  }
+}
