@@ -20,11 +20,12 @@
 #include "assets/TextureAsset.h"
 #include "components/MeshRenderComponent.h"
 #include "components/MeshContainerComponent.h"
+#include "graphics/RenderPassManager.h"
 
 RenderSystem::RenderSystem(Window* aWindow)
 	: mRenderPass(nullptr), mGraphicsPipeline(nullptr), mVertexBuffer(nullptr), mIndexBuffer(nullptr),
-	  mUboObject0(nullptr), mUboPool(nullptr),
-	  mTexture(nullptr), mTexture2(nullptr), mSampler(nullptr), mWindow(aWindow)
+	  mUboPool(nullptr),
+	  mTexture(nullptr), mWindow(aWindow)
 {
 	GraphicsContextCreateInfo info;
 	info.applicationName = "Sandbox";
@@ -85,6 +86,17 @@ RenderSystem::~RenderSystem()
 		}
 	}
 
+	for (auto& frame : mSecondaryBuffers)
+	{
+		for (auto& pass : frame)
+		{
+			for (auto& buf : pass.second)
+			{
+				delete buf;
+			}
+		}
+	}
+
 	delete[] mFramebuffers;
 
 	delete mCpyBuffer;
@@ -113,6 +125,7 @@ struct UBO
 void RenderSystem::initialize()
 {
 	mPrimaryBuffers.resize(mFlightSize);
+	mSecondaryBuffers.resize(mFlightSize);
 
 	const CommandBufferCreateInfo commandBufferInfo =
 	{
@@ -275,11 +288,60 @@ void RenderSystem::render()
 {
 	for (const auto& renderPass : mRenderMap)
 	{
-		const auto handle = mPrimaryBuffers[mCurrentFrame];
-		const auto prevHandle = mPrimaryBuffers[(mCurrentFrame - 1) % mFlightSize];
+		const auto handle = primal_cast<VulkanCommandBuffer*>(mPrimaryBuffers[mCurrentFrame][renderPass.first]);
+		const auto prevHandle = mPrimaryBuffers[(mCurrentFrame - 1) % mFlightSize][renderPass.first];
 
 		CommandBufferInheritanceInfo inheritanceInfo = {};
+		inheritanceInfo.frameBuffer = primal_cast<VulkanRenderPass*>(renderPass.first)->getFramebuffer();
 		inheritanceInfo.renderPass = renderPass.first;
+
+		CommandBufferRecordInfo recordInfo = {};
+		recordInfo.inheritance = &inheritanceInfo;
+		recordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
+
+		handle->record(recordInfo);
+
+		for (const auto& layouts : renderPass.second)
+		{
+			// Set the scene information for the layout
+			for (const auto& pipeline : layouts.second)
+			{
+				const auto secondary = primal_cast<VulkanCommandBuffer*>(mSecondaryBuffers[mCurrentFrame][renderPass.first][pipeline.first->getSubpass()]);
+
+				CommandBufferInheritanceInfo secondaryInheritanceInfo = {};
+				secondaryInheritanceInfo.renderPass = renderPass.first;
+				secondaryInheritanceInfo.frameBuffer = primal_cast<VulkanRenderPass*>(renderPass.first)->getFramebuffer();
+				secondaryInheritanceInfo.occlusionQueryEnable = false;
+				secondaryInheritanceInfo.queryPrecsise = false;
+				secondaryInheritanceInfo.subPass = pipeline.first->getSubpass();
+				secondaryInheritanceInfo.pipelineStatistics = 0;
+
+				CommandBufferRecordInfo secondaryRecordInfo = {};
+				secondaryRecordInfo.inheritance = &secondaryInheritanceInfo;
+				secondaryRecordInfo.flags = COMMAND_BUFFER_USAGE_SIMULATANEOUS_USE;
+
+				secondary->record(secondaryRecordInfo);
+
+				for (const auto& mesh : pipeline.second)
+				{
+					// bind mesh
+					for (const auto& mat : mesh.second)
+					{
+						// set material info
+						for (const auto& instance : mat.second)
+						{
+							// draw here
+						}
+					}
+				}
+
+				secondary->end();
+			}
+		}
+
+		handle->executeCommands(mSecondaryBuffers[mCurrentFrame][renderPass.first]);
+
+		handle->end();
 	}
 
 //	const auto handle = *(mPrimaryBuffer + mCurrentFrame);
@@ -416,6 +478,7 @@ bool RenderSystem::_onMeshRenderComponentAdded(ComponentAddedEvent<MeshRenderCom
 	MaterialInstance* matInstance = renderComponent->mMaterialInstance;
 	Material* material = matInstance->getParentMaterial();
 	IGraphicsPipeline* pipeline = material->getPipeline();
+	IPipelineLayout* layout = pipeline->getLayout();
 	IRenderPass* renderPass = pipeline->getRenderPass();
 	const Mesh* mesh = meshComponent->getMesh();
 
@@ -424,9 +487,9 @@ bool RenderSystem::_onMeshRenderComponentAdded(ComponentAddedEvent<MeshRenderCom
 		for (size_t i = 0; i < mFlightSize; i++)
 		{
 			auto& renderPasses = mPrimaryBuffers[i];
-			ICommandBuffer* buf = new VulkanCommandBuffer(mContext);
-			
-			const CommandBufferCreateInfo commandBufferInfo =
+			VulkanCommandBuffer* buf = new VulkanCommandBuffer(mContext);
+
+			CommandBufferCreateInfo commandBufferInfo =
 			{
 				mContext->getCommandPool(),
 				true
@@ -436,10 +499,58 @@ bool RenderSystem::_onMeshRenderComponentAdded(ComponentAddedEvent<MeshRenderCom
 
 			renderPasses[renderPass] = buf;
 		}
+
+		for (size_t i = 0; i < mFlightSize; i++)
+		{
+			auto& renderPasses = mSecondaryBuffers[i];
+			VulkanCommandBuffer* buf = new VulkanCommandBuffer(mContext);
+
+			CommandBufferCreateInfo commandBufferInfo =
+			{
+				mContext->getCommandPool(),
+				false
+			};
+
+			buf->construct(commandBufferInfo);
+
+			auto& pipelines = renderPasses[renderPass];
+			if (pipelines.size() <= pipeline->getSubpass())
+			{
+				pipelines.resize(pipeline->getSubpass() + 1);
+			}
+			pipelines[pipeline->getSubpass()] = buf;
+		}
+	}
+	else if (mRenderMap[renderPass].find(layout) == mRenderMap[renderPass].end())
+	{
+		if (mRenderMap[renderPass][layout].find(pipeline) == mRenderMap[renderPass][layout].end())
+		{
+			for (size_t i = 0; i < mFlightSize; i++)
+			{
+				auto& renderPasses = mSecondaryBuffers[i];
+				VulkanCommandBuffer* buf = new VulkanCommandBuffer(mContext);
+
+				CommandBufferCreateInfo commandBufferInfo =
+				{
+					mContext->getCommandPool(),
+					false
+				};
+
+				buf->construct(commandBufferInfo);
+
+				auto pipelines = renderPasses[renderPass];
+				if (pipelines.size() <= pipeline->getSubpass())
+				{
+					pipelines.resize(pipeline->getSubpass() + 1);
+				}
+				pipelines[pipeline->getSubpass()] = buf;
+			}
+		}
 	}
 
-	auto& graphicsPipeline = mRenderMap[renderPass];
-	auto& meshes = graphicsPipeline[pipeline];
+	auto& layouts = mRenderMap[renderPass];
+	auto& pipelines = layouts[layout];
+	auto& meshes = pipelines[pipeline];
 	auto& materials = meshes[mesh];
 	auto& materialInstances = materials[material];
 

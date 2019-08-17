@@ -43,7 +43,7 @@ struct RenderPassLayout
 	}
 };
 
-namespace std
+namespace std  // NOLINT(cert-dcl58-cpp)
 {
 	template<>
 	struct hash<RenderPassLayout>
@@ -54,9 +54,9 @@ namespace std
 	inline size_t hash<RenderPassLayout>::operator()(const RenderPassLayout& aKey) const noexcept
 	{
 		size_t h = 0;
-		for(size_t i = 0; i < aKey.attachments.size(); i++)
+		for (size_t attachment : aKey.attachments)
 		{
-			h += aKey.attachments[i];
+			h += attachment;
 		}
 
 		return h;

@@ -21,9 +21,10 @@ class VulkanGraphicsPipeline final : public IGraphicsPipeline
 		void reconstruct(const GraphicsPipelineCreateInfo& aInfo) override;
 		void destroy() override;
 
+		uint32_t getSubpass() const override;
 		GraphicsPipelineCreateInfo& getCreateInfo() override;
 		VkPipeline getHandle() const;
-		VulkanPipelineLayout* getLayout() const;
+		IPipelineLayout* getLayout() const override;
 
 	private:
 		void _destroy() const;

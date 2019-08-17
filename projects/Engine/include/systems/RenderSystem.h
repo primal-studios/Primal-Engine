@@ -54,6 +54,8 @@ class RenderSystem final : public System
 		VulkanPipelineLayout* mLayout{};
 
 		std::vector<std::unordered_map<IRenderPass*, ICommandBuffer*>> mPrimaryBuffers;
+		std::vector<std::unordered_map<IRenderPass*, std::vector<ICommandBuffer*>>> mSecondaryBuffers;
+
 		VulkanFramebuffer** mFramebuffers = nullptr;
 
 		VulkanCommandBuffer* mCpyBuffer = nullptr;
@@ -80,7 +82,11 @@ class RenderSystem final : public System
 
 		uint8_t mCpyReady = 2;
 
-		std::unordered_map<IRenderPass*, std::unordered_map<IGraphicsPipeline*, std::unordered_map<const Mesh*, std::unordered_map<Material*, std::vector<MeshRenderComponent*>>>>> mRenderMap;
+		std::unordered_map<IRenderPass*, 
+			std::unordered_map<IPipelineLayout*, 
+			std::unordered_map<IGraphicsPipeline*, 
+			std::unordered_map<const Mesh*, 
+			std::unordered_map<Material*, std::vector<MeshRenderComponent*>>>>>> mRenderMap;
 };
 
 #endif // rendersystem_h__

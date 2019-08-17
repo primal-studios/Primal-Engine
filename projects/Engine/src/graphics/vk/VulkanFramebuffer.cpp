@@ -23,6 +23,8 @@ void VulkanFramebuffer::construct(const FramebufferCreateInfo& aInfo)
 	VulkanGraphicsContext* context = primal_cast<VulkanGraphicsContext*>(mContext);
 	VulkanRenderPass* rp = primal_cast<VulkanRenderPass*>(aInfo.renderPass);
 
+	rp->mFramebufferRef = this;
+
 	vector<VkImageView> attachments;
 	attachments.reserve(aInfo.attachments.size());
 

@@ -334,6 +334,11 @@ void VulkanGraphicsPipeline::destroy()
 	_destroy();
 }
 
+uint32_t VulkanGraphicsPipeline::getSubpass() const
+{
+	return mCreateInfo.subPass;
+}
+
 GraphicsPipelineCreateInfo& VulkanGraphicsPipeline::getCreateInfo()
 {
 	return mCreateInfo;
@@ -344,9 +349,9 @@ VkPipeline VulkanGraphicsPipeline::getHandle() const
 	return mPipeline;
 }
 
-VulkanPipelineLayout* VulkanGraphicsPipeline::getLayout() const
+IPipelineLayout* VulkanGraphicsPipeline::getLayout() const
 {
-	return primal_cast<VulkanPipelineLayout*>(mCreateInfo.layout);
+	return mCreateInfo.layout;
 }
 
 void VulkanGraphicsPipeline::_destroy() const

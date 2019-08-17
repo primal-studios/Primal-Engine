@@ -1,6 +1,8 @@
 #include "core/Log.h"
 #include "core/PrimalAssert.h"
 #include "core/PrimalCast.h"
+// ReSharper disable once CppUnusedIncludeDirective
+#include "graphics/vk/VulkanFramebuffer.h"
 #include "graphics/vk/VulkanGraphicsContext.h"
 #include "graphics/vk/VulkanRenderPass.h"
 
@@ -212,6 +214,11 @@ RenderPassCreateInfo& VulkanRenderPass::getCreateInfo()
 VkRenderPass VulkanRenderPass::getHandle() const
 {
 	return mPass;
+}
+
+IFramebuffer* VulkanRenderPass::getFramebuffer() const
+{
+	return mFramebufferRef;
 }
 
 void VulkanRenderPass::_destroy() const

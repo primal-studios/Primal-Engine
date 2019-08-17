@@ -50,6 +50,8 @@ class VulkanCommandBuffer final : public ICommandBuffer
 		void draw(uint32_t aVertexCount, uint32_t aInstanceCount, uint32_t aFirstVertex, uint32_t aFirstInstance) override;
 		void drawIndexed(uint32_t aIndexCount, uint32_t aInstanceCount, uint32_t aFirstIndex, int32_t aVertexOffset, uint32_t aFirstInstance) override;
 
+		void executeCommands(std::vector<ICommandBuffer*> aCmdBuffers) override;
+
 		VkCommandBuffer getHandle() const;
 		VkSemaphore getSemaphore() const;
 

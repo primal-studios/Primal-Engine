@@ -2,11 +2,13 @@
 #define vulkanrenderpass_h__
 
 #include "graphics/api/IRenderPass.h"
+#include "graphics/api/IFramebuffer.h"
 
 #include <vulkan/vulkan.h>
 
 class VulkanRenderPass final : public IRenderPass
 {
+		friend class VulkanFramebuffer;
 	public:
 		explicit VulkanRenderPass(IGraphicsContext* aContext);
 		VulkanRenderPass(const VulkanRenderPass&) = delete;
@@ -22,6 +24,8 @@ class VulkanRenderPass final : public IRenderPass
 		
 		RenderPassCreateInfo& getCreateInfo() override;
 		VkRenderPass getHandle() const;
+
+		IFramebuffer* getFramebuffer() const;
 	private:
 		void _destroy() const;
 
@@ -29,6 +33,7 @@ class VulkanRenderPass final : public IRenderPass
 
 		IGraphicsContext* mContext;
 		VkRenderPass mPass{};
+		VulkanFramebuffer* mFramebufferRef = nullptr;
 
 };
 

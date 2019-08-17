@@ -145,7 +145,10 @@ void VulkanCommandBuffer::record(const CommandBufferRecordInfo& aInfo)
 	VkCommandBufferInheritanceInfo inheritanceInfo = {};
 	if (aInfo.inheritance != nullptr) {
 		inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-		inheritanceInfo.framebuffer = primal_cast<VulkanFramebuffer*>(aInfo.inheritance->frameBuffer)->getHandle();
+		if (inheritanceInfo.framebuffer)
+		{
+			inheritanceInfo.framebuffer = primal_cast<VulkanFramebuffer*>(aInfo.inheritance->frameBuffer)->getHandle();
+		}
 		inheritanceInfo.occlusionQueryEnable = aInfo.inheritance->occlusionQueryEnable;
 		inheritanceInfo.pipelineStatistics = aInfo.inheritance->pipelineStatistics;
 		inheritanceInfo.renderPass = primal_cast<VulkanRenderPass*>(aInfo.inheritance->renderPass)->getHandle();
@@ -406,7 +409,7 @@ void VulkanCommandBuffer::bindMaterial(Material* aMaterial, const uint32_t aFram
 		offset = 1;
 	}
 
-	VulkanPipelineLayout* layout = primal_cast<VulkanGraphicsPipeline*>(aMaterial->mPipeline)->getLayout();
+	VulkanPipelineLayout* layout = primal_cast<VulkanPipelineLayout*>(primal_cast<VulkanGraphicsPipeline*>(aMaterial->mPipeline)->getLayout());
 	uint32_t dynamicOffset = 0; // TODO : Calculate the number of dynamic buffers associated
 	vkCmdBindDescriptorSets(mBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout->getHandle(), offset, count, sets, 1, &dynamicOffset);
 }
@@ -418,7 +421,7 @@ void VulkanCommandBuffer::bindMaterialInstance(MaterialInstance* aInstance, uint
 	VkDescriptorSet set = primal_cast<VulkanDescriptorSet*>(aInstance->mParent->mSet.set)->getHandle(aFrame);
 
 	VulkanGraphicsPipeline* pipeline = primal_cast<VulkanGraphicsPipeline*>(parent->mPipeline);
-	VulkanPipelineLayout* layout = pipeline->getLayout();
+	VulkanPipelineLayout* layout = primal_cast<VulkanPipelineLayout*>(pipeline->getLayout());
 
 	std::vector<uint32_t> offsets;
 	for (const auto& pair : parent->mBackingBuffers)
@@ -448,6 +451,18 @@ void VulkanCommandBuffer::drawIndexed(const uint32_t aIndexCount, const uint32_t
 	const int32_t aVertexOffset, const uint32_t aFirstInstance)
 {
 	vkCmdDrawIndexed(mBuffer, aIndexCount, aInstanceCount, aFirstIndex, aVertexOffset, aFirstInstance);
+}
+
+void VulkanCommandBuffer::executeCommands(std::vector<ICommandBuffer*> aCmdBuffers)
+{
+	std::vector<VkCommandBuffer> secondary;
+	secondary.reserve(aCmdBuffers.size());
+	for (const auto buf : aCmdBuffers)
+	{
+		secondary.emplace_back(primal_cast<VulkanCommandBuffer*>(buf)->mBuffer);
+	}
+
+	vkCmdExecuteCommands(mBuffer, static_cast<uint32_t>(secondary.size()), secondary.data());
 }
 
 VkCommandBuffer VulkanCommandBuffer::getHandle() const

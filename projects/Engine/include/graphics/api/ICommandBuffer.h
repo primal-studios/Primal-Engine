@@ -115,6 +115,8 @@ class ICommandBuffer
 
 		virtual void draw(uint32_t aVertexCount, uint32_t aInstanceCount = 1, uint32_t aFirstVertex = 0, uint32_t aFirstInstance = 0) = 0;
 		virtual void drawIndexed(uint32_t aIndexCount, uint32_t aInstanceCount = 1, uint32_t aFirstIndex = 0, int32_t aVertexOffset = 0, uint32_t aFirstInstance = 0) = 0;
+
+		virtual void executeCommands(std::vector<ICommandBuffer*> aCmdBuffers) = 0;
 };
 
 #endif // icommandbuffer_h__

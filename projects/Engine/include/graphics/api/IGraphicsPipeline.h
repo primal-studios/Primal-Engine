@@ -388,8 +388,10 @@ class IGraphicsPipeline
 		virtual void destroy() = 0;
 
 		[[nodiscard]] IRenderPass* getRenderPass() const;
-
+		
+		virtual uint32_t getSubpass() const = 0;
 		virtual GraphicsPipelineCreateInfo& getCreateInfo() = 0;
+		virtual IPipelineLayout* getLayout() const = 0;
 	protected:
 		IGraphicsContext* mContext;
 		GraphicsPipelineCreateInfo mCreateInfo;
